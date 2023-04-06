@@ -50,9 +50,10 @@ public class CollectionExtensions {
 
         // Act
         ref var valueRef = ref dictionary.GetValueRefOrNullRef(key);
+        ref var valueReal = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
 
         // Assert
-        Unsafe.AreSame(ref valueRef, ref dictionary[key]).Should().BeTrue();
+        Unsafe.AreSame(ref valueRef, ref valueReal).Should().BeTrue();
     }
 
     [Fact]
