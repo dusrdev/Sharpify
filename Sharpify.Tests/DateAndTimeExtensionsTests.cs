@@ -3,8 +3,8 @@ namespace Sharpify.Tests;
 public class DateAndTimeExtensionsTests {
     [Theory]
     [InlineData(0.00001, "0.01ms")]
-    [InlineData(0.01, "0.01ms")]
-    [InlineData(0.5, "0.5s")]
+    [InlineData(0.01, "10ms")]
+    [InlineData(0.5, "500ms")]
     [InlineData(1, "1s")]
     [InlineData(59.999, "59.99s")]
     [InlineData(60, "1m")]

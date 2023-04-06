@@ -44,7 +44,7 @@ public class EitherTests {
         bool t1HandlerCalled = false;
 
         // Act
-        either.Switch(t0 => t0HandlerCalled = false, t1 => t1HandlerCalled = true);
+        either.Switch(t0 => t0HandlerCalled = true, t1 => t1HandlerCalled = true);
 
         // Assert
         t0HandlerCalled.Should().BeFalse();

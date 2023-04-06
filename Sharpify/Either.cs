@@ -12,12 +12,12 @@ public readonly record struct Either<T0, T1> {
     /// <summary>
     /// Checks if the value is T0.
     /// </summary>
-    public bool IsT0 => _value0 is not null;
+    public readonly bool IsT0;
 
     /// <summary>
     /// Checks if the value is T1.
     /// </summary>
-    public bool IsT1 => _value1 is not null;
+    public readonly bool IsT1;
 
     /// <summary>
     /// Gets the value as T0.
@@ -43,11 +43,15 @@ public readonly record struct Either<T0, T1> {
     private Either(T0 value) {
         _value0 = value;
         _value1 = default;
+        IsT0 = true;
+        IsT1 = false;
     }
 
     private Either(T1 value) {
         _value0 = default;
         _value1 = value;
+        IsT0 = false;
+        IsT1 = true;
     }
 
     /// <summary>

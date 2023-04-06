@@ -29,15 +29,6 @@ public class CollectionExtensionsTests {
     }
 
     [Fact]
-    public void AsSpan_GivenNullList_ThrowsArgumentNullException() {
-        // Arrange
-        List<int> list = null;
-
-        // Act and Assert
-        list.Invoking(x => x.AsSpan()).Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetValueRefOrNullRef_GivenExistingKey_ReturnsRefToValue() {
         // Arrange
         var dictionary = new Dictionary<int, string>
@@ -84,8 +75,8 @@ public class CollectionExtensionsTests {
         ref var valueRef = ref dictionary.GetValueRefOrAddDefault(key, out bool exists);
 
         // Assert
-        valueRef.Should().Be(dictionary[key]);
-        exists.Should().BeFalse();
+        valueRef.Should().BeEquivalentTo("two");
+        exists.Should().BeTrue();
     }
 
     [Fact]

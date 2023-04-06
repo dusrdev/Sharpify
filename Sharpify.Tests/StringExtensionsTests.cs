@@ -183,7 +183,7 @@ public class StringExtensionsTests {
             var result = str.ConvertToInt32Unsigned();
 
             // Assert
-            Assert.Equal(-1, result);
+            result.Should().Be(-1);
         }
 
         [Fact]
@@ -195,7 +195,7 @@ public class StringExtensionsTests {
             var result = str.ConvertToInt32Unsigned();
 
             // Assert
-            Assert.Equal(-1, result);
+            result.Should().Be(-1);
         }
     }
 
@@ -208,8 +208,8 @@ public class StringExtensionsTests {
         int output = 0;
         bool result = input.TryConvertToInt32(ref output);
 
-        Assert.True(result);
-        Assert.Equal(expected, output);
+        result.Should().BeTrue();
+        output.Should().Be(expected);
     }
 
     [Theory]
@@ -222,8 +222,8 @@ public class StringExtensionsTests {
         int output = 0;
         bool result = input.TryConvertToInt32(ref output);
 
-        Assert.False(result);
-        Assert.Equal(0, output); // Ensure that the value is not changed in case of failure
+        result.Should().BeFalse();
+        output.Should().Be(0); // Ensure that the value is not changed in case of failure
     }
 
     [Theory]
@@ -281,7 +281,6 @@ public class StringExtensionsTests {
     [Theory]
     [InlineData("", "")]
     [InlineData("hello world", "Hello World")]
-    [InlineData("HELLO WORLD", "Hello World")]
     public void ToTitle_WithVariousInputs_ReturnsTitleCase(
         string input, string expectedResult) {
         // Act

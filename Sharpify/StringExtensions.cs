@@ -51,7 +51,10 @@ public static partial class Extensions {
     /// <param name="num"></param>
     public static void ConvertToInt32Unsigned(this ReadOnlySpan<char> str, ref int num) {
         // Check for empty string or larger than Int.MaxValue
-        Debug.Assert(str.Length is > 0 and <= 10);
+        if (str.Length is < 0 or > 10) {
+            num = -1;
+            return;
+        }
         for (var i = 0; i < str.Length; i++) {
             var digit = str[i] - '0';
 
@@ -100,6 +103,12 @@ public static partial class Extensions {
                 return false;
             }
 
+            // Check for overflow
+            if (num > (int.MaxValue - digit) / 10) {
+                num = prevValue;
+                return false;
+            }
+
             num = (num * 10) + digit;
         }
         return true;
@@ -129,9 +138,10 @@ public static partial class Extensions {
         }
         var str = value.AsSpan();
         Span<char> res = stackalloc char[str.Length + suffix.Length];
-        str.CopyTo(res);
-        res = res[str.Length..];
-        suffix.CopyTo(res);
+        Span<char> resSpan = res;
+        str.CopyTo(resSpan);
+        resSpan = resSpan[str.Length..];
+        suffix.CopyTo(resSpan);
         return new string(res);
     }
 
