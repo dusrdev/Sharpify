@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify", "Sharpify\Sharpify.csproj", "{B7E50023-3684-40A8-8968-0AC3E75560A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.Tests", "Sharpify.Tests\Sharpify.Tests.csproj", "{2A67A127-7FAC-40D6-897B-D71FF4611440}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B7E50023-3684-40A8-8968-0AC3E75560A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7E50023-3684-40A8-8968-0AC3E75560A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7E50023-3684-40A8-8968-0AC3E75560A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A67A127-7FAC-40D6-897B-D71FF4611440}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A67A127-7FAC-40D6-897B-D71FF4611440}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A67A127-7FAC-40D6-897B-D71FF4611440}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A67A127-7FAC-40D6-897B-D71FF4611440}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
