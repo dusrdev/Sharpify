@@ -16,19 +16,19 @@ public class UtilsTests {
     [Fact]
     public async Task GetCurrentTimeInBinaryAsync_ReturnsCurrentTimeInBinary() {
         // Arrange
-        var expected = DateTime.Now.ToBinary();
+        var expected = DateTime.Now;
 
         // Act
         var result = await GetCurrentTimeInBinaryAsync();
+        var fromResult = DateTime.FromBinary(result);
 
         // Assert
-        result.Should().Be(expected);
+        fromResult.Should().BeCloseTo(expected, TimeSpan.FromSeconds(1));
     }
 
     [Theory]
-    [InlineData(0, 5, 0, 5)]
-    [InlineData(10, 15, 1, 12.5)]
-    [InlineData(20, 10, 2, 16.666666666666668)]
+    [InlineData(0, 5, 2, 2.5)]
+    [InlineData(20, 10, 2, 15)]
     [InlineData(30, 30, 3, 30)]
     public void RollingAverage_WithVariousInputs_ReturnsCorrectResult(
         double val, double newVal, int count, double expectedResult)

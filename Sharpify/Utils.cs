@@ -29,8 +29,9 @@ public static class Utils {
     public static double RollingAverage(
         double oldVal,
         double newVal,
-        int count) =>
-                  count is 0
-                  ? newVal
-                  : (oldVal * (count - 1) / count) + (newVal / count);
+        int count) => count < 0
+            ? throw new ArgumentException("Count must be greater than or equal to 0", nameof(count))
+            : count is 0
+                      ? newVal
+                      : (oldVal * (count - 1) / count) + (newVal / count);
 }

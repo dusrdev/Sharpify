@@ -6,23 +6,43 @@ namespace Sharpify;
 
 public static partial class Extensions {
     /// <summary>
+    /// A simple wrapper over <see cref="string.IsNullOrEmpty(string)"/> to make it easier to use.
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
+
+    /// <summary>
+    /// A simple wrapper over <see cref="string.IsNullOrWhiteSpace(string)"/> to make it easier to use.
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static bool IsNullOrWhiteSpace(this string str) => string.IsNullOrWhiteSpace(str);
+
+    /// <summary>
     /// Converts a string to an int32.
     /// </summary>
     /// <param name="value"></param>
     public static int ConvertToInt32(this string value) {
-        // Check for empty string or larger than Int.MaxValue
+        if (string.IsNullOrWhiteSpace(value)) {
+            return 0;
+        }
         var str = value.AsSpan();
         bool isNegative = str[0] is '-';
         if (isNegative) {
             str = str[1..];
         }
-        Debug.Assert(str.Length is > 0 and <= 11);
         var num = 0;
         for (var i = 0; i < str.Length; i++) {
             var digit = str[i] - '0';
 
             // Check for invalid digit
             if (digit is < 0 or > 9) {
+                return 0;
+            }
+
+            // Check for overflow
+            if (num > (int.MaxValue - digit) / 10) {
                 return 0;
             }
 
@@ -51,7 +71,7 @@ public static partial class Extensions {
     /// <param name="num"></param>
     public static void ConvertToInt32Unsigned(this ReadOnlySpan<char> str, ref int num) {
         // Check for empty string or larger than Int.MaxValue
-        if (str.Length is < 0 or > 10) {
+        if (str.IsEmpty) {
             num = -1;
             return;
         }
@@ -62,6 +82,12 @@ public static partial class Extensions {
             if (digit is < 0 or > 9) {
                 num = -1;
                 break;
+            }
+
+            // Check for overflow
+            if (num > (int.MaxValue - digit) / 10) {
+                num = -1;
+                return;
             }
 
             num = (num * 10) + digit;

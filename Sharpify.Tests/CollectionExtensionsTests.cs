@@ -90,7 +90,7 @@ public class CollectionExtensionsTests {
 
         // Assert
         valueRef.Should().Be(default(string));
-        exists.Should().BeTrue();
+        exists.Should().BeFalse();
         dictionary.Should().ContainKey(key).And.ContainValue(default(string));
     }
 

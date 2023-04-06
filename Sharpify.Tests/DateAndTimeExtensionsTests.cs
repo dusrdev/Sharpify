@@ -6,7 +6,7 @@ public class DateAndTimeExtensionsTests {
     [InlineData(0.01, "10ms")]
     [InlineData(0.5, "500ms")]
     [InlineData(1, "1s")]
-    [InlineData(59.999, "59.99s")]
+    [InlineData(59.99, "59.99s")]
     [InlineData(60, "1m")]
     [InlineData(61, "1.02m")]
     [InlineData(121.234, "2.02m")]

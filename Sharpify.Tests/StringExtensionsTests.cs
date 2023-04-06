@@ -2,6 +2,66 @@ namespace Sharpify.Tests;
 
 public class StringExtensionsTests {
     [Fact]
+    public void IsNullOrEmpty_GivenNullString_ReturnsTrue() {
+        // Arrange
+        string value = null;
+
+        // Act
+        var result = value.IsNullOrEmpty();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsNullOrEmpty_GivenEmptyString_ReturnsTrue() {
+        // Arrange
+        const string value = "";
+
+        // Act
+        var result = value.IsNullOrEmpty();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsNullOrWhiteSpace_GivenNullString_ReturnsTrue() {
+        // Arrange
+        string value = null;
+
+        // Act
+        var result = value.IsNullOrWhiteSpace();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsNullOrWhiteSpace_GivenEmptyString_ReturnsTrue() {
+        // Arrange
+        const string value = "";
+
+        // Act
+        var result = value.IsNullOrWhiteSpace();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsNullOrWhiteSpace_GivenWhiteSpaceString_ReturnsTrue() {
+        // Arrange
+        const string value = "      ";
+
+        // Act
+        var result = value.IsNullOrWhiteSpace();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
     public void ConvertToInt32_GivenValidString_ReturnsInt32Value() {
         // Arrange
         const string value = "1234";
@@ -65,7 +125,7 @@ public class StringExtensionsTests {
     public void ConvertToInt32Unsigned_GivenValidSpan_ShouldSucceed() {
         // Arrange
         var span = "1234".AsSpan();
-        var num = -1;
+        var num = 0;
 
         // Act
         span.ConvertToInt32Unsigned(ref num);
