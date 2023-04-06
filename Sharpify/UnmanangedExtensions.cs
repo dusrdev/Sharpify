@@ -20,7 +20,7 @@ public static partial class Extensions {
                   : (val * (count - 1) / count) + (newVal / count);
 
     private static readonly ImmutableArray<string> FileSizeSuffix =
-        ImmutableArray.Create(new[] { "B", "KB", "MB", "GB", "TB", "PB" });
+        ImmutableArray.Create("B", "KB", "MB", "GB", "TB", "PB");
 
     private static readonly ThreadLocal<StringBuilder> ByteFormattingBuilder = new(static () => new StringBuilder());
 

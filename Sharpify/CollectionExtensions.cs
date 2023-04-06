@@ -19,7 +19,7 @@ public static partial class Extensions {
     /// <param name="key">The key used for lookup.</param>
     /// <remarks>
     /// Items should not be added or removed from the <see cref="Dictionary{TKey, TValue}"/> while the ref <typeparamref name="TValue"/> is in use.
-    /// The ref null can be detected using <see cref="System.Runtime.CompilerServices.Unsafe.IsNullRef{T}(ref T)"/>
+    /// The ref null can be detected using <see cref="Unsafe.IsNullRef{T}(ref T)"/>
     /// </remarks>
     public static ref TValue GetValueRefOrNullRef<TKey, TValue>(
         this Dictionary<TKey, TValue> dictionary,

@@ -32,16 +32,6 @@ public static partial class Extensions {
     }
 
     /// <summary>
-    /// Converts a string to an int32 (Use when you are sure it will only be positive).
-    /// </summary>
-    /// <param name="str"></param>
-    /// <remarks>
-    /// Here, invalid returns -1, you could use this to check if the conversion was successful.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ConvertToInt32Unsigned(this string str) => str.AsSpan().ConvertsToInt32Unsigned();
-
-    /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/> to an int32 (Use when you are sure it will only be positive).
     /// </summary>
     /// <param name="str"></param>
@@ -74,6 +64,16 @@ public static partial class Extensions {
             num = (num * 10) + digit;
         }
     }
+
+    /// <summary>
+    /// Converts a string to an int32 (Use when you are sure it will only be positive).
+    /// </summary>
+    /// <param name="str"></param>
+    /// <remarks>
+    /// Here, invalid returns -1, you could use this to check if the conversion was successful.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ConvertToInt32Unsigned(this string str) => str.AsSpan().ConvertsToInt32Unsigned();
 
     /// <summary>
     /// Tries to convert a string to an int32.
