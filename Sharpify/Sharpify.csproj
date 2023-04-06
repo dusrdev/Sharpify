@@ -4,6 +4,11 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Authors>David Shnayder</Authors>
+    <Copyright>David Shnayder - 2023</Copyright>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>A collection of high performance language extensions for C#</Title>
   </PropertyGroup>
 
 </Project>
