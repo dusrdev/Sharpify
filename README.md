@@ -4,25 +4,25 @@ A collection of high performance language extensions for C#
 
 ## Features
 
-* Discriminated union object that forces handling of both cases called `Either<T0, T1>`
-* Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
-* `Concurrent` wrapper object together with `IAction` and `IAsyncAction` interfaces and extension methods that are a window into vastly improved parallel/concurrent processing (More info below)
-* Utility functions that add new functionality or change the way you access certain features (More info below).
-* Large collection of extension methods that replace core library functions with alternatives that offer tremendously improved performance.
-
-## How was any of it achieved and why
-
-From my experience with coding with C# for about a decade now, I was used to seeing an extension class in almost any project, often with extensions that are almost trivial that should exist in the core language, others that are very smart and intuitive and could be added to increase performance and/or productivity, This is why I thought it would be amazing if there could be a lightweight package to just install in all projects that would fill all those needs. In the last few years the .NET team has made a lot of efforts to optimize code, add new features and a lot more. At this time (Latest release is .NET 7) the features are still better than what is available in the core language. Staying updated in the official additions to the language, I will update the package and mark features as deprecated if a better official one will be released.
-
-To achieve the features the package:
-
-* Uses `Span`, `ReadOnlySpan` and `stackalloc` pretty heavily.
-* `Result` struct doesn't require handling with **lambdas** to virtually eliminate boxing and heap allocation.
-* `IAction` and `IAsyncAction` provide more readable and configurable alternatives to lambda functions that are also subject to a large degree of optimization using JIT, and together with **ref struct** `Concurrent` wrapper, allow usage of incredibly performant concurrent processing extensions.
+* 🤷 `Either<T0, T1>` - Discriminated union object that forces handling of both cases
+* 🦾 Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
+* 🚀 Extremely efficient concurrency with `Concurrent` collection wrapper and `IAction`/`IAsyncAction` interfaces
+* 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
+* 🏋️ High performance optimized alternative to core language extensions
+* 🎁 More added features that are not present in the core language
 
 ### More on `Concurrent`
 
 The interfaces `IAction` and `IAsyncAction` allow usage of **readonly structs** to represents the actual **lambda** function alternative, in addition of possibly being allocated on the stack, it also allows usage of readonly field and provides clarity for the **JIT** compiler allowing it to optimize much more during runtime than if it were **lambda** functions. The `Concurrent` wrapper serves 3 purposes: first is separating the extensions of this library from the rest of parallel core extensions, to make sure you really are using the one you want. Second is to limit actual types of collections you could use, In order to maximize the performance only collections that implement `ICollection<T>` can be used. Third is that wrapping the collection as a **field** in a **ref struct** sometimes helps allocate more of the actual processing dependencies on the stack, and most of the time even if not, it will allocate the pointer to the stack which will help the **JIT** to further optimize during runtime.
+
+### More on `Result`
+
+`Result` is a `readonly record struct` that includes a `bool` status of either success or failure and an optional `string` message.
+In addition to that there is an alternative `Result<T>` which can also store a value of type **T**. The result class uses static factory methods to create both `Result` and `Result<T>` objects, and implicit converters minimize complexity and unreadability of code.
+
+Unlike `Either<T0, T1>`, `Result` does force the user to handle it in any special way, instead nullable properties are used. both `Result.Message` and `Result.Value` (if `Result<T>` is used) can be null, and the factory methods for `Fail` set the `Value` to null. So that in the worst case you only allocate a null reference.
+
+All of these design choices guarantee vastly improved performance over `Either<T0, T1>` since, you can use any objects during the handling of the result, or pass the result entirely or just parts of it between methods without worrying of boxing and heap allocations from lambdas
 
 ### More on the `Utils` class
 
