@@ -1,6 +1,6 @@
 namespace Sharpify.Tests;
 
-public class DateAndTimeExtensions {
+public class DateAndTimeExtensionsTests {
     [Theory]
     [InlineData(0.00001, "0.01ms")]
     [InlineData(0.01, "0.01ms")]

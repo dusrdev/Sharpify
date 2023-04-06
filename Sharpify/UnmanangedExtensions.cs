@@ -5,22 +5,8 @@ using System.Text;
 namespace Sharpify;
 
 public static partial class Extensions {
-    /// <summary>
-    /// Returns a rolling average
-    /// </summary>
-    /// <param name="val"></param>
-    /// <param name="newVal"></param>
-    /// <param name="count"></param>
-    public static double RollingAverage(
-        this double val,
-        double newVal,
-        int count) =>
-                  count is 0
-                  ? newVal
-                  : (val * (count - 1) / count) + (newVal / count);
-
     private static readonly ImmutableArray<string> FileSizeSuffix =
-        ImmutableArray.Create("B", "KB", "MB", "GB", "TB", "PB");
+    ImmutableArray.Create("B", "KB", "MB", "GB", "TB", "PB");
 
     private static readonly ThreadLocal<StringBuilder> ByteFormattingBuilder = new(static () => new StringBuilder());
 

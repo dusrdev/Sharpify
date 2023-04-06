@@ -1,6 +1,6 @@
 namespace Sharpify.Tests;
 
-public class CollectionExtensions {
+public class CollectionExtensionsTests {
     [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
         // Arrange
