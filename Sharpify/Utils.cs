@@ -23,15 +23,17 @@ public static class Utils {
     /// <summary>
     /// Returns a rolling average
     /// </summary>
-    /// <param name="oldVal"></param>
-    /// <param name="newVal"></param>
-    /// <param name="count"></param>
-    public static double RollingAverage(
-        double oldVal,
-        double newVal,
-        int count) => count < 0
-            ? throw new ArgumentException("Count must be greater than or equal to 0", nameof(count))
-            : count is 0
-                      ? newVal
-                      : (oldVal * (count - 1) / count) + (newVal / count);
+    /// <param name="oldAverage"></param>
+    /// <param name="newNumber"></param>
+    /// <param name="sampleCount"></param>
+    public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
+        if (sampleCount < 0)
+            throw new ArgumentException("Count must be greater than or equal to 0", nameof(sampleCount));
+
+        if (sampleCount is 0)
+            return newNumber;
+
+        double denominator = 1 / (double)sampleCount;
+        return (oldAverage * (sampleCount - 1) * denominator) + (newNumber * denominator);
+    }
 }

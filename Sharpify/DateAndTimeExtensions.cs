@@ -12,7 +12,9 @@ public static partial class Extensions {
     public static string Format(this TimeSpan elapsed) => elapsed.TotalSeconds switch {
         < 1 => $"{Math.Round(elapsed.TotalMilliseconds, 2)}ms",
         < 60 => $"{Math.Round(elapsed.TotalSeconds, 2)}s",
-        _ => $"{Math.Round(elapsed.TotalMinutes, 2)}m"
+        < 3600 => $"{Math.Round(elapsed.TotalMinutes, 2)}m",
+        < 86400 => $"{Math.Round(elapsed.TotalHours, 2)}hr",
+        _ => $"{Math.Round(elapsed.TotalDays, 2)}d"
     };
 
     private static readonly ThreadLocal<StringBuilder> RemainingTimeBuilder = new(static () => new StringBuilder());
@@ -59,15 +61,15 @@ public static partial class Extensions {
         Span<char> buffer = stackalloc char[14];
 
         // Append the hour and minute to the buffer
-        buffer[0] = (char)('0' + (time.Hour / 10));
+        buffer[0] = (char)('0' + (time.Hour * 0.1));
         buffer[1] = (char)('0' + (time.Hour % 10));
-        buffer[2] = (char)('0' + (time.Minute / 10));
+        buffer[2] = (char)('0' + (time.Minute * 0.1));
         buffer[3] = (char)('0' + (time.Minute % 10));
 
         // Append the day
         var monthAbbreviation = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month);
         buffer[4] = '-';
-        buffer[5] = (char)('0' + (time.Day / 10));
+        buffer[5] = (char)('0' + (time.Day * 0.1));
         buffer[6] = (char)('0' + (time.Day % 10));
         // Append the month abbreviation
         buffer[7] = '-';
@@ -76,7 +78,7 @@ public static partial class Extensions {
         buffer[10] = monthAbbreviation[2];
         // Append the year
         buffer[11] = '-';
-        buffer[12] = (char)('0' + (time.Year % 100 / 10));
+        buffer[12] = (char)('0' + (time.Year % 100 * 0.1));
         buffer[13] = (char)('0' + (time.Year % 10));
 
         return new string(buffer);
