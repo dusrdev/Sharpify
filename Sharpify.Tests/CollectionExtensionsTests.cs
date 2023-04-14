@@ -89,9 +89,11 @@ public class CollectionExtensionsTests {
         ref var valueRef = ref dictionary.GetValueRefOrAddDefault(key, out bool exists);
 
         // Assert
+        #pragma warning disable
         valueRef.Should().Be(default(string));
         exists.Should().BeFalse();
         dictionary.Should().ContainKey(key).And.ContainValue(default(string));
+        #pragma warning restore
     }
 
     [Fact]

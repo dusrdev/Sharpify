@@ -1,4 +1,5 @@
 namespace Sharpify.Tests;
+#pragma warning disable
 
 public class StringExtensionsTests {
     [Fact]
@@ -367,3 +368,4 @@ public class StringExtensionsTests {
         result.Should().Be(expectedResult);
     }
 }
+#pragma warning restore
