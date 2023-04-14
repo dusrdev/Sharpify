@@ -11,6 +11,10 @@ A collection of high performance language extensions for C#
 * 🏋️ High performance optimized alternative to core language extensions
 * 🎁 More added features that are not present in the core language
 
+## ⬇ Installation
+
+* Nuget --> [![](https://img.shields.io/nuget/dt/Sharpify?label=Downloads)](https://www.nuget.org/packages/Sharpify/)
+
 ### More on `Concurrent`
 
 The interfaces `IAction` and `IAsyncAction` allow usage of **readonly structs** to represents the actual **lambda** function alternative, in addition of possibly being allocated on the stack, it also allows usage of readonly field and provides clarity for the **JIT** compiler allowing it to optimize much more during runtime than if it were **lambda** functions. The `Concurrent` wrapper serves 3 purposes: first is separating the extensions of this library from the rest of parallel core extensions, to make sure you really are using the one you want. Second is to limit actual types of collections you could use, In order to maximize the performance only collections that implement `ICollection<T>` can be used. Third is that wrapping the collection as a **field** in a **ref struct** sometimes helps allocate more of the actual processing dependencies on the stack, and most of the time even if not, it will allocate the pointer to the stack which will help the **JIT** to further optimize during runtime.
