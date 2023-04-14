@@ -7,5 +7,3 @@ global using FluentAssertions;
 global using Sharpify;
 
 global using Xunit;
-
-global using static Sharpify.Utils;
