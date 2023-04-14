@@ -61,11 +61,17 @@ public static partial class Extensions {
         IAsyncAction<T> action,
         int degreeOfParallelization = -1,
         CancellationToken token = default) {
+        if (concurrentReference.Source.Count is 0) {
+            return Task.CompletedTask;
+        }
+
         if (degreeOfParallelization is -1) {
             degreeOfParallelization = Environment.ProcessorCount;
         }
 
-        int batchCount = concurrentReference.Source.Count / degreeOfParallelization;
+        int batchCount = concurrentReference.Source.Count <= degreeOfParallelization
+            ? 1
+            : concurrentReference.Source.Count / degreeOfParallelization;
 
         async Task AwaitPartition(IEnumerator<T> partition) {
             using (partition) {
