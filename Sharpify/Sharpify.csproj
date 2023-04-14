@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.0.1</PackageVersion>
     <Nullable>enable</Nullable>
     <Authors>David Shnayder</Authors>
-    <Copyright>David Shnayder - 2023</Copyright>
+    <Copyright>David Shnayder</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
@@ -16,11 +16,12 @@
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Extensions, HighPerformance, DiscriminatedUnion, Result</PackageTags>
+    <PackageTags>Extensions; HighPerformance; DiscriminatedUnion; Result</PackageTags>
   </PropertyGroup>
   
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\"/>
+    <None Include="CHANGELOG.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>
