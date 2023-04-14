@@ -13,7 +13,7 @@ A collection of high performance language extensions for C#
 
 ## ⬇ Installation
 
-* Nuget --> [![](https://img.shields.io/nuget/dt/Sharpify?label=Downloads)](https://www.nuget.org/packages/Sharpify/)
+* Nuget --> [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Downloads)](https://www.nuget.org/packages/Sharpify/)
 
 ### More on `Concurrent`
 
