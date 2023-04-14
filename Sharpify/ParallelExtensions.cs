@@ -10,7 +10,9 @@ public static partial class Extensions {
     /// <typeparam name="T"></typeparam>
     /// <param name="source"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Concurrent<T> Concurrent<T>(this ICollection<T> source) => new(source);
+    public static Concurrent<T> Concurrent<T>(this ICollection<T> source) => source is null
+        ? throw new ArgumentNullException(nameof(source))
+        : new Concurrent<T>(source);
 
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
