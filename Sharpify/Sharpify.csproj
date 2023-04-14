@@ -14,8 +14,13 @@
     <Title>Sharpify</Title>
     <Description>A collection of high performance language extensions for C#</Description>
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Extensions, HighPerformance, DiscriminatedUnion, Result</PackageTags>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
 </Project>
