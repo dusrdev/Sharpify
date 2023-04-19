@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.3
+
+* Fixed implementation of `IModifier<T>` to better fit the requirements of `Func<T, T>`
+
 ## v1.0.2
 
 * Introduces a new `ThreadSafe<T>` wrapper which makes any type thread-safe

@@ -12,6 +12,7 @@ public interface IModifier<T> {
     /// Modifies the value
     /// </summary>
     /// <param name="value"></param>
+    /// <param name="newValue"></param>
     /// <returns>The modified value</returns>
-    T Modify(T value);
+    T Modify(T value, T newValue);
 }

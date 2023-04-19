@@ -25,6 +25,19 @@ public class ThreadSafeTests {
     [InlineData(1, 2, 3)]
     [InlineData(2, 3, 5)]
     [InlineData(3, 4, 7)]
+    public void SetValue_NewValueWithModifier_UpdatesValue(int original, int addition, int expected) {
+        ThreadSafe<int> wrapper = new(original);
+        var adder = new Adder();
+
+        int result = wrapper.Modify(adder, addition);
+
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(1, 2, 3)]
+    [InlineData(2, 3, 5)]
+    [InlineData(3, 4, 7)]
     public void PerformActionWithResult_Action_ReturnsActionResult(int original, int addition, int expected) {
         ThreadSafe<int> wrapper = new(original);
 
@@ -74,7 +87,7 @@ public class ThreadSafeTests {
         async Task Increment() {
             await Task.Run(() => {
                 for (int i = 0; i < iterations; i++) {
-                    wrapper.Modify(modifier);
+                    wrapper.Modify(modifier, 1);
                 }
             });
         }
@@ -91,6 +104,6 @@ public class ThreadSafeTests {
     }
 
     private class Adder : IModifier<int> {
-        public int Modify(int value) => value + 1;
+        public int Modify(int value, int newValue) => value + newValue;
     }
 }
