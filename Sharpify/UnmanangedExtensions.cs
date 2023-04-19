@@ -24,11 +24,13 @@ public static partial class Extensions {
     /// <returns>string</returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.NoInlining)]
     public static string FormatBytes(this double bytes) {
+        const double kb = 1024d;
+        const double divisor = 1 / kb;
         var byteFormattingBuilder = ByteFormattingBuilder.Value;
         byteFormattingBuilder!.Clear();
         var suffix = 0;
-        while (bytes >= 1024 && suffix < FileSizeSuffix.Length) {
-            bytes /= 1024;
+        while (bytes >= kb && suffix < FileSizeSuffix.Length) {
+            bytes *= divisor;
             suffix++;
         }
         return byteFormattingBuilder.Append(Math.Round(bytes, 2))

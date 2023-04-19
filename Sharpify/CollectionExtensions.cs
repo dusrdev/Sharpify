@@ -100,7 +100,8 @@ public static partial class Extensions {
                 list.RemoveAt(i);
                 continue;
             }
-            current = list[i++];
+            current = list[i];
+            i++;
         }
     }
 

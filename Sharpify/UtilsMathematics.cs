@@ -18,7 +18,7 @@ public static partial class Utils {
             if (sampleCount is 0)
                 return newNumber;
 
-            double denominator = 1 / (double)sampleCount;
+            double denominator = 1d / sampleCount;
             return (oldAverage * (sampleCount - 1) * denominator) + (newNumber * denominator);
         }
 
@@ -37,7 +37,8 @@ public static partial class Utils {
 
             var num = 1d;
             while (n > 1) {
-                num *= n--;
+                num *= n;
+                n--;
             }
             return num;
         }

@@ -21,21 +21,4 @@ public static partial class Utils {
         /// </remarks>
         public static ValueTask<long> GetCurrentTimeInBinaryAsync() => ValueTask.FromResult(DateTime.Now.ToBinary());
     }
-
-    /// <summary>
-    /// Returns a rolling average
-    /// </summary>
-    /// <param name="oldAverage"></param>
-    /// <param name="newNumber"></param>
-    /// <param name="sampleCount"></param>
-    public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
-        if (sampleCount < 0)
-            throw new ArgumentException("Count must be greater than or equal to 0", nameof(sampleCount));
-
-        if (sampleCount is 0)
-            return newNumber;
-
-        double denominator = 1d / sampleCount;
-        return (oldAverage * (sampleCount - 1) * denominator) + (newNumber * denominator);
-    }
 }
