@@ -90,10 +90,13 @@ public sealed class AesProvider : IDisposable {
     /// Encrypts the text using the key
     /// </summary>
     /// <param name="encrypted"></param>
+    /// <remarks>Returns an empty string if it fails</remarks>
     public string Decrypt(string encrypted) {
         var buffer = Convert.FromBase64String(encrypted);
         var result = DecryptBytes(buffer);
-        return Encoding.UTF8.GetString(result);
+        return result.Length is 0
+            ? string.Empty
+            : Encoding.UTF8.GetString(result);
     }
 
     /// <summary>
@@ -106,7 +109,14 @@ public sealed class AesProvider : IDisposable {
     /// Decrypts the bytes using the key
     /// </summary>
     /// <param name="encrypted"></param>
-    public byte[] DecryptBytes(byte[] encrypted) => _aes.DecryptCbc(encrypted, _aes.IV);
+    /// <remarks>Return an empty array if it failed</remarks>
+    public byte[] DecryptBytes(byte[] encrypted) {
+        try {
+            return _aes.DecryptCbc(encrypted, _aes.IV);
+        } catch (CryptographicException) {
+            return Array.Empty<byte>();
+        }
+    }
 
     /// <summary>
     /// Creates an encryptor
@@ -123,6 +133,45 @@ public sealed class AesProvider : IDisposable {
     /// <see cref="ICryptoTransform"/> implements <see cref="IDisposable"/>, make sure to properly dispose it.
     /// </remarks>
     public ICryptoTransform CreateDecryptor() => _aes.CreateDecryptor();
+
+    /// <summary>
+    /// Encrypts the url using the key
+    /// </summary>
+    /// <param name="url">original url</param>
+    /// <returns>Encrypted url with Base64Url encoding</returns>
+    public string EncryptUrl(string url) {
+        var encryptedBytes = EncryptBytes(Encoding.UTF8.GetBytes(url));
+        return Base64UrlEncode(encryptedBytes);
+    }
+
+    /// <summary>
+    /// Decrypts the url using the key
+    /// </summary>
+    /// <param name="encryptedUrl">encrypted url with Base64Url encoding</param>
+    /// <returns>Decrypted url</returns>
+    /// <remarks>Returns an empty string if it fails</remarks>
+    public string DecryptUrl(string encryptedUrl) {
+        var decryptedBytes = DecryptBytes(Base64UrlDecode(encryptedUrl));
+        return decryptedBytes.Length is 0
+            ? string.Empty
+            : Encoding.UTF8.GetString(decryptedBytes);
+    }
+
+    // Helper method to convert Base64Url encoded string to byte array
+    private static byte[] Base64UrlDecode(string base64Url) {
+        var base64 = base64Url.Replace('-', '+').Replace('_', '/');
+        switch (base64.Length % 4) {
+            case 2: base64 += "=="; break;
+            case 3: base64 += "="; break;
+        }
+        return Convert.FromBase64String(base64);
+    }
+
+    // Helper method to convert byte array to Base64Url encoded string
+    private static string Base64UrlEncode(byte[] bytes) {
+        var base64 = Convert.ToBase64String(bytes);
+        return base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+    }
 
     /// <summary>
     /// Disposes the AES object
