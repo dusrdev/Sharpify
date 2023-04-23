@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.0.4
+
+* Added url encryption and decryption functions to `AesProvider`
+* Added more safeguards that prevent exceptions when `plain` text input is passed as `encrypted` to decryption functions. They now return an empty output, either `byte[]` or `string.Empty`, depends on the method.
+
 ## v1.0.3
 
 * Fixed implementation of `IModifier<T>` to better fit the requirements of `Func<T, T>`
