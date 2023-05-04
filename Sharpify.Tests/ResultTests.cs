@@ -2,6 +2,28 @@ namespace Sharpify.Tests;
 
 public class ResultTests {
     [Fact]
+    public void Result_DefaultConstructor_ThrowsException() {
+        // Act
+        Action act = () => new Result() {
+            IsOk = true
+        };
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void ResultT_DefaultConstructor_ThrowsException() {
+        // Act
+        Action act = () => new Result<int>() {
+            IsOk = true
+        };
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void Ok_ResultWithoutMessage_ReturnsResultWithIsOkTrueAndNoMessage() {
         // Act
         var result = Result.Ok();

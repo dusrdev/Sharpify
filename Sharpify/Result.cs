@@ -9,7 +9,7 @@ public readonly record struct Result {
     /// <summary>
     /// Status
     /// </summary>
-    public required readonly bool IsOk { get; init; }
+    public readonly bool IsOk { get; init; }
 
     /// <summary>
     /// <see langword="true"/> if the status is not Ok
@@ -22,6 +22,16 @@ public readonly record struct Result {
     public readonly string? Message { get; init; }
 
     /// <summary>
+    /// DO NOT USE CONSTRUCTOR, USE <see cref="Ok(string?)"/> or <see cref="Fail(string?)"/> or their overloads INSTEAD
+    /// </summary>
+    public Result() => throw new InvalidOperationException("Result cannot be instantiated directly. Use Ok or Fail methods.");
+
+    internal Result(bool isOk, string? message) {
+        IsOk = isOk;
+        Message = message;
+    }
+
+    /// <summary>
     /// Deconstructs the <see cref="Result"/> into <paramref name="isOk"/> and <paramref name="message"/>
     /// </summary>
     /// <param name="isOk"></param>
@@ -30,19 +40,11 @@ public readonly record struct Result {
         out bool isOk,
         out string? message) => (isOk, message) = (IsOk, Message);
 
-    private static Result<T> InternalOk<T>(
-        T value,
-        string? message) => new() {
-        IsOk = true,
-        Message = message,
-        Value = value
-    };
-
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/>
     /// </summary>
     /// <param name="message"></param>
-    public static Result Ok(string? message = null) => new() { IsOk = true, Message = message };
+    public static Result Ok(string? message = null) => new(true, message);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/> and <paramref name="value"/>
@@ -51,23 +53,20 @@ public readonly record struct Result {
     /// <param name="message"></param>
     /// <param name="value"></param>
     public static Result<T> Ok<T>(
-        string message, T value) => InternalOk(value, message);
+        string message, T value) => new(true, message, value);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="value"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="value"></param>
-    public static Result<T> Ok<T>(T value) => InternalOk(value, null);
+    public static Result<T> Ok<T>(T value) => new(true, null, value);
 
     /// <summary>
     /// Returns a result with status failed and <paramref name="message"/>
     /// </summary>
     /// <param name="message"></param>
-    public static Result Fail(string? message = null) => new() {
-        IsOk = false,
-        Message = message
-    };
+    public static Result Fail(string? message = null) => new(false, message);
 
     /// <summary>
     /// Returns the <see cref="Result"/> as a <see cref="Task"/>
@@ -90,7 +89,7 @@ public readonly record struct Result<T> {
     /// <summary>
     /// Status
     /// </summary>
-    public required readonly bool IsOk { get; init; }
+    public readonly bool IsOk { get; init; }
 
     /// <summary>
     /// <see langword="true"/> if the status is not Ok
@@ -108,6 +107,17 @@ public readonly record struct Result<T> {
     public readonly T? Value { get; init; }
 
     /// <summary>
+    /// DO NOT USE CONSTRUCTOR, USE <see cref="Result.Ok(string?)"/> or <see cref="Result.Fail(string?)"/> or their overloads INSTEAD
+    /// </summary>
+    public Result() => throw new InvalidOperationException("Result cannot be instantiated directly. Use Ok or Fail methods.");
+
+    internal Result(bool isOk, string? message, T? value) {
+        IsOk = isOk;
+        Message = message;
+        Value = value;
+    }
+
+    /// <summary>
     /// Deconstructs the <see cref="Result{T}"/> into <paramref name="isOk"/>, <paramref name="message"/> and <paramref name="value"/>
     /// </summary>
     /// <param name="isOk"></param>
@@ -122,20 +132,13 @@ public readonly record struct Result<T> {
     /// Converts a <see cref="Result{T}"/> to a <see cref="Result"/>
     /// </summary>
     /// <param name="result"></param>
-    public static implicit operator Result(Result<T> result) => new() {
-        IsOk = result.IsOk,
-        Message = result.Message
-    };
+    public static implicit operator Result(Result<T> result) => new(result.IsOk, result.Message);
 
     /// <summary>
     /// Converts a <see cref="Result"/> to a <see cref="Result{T}"/> with <see cref="Value"/> set to <see langword="default"/>
     /// </summary>
     /// <param name="result"></param>
-    public static implicit operator Result<T>(Result result) => new() {
-        IsOk = result.IsOk,
-        Message = result.Message,
-        Value = default
-    };
+    public static implicit operator Result<T>(Result result) => new(result.IsOk, result.Message, default);
 
     /// <summary>
     /// Returns the <see cref="Result{T}"/> as a <see cref="Task"/>
@@ -170,10 +173,6 @@ public static class ResultExtensions {
     /// </remarks>
     public static Result<T> WithValue<T>(this in Result result, in T value) {
         ArgumentNullException.ThrowIfNull(result);
-        return new() {
-            IsOk = result.IsOk,
-            Message = result.Message,
-            Value = value
-        };
+        return new(result.IsOk, result.Message, value);
     }
 }

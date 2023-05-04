@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v1.0.5
+
+THIS UPDATE MAY INTRODUCES THE FOLLOWING BREAKING CHANGES BUT THEY ARE REQUIRED FOR FURTHER STABILITY
+
+* Updated `Result` and `Result<T>` to disallow default constructors, thus enforcing use of factory methods such as `Result.OK(message)` and `Result.Fail(message)` and their overloads.
+* Updated `Concurrent` to also disallow default constructor, enforcing use of `ICollection.Concurrent()` extension method.
+
 ## v1.0.4
 
 * Added url encryption and decryption functions to `AesProvider`

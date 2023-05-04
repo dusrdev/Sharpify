@@ -21,6 +21,15 @@ public class ParallelExtensionsTests {
     }
 
     [Fact]
+    public void Concurrent_DefaultConstructor_ThrowsException() {
+        // Act
+        Action act = () => new Concurrent<int>();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void Concurrent_GivenValidCollection_WorksFine() {
         // Arrange
         ICollection<int> source = new List<int> { 1, 2, 3 };

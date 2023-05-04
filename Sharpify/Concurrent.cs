@@ -7,6 +7,11 @@ namespace Sharpify;
 public readonly ref struct Concurrent<T> {
     internal readonly ICollection<T> Source;
 
+    /// <summary>
+    /// Concurrent cannot be instantiated directly. Use Extension method for ICollections instead.
+    /// </summary>
+    public Concurrent() => throw new InvalidOperationException("Concurrent cannot be instantiated directly. Use Extension method for ICollections instead.");
+
     internal Concurrent(ICollection<T> source) {
         Source = source;
     }
