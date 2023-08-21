@@ -12,6 +12,7 @@ A collection of high performance language extensions for C#
 * 🔐 `AesProvider` provides access to industry leading AES-128 encryption with virtually no setup
 * 🏋️ High performance optimized alternative to core language extensions
 * 🎁 More added features that are not present in the core language
+* ❗Parameter validation is handled with `Debug.Assert` statements instead of `Exception` throwing to increase performance in Release builds
 
 ### More on `Concurrent`
 

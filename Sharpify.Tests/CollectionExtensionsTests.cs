@@ -149,28 +149,92 @@ public class CollectionExtensionsTests {
     }
 
     [Fact]
-    public void RemoveDuplicatesSorted_GivenSortedListWithDuplicates_RemovesDuplicates() {
+    public void RemoveDuplicates_GivenListWithDuplicates_RemovesDuplicates() {
         // Arrange
-        var list = new List<int> { 1, 1, 2, 2, 2, 3, 3, 4, 5, 5, 5 };
+        var list = new List<int> { 1, 2, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 5 };
         var expected = new List<int> { 1, 2, 3, 4, 5 };
 
         // Act
-        list.RemoveDuplicatesSorted(Comparer<int>.Default);
+        list.RemoveDuplicates();
 
         // Assert
         list.Should().Equal(expected);
     }
 
     [Fact]
-    public void RemoveDuplicatesSorted_GivenSortedListWithNoDuplicates_DoesNotModifyList() {
+    public void RemoveDuplicates_GivenListWithNoDuplicates_DoesNotModifyList() {
+        // Arrange
+        var list = new List<string> { "banana", "apple", "pear", "cherry"  };
+        var expected = new List<string> { "banana", "apple", "pear", "cherry"  };
+
+        // Act
+        list.RemoveDuplicates(comparer: StringComparer.InvariantCulture);
+
+        // Assert
+        list.Should().Equal(expected);
+    }
+
+    [Fact]
+    public void RemoveDuplicates_Sorted_GivenSortedListWithDuplicates_RemovesDuplicates() {
+        // Arrange
+        var list = new List<int> { 1, 1, 2, 2, 2, 3, 3, 4, 5, 5, 5 };
+        var expected = new List<int> { 1, 2, 3, 4, 5 };
+
+        // Act
+        list.RemoveDuplicates(isSorted: true);
+
+        // Assert
+        list.Should().Equal(expected);
+    }
+
+    [Fact]
+    public void RemoveDuplicates_Sorted_GivenSortedListWithNoDuplicates_DoesNotModifyList() {
         // Arrange
         var list = new List<string> { "apple", "banana", "cherry", "pear" };
         var expected = new List<string> { "apple", "banana", "cherry", "pear" };
 
         // Act
-        list.RemoveDuplicatesSorted(StringComparer.InvariantCulture);
+        list.RemoveDuplicates(isSorted: true, comparer: StringComparer.InvariantCulture);
 
         // Assert
         list.Should().Equal(expected);
+    }
+
+    [Fact]
+    public void ChunkToSegments_GivenEmptyArray_ReturnsEmptyList() {
+        // Arrange
+        var array = new int[0];
+
+        // Act
+        var result = array.ChunkToSegments(3);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ChunkToSegments_GivenArrayWithLengthLessThanSegmentSize_ReturnsSingleSegment() {
+        // Arrange
+        var array = new int[] { 1, 2, 3 };
+
+        // Act
+        var result = array.ChunkToSegments(5);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result[0].Should().Equal(array);
+    }
+
+    [Fact]
+    public void ChunkToSegments_GivenValidArray_ReturnsCorrectNumberOfSegments() {
+        // Arrange
+        var array = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+
+        // Act
+        var result = array.ChunkToSegments(3);
+
+        // Assert
+        result.Should().HaveCount(3);
+        result.Sum(s => s.Count).Should().Be(array.Length);
     }
 }

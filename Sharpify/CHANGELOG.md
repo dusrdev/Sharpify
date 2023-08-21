@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v1.0.6
+
+* New `RemoveDuplicates` extensions for `List<T>` was added, it is implemented using a more efficient algorithm, and has an optional parameter `isSorted` that allows further optimization. There is also an optional `IEqualityComparer<T>` parameter for types that their default comparer doesn't provide accurate results
+* Performance enhancements to `AesProvider`
+* New `ChunkToSegments` extension method for arrays that returns `List<ArraySegment>>` that can be used to segment array and process them concurrently, which is the most efficient way to do this as `Enumerable.Chunk` will actually create new arrays (much more memory allocation), and `span`s are very limited when it comes to concurrent processing with `Task`s.
+* Optimized `base64` related methods in `AesProvider`
+* Several methods that relied on exception throwing for invalid input parameters, no instead use `Debug.Assert` to improve performance on Release builds.
+
+### Breaking Changes
+
+* `List` extensions: `RemovedDuplicatesSorted`, `SortAndRemoveDuplicates` have been removed. Their functionality is replaces with the new `RemoveDuplicates` extension
+
 ## v1.0.5
 
 THIS UPDATE MAY INTRODUCES THE FOLLOWING BREAKING CHANGES BUT THEY ARE REQUIRED FOR FURTHER STABILITY
