@@ -49,6 +49,6 @@ public static partial class Extensions {
     public static bool TryParseAsEnum<TEnum>(
         this string value,
         out TEnum result) where TEnum : struct, Enum {
-        return Enum.TryParse(value, out result);
+        return Enum.TryParse(value, out result) && Enum.IsDefined(result);
     }
 }
