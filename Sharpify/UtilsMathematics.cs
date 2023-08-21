@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Sharpify;
 
 public static partial class Utils {
@@ -11,11 +13,15 @@ public static partial class Utils {
         /// <param name="oldAverage"></param>
         /// <param name="newNumber"></param>
         /// <param name="sampleCount"></param>
+        /// <remarks>
+        /// If the <paramref name="sampleCount"/> is less or equal to 0, the <paramref name="newNumber"/> is returned.
+        /// <para>A message will be displayed during debug if that happens.</para>
+        /// <para>An exception will not be thrown at runtime to increase performance.</para>
+        /// </remarks>
         public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
-            if (sampleCount < 0)
-                throw new ArgumentException("Count must be greater than or equal to 0", nameof(sampleCount));
+            Debug.Assert(sampleCount >= 0, "Count must be greater than or equal to 0");
 
-            if (sampleCount is 0)
+            if (sampleCount is <= 0)
                 return newNumber;
 
             double denominator = 1d / sampleCount;
@@ -26,12 +32,15 @@ public static partial class Utils {
         /// Returns the factorial result of <paramref name="n"/>
         /// </summary>
         /// <param name="n"></param>
+        /// <remarks>
+        /// If the <paramref name="n"/> is less or equal to 0, <paramref name="n"/> is returned.
+        /// <para>A message will be displayed during debug if that happens.</para>
+        /// <para>An exception will not be thrown at runtime to increase performance.</para>
+        /// </remarks>
         public static double Factorial(double n) {
-            if (n <= 0) {
-                throw new ArgumentException("Number must be greater than 0", nameof(n));
-            }
+            Debug.Assert(n > 0, "Number must be greater than 0");
 
-            if (n is 1 or 2) {
+            if (n is <= 2) {
                 return n;
             }
 
