@@ -43,7 +43,7 @@ public sealed class AesProvider : IDisposable {
         //generate a random salt for hashing
         var salt = new byte[SaltSize];
         using var generator = RandomNumberGenerator.Create();
-        generator.GetBytes(salt);
+        generator.GetBytes(salt.AsSpan());
 
         //hash password given salt and iterations (default to 1000)
         //iterations provide difficulty when cracking
@@ -62,7 +62,7 @@ public sealed class AesProvider : IDisposable {
     /// <returns>bool</returns>
     public static bool IsPasswordValid(string password, string hashedPassword) {
         //extract original values from delimited hash text
-        var origHashedParts = hashedPassword.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+        var origHashedParts = hashedPassword.Split('|', StringSplitOptions.RemoveEmptyEntries);
         var origSalt = Convert.FromBase64String(origHashedParts[0]);
         int origIterations = 0;
         origHashedParts[1].AsSpan().ConvertToInt32Unsigned(ref origIterations);
@@ -159,18 +159,26 @@ public sealed class AesProvider : IDisposable {
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
-        var base64 = base64Url.Replace('-', '+').Replace('_', '/');
+        var base64 = new StringBuilder(base64Url);
+        base64.Replace('-', '+')
+              .Replace('_', '/');
         switch (base64.Length % 4) {
-            case 2: base64 += "=="; break;
-            case 3: base64 += "="; break;
+            case 2: base64.Append("=="); break;
+            case 3: base64.Append('='); break;
         }
-        return Convert.FromBase64String(base64);
+        return Convert.FromBase64String(base64.ToString());
     }
 
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(byte[] bytes) {
         var base64 = Convert.ToBase64String(bytes);
-        return base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        var sb = new StringBuilder(base64);
+        sb.Replace('+', '-')
+          .Replace('/', '_');
+        while (sb[^1] is '=') {
+            sb.Remove(sb.Length - 1, 1);
+        }
+        return sb.ToString();
     }
 
     /// <summary>
