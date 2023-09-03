@@ -92,7 +92,7 @@ public static partial class Extensions {
     /// <param name="list">The list to remove duplicates from.</param>
     /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
     /// <param name="comparer">An optional comparer to use for comparing elements for equality. Default is null.</param>
-    public static void RemoveDuplicates<T>(this List<T> list, bool isSorted = false, IEqualityComparer<T>? comparer = null) {
+    public static void RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T>? comparer = null, bool isSorted = false) {
         if (isSorted) {
             list.RemoveDuplicatesSorted(comparer);
             return;

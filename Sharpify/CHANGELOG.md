@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.0.7
+
+* Performance increase in `RollingAverage` and `FibonacciApproximation`
+* `List.RemoveDuplicates` api change: parameter `isSorted` was moved to be after the `comparer` override, since it usually is used less frequently.
+* Small performance and stability enhancement in `DateTime.ToTimeStamp`
+
 ## v1.0.6
 
 * New `RemoveDuplicates` extensions for `List<T>` was added, it is implemented using a more efficient algorithm, and has an optional parameter `isSorted` that allows further optimization. There is also an optional `IEqualityComparer<T>` parameter for types that their default comparer doesn't provide accurate results

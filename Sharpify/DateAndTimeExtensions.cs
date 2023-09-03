@@ -59,18 +59,19 @@ public static partial class Extensions {
     /// <param name="time"></param>
     public static string ToTimeStamp(this DateTime time) {
         Span<char> buffer = stackalloc char[14];
+        const char zero = '0';
 
         // Append the hour and minute to the buffer
-        buffer[0] = (char)('0' + (time.Hour * 0.1));
-        buffer[1] = (char)('0' + (time.Hour % 10));
-        buffer[2] = (char)('0' + (time.Minute * 0.1));
-        buffer[3] = (char)('0' + (time.Minute % 10));
+        buffer[0] = (char)(zero + (time.Hour * 0.1));
+        buffer[1] = (char)(zero + (time.Hour % 10));
+        buffer[2] = (char)(zero + (time.Minute * 0.1));
+        buffer[3] = (char)(zero + (time.Minute % 10));
 
         // Append the day
         var monthAbbreviation = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month);
         buffer[4] = '-';
-        buffer[5] = (char)('0' + (time.Day * 0.1));
-        buffer[6] = (char)('0' + (time.Day % 10));
+        buffer[5] = (char)(zero + (time.Day * 0.1));
+        buffer[6] = (char)(zero + (time.Day % 10));
         // Append the month abbreviation
         buffer[7] = '-';
         buffer[8] = monthAbbreviation[0];
@@ -78,8 +79,8 @@ public static partial class Extensions {
         buffer[10] = monthAbbreviation[2];
         // Append the year
         buffer[11] = '-';
-        buffer[12] = (char)('0' + (time.Year % 100 * 0.1));
-        buffer[13] = (char)('0' + (time.Year % 10));
+        buffer[12] = (char)(zero + (time.Year % 100 * 0.1));
+        buffer[13] = (char)(zero + (time.Year % 10));
 
         return new string(buffer);
     }

@@ -89,10 +89,10 @@ public readonly record struct Either<T0, T1> {
     public TResult Match<TResult>(Func<T0, TResult> handleT0, Func<T1, TResult> handleT1) {
         if (IsT0) {
             return handleT0(_value0!);
-        } else if (IsT1) {
-            return handleT1(_value1!);
-        } else {
-            throw new InvalidOperationException("T0 and T1 are both null");
         }
+        if (IsT1) {
+            return handleT1(_value1!);
+        }
+        throw new InvalidOperationException("T0 and T1 are both null");
     }
 }
