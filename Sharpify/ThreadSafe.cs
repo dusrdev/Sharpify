@@ -19,9 +19,7 @@ public sealed class ThreadSafe<T> {
     /// <summary>
     /// Creates a new instance of ThreadSafe with the default value of T.
     /// </summary>
-    public ThreadSafe() {
-        _value = default!;
-    }
+    public ThreadSafe() : this(default!) { }
 
     /// <summary>
     /// A public getter and setter for the value.
