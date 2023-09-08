@@ -143,7 +143,7 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// Options that can be used to configure the behavior of an async routine.
     /// </summary>
-    public enum RoutineOptions {
+    public enum RoutineOptions : byte {
         /// <summary>
         /// Represents the possible states of an asynchronous routine.
         /// </summary>
