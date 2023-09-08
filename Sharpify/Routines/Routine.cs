@@ -1,4 +1,4 @@
-namespace Sharpify;
+namespace Sharpify.Routines;
 
 /// <summary>
 /// Represents a routine that executes a list of actions at a specified interval.
@@ -66,7 +66,7 @@ public class Routine : IDisposable {
     /// Disposes the timer and suppresses finalization of the object.
     /// </summary>
     public void Dispose() {
-        _timer.Dispose();
+        _timer.Close();
         GC.SuppressFinalize(this);
     }
 }

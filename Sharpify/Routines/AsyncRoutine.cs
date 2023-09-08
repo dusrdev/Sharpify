@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Sharpify;
+namespace Sharpify.Routines;
 
 /// <summary>
 /// Represents an asynchronous routine that executes a list of asynchronous actions at a specified interval.
@@ -81,16 +81,15 @@ public class AsyncRoutine : IDisposable {
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task Start() {
         Debug.Assert(Actions.Count > 0, "Actions.Count must be > 0");
-        if (_options.HasFlag(RoutineOptions.ExecuteInParallel) && Actions.Count > 0) {
-            _tasks = new Task[Actions.Count];
-            for (int i = 0; i < Actions.Count; i++) {
-                _tasks[i] = Actions[i](_cancellationTokenSource.Token);
-            }
-        }
         try {
-            while (_isRunning && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token)) {
+            while (_isRunning
+                   && Actions.Count > 0
+                   && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token)) {
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    Debug.Assert(_tasks.Length == Actions.Count, "tasks.Length must be equal to Actions.Count when using ExecuteInParallel");
+                    _tasks = new Task[Actions.Count];
+                    for (int i = 0; i < Actions.Count; i++) {
+                        _tasks[i] = Actions[i](_cancellationTokenSource.Token);
+                    }
                     await Task.WhenAll(_tasks).WaitAsync(_cancellationTokenSource.Token);
                     continue;
                 }
@@ -138,25 +137,5 @@ public class AsyncRoutine : IDisposable {
         }
         _timer.Dispose();
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Options that can be used to configure the behavior of an async routine.
-    /// </summary>
-    public enum RoutineOptions : byte {
-        /// <summary>
-        /// Represents the possible states of an asynchronous routine.
-        /// </summary>
-        None = 0,
-
-        /// <summary>
-        /// Flag that indicates whether the async routine should execute all the actions in parallel.
-        /// </summary>
-        ExecuteInParallel = 1 << 0,
-
-        /// <summary>
-        /// Flag indicating whether to throw an exception when the async routine is cancelled.
-        /// </summary>
-        ThrowOnCancellation = 1 << 1
     }
 }
