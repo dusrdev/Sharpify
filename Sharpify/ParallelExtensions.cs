@@ -26,9 +26,10 @@ public static partial class Extensions {
         this Concurrent<T> concurrentReference,
         in IAsyncAction<T> action,
         CancellationToken token = default) {
-        var tasks = new List<Task>();
+        var tasks = new Task[concurrentReference.Source.Count];
+        var i = 0;
         foreach (var item in concurrentReference.Source) {
-            tasks.Add(action.InvokeAsync(item));
+            tasks[i++] = action.InvokeAsync(item);
         }
         return Task.WhenAll(tasks).WaitAsync(token);
     }
