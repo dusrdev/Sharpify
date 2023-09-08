@@ -162,6 +162,20 @@ public class CollectionExtensionsTests {
     }
 
     [Fact]
+    public void RemoveDuplicatesWithHashSet_GivenListWithDuplicates_RemovesDuplicatesAndReturnsHashSet() {
+        // Arrange
+        var list = new List<int> { 1, 2, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 5 };
+        var expected = new List<int> { 1, 2, 3, 4, 5 };
+
+        // Act
+        list.RemoveDuplicates(out var hSet);
+
+        // Assert
+        list.Should().Equal(expected);
+        hSet.Should().HaveCount(expected.Count);
+    }
+
+    [Fact]
     public void RemoveDuplicates_GivenListWithNoDuplicates_DoesNotModifyList() {
         // Arrange
         var list = new List<string> { "banana", "apple", "pear", "cherry"  };
