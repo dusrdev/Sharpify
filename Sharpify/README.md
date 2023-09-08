@@ -8,11 +8,13 @@ A collection of high performance language extensions for C#
 * 🦾 Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
 * 🚀 Extremely efficient concurrency with `Concurrent` collection wrapper and `IAction`/`IAsyncAction` interfaces
 * 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
+* `Routine` and `AsyncRoutine` bring the user easily usable and configurable interval based background job execution.
 * 🧵 `ThreadSafe<T>` makes any variable type thread-safe
 * 🔐 `AesProvider` provides access to industry leading AES-128 encryption with virtually no setup
-* 🏋️ High performance optimized alternative to core language extensions
+* 🏋️ High performance optimized alternatives to core language extensions
 * 🎁 More added features that are not present in the core language
 * ❗Parameter validation is handled with `Debug.Assert` statements instead of `Exception` throwing to increase performance in Release builds
+* 🫴 Focus on giving the user complete control by using flexible and common types, and resulting types that can be further used and just viewed.
 
 ### More on `Concurrent`
 
@@ -46,3 +48,7 @@ All of these design choices guarantee vastly improved performance over `Either<T
 
 * Adds an option for calculating **rolling average** for `double`
 * Adds new interfaces to access `DateTime.Now` using `GetCurrentTimeAsync` and `GetCurrentTimeInBinaryAsync`, as using the default ones involves a system call and it is blocking, it actually takes quite a bit of time, from my testing about 180ns, the new functions allow calling to a variable and not awaiting them, then later awaiting the actual variable to either get the value or wait for it to complete and get the value. This allows you to actually do other things while awaiting this system call. It can make a big difference in high-performance scenarios where you use `DateTime.Now to also get a timestamp
+
+#### Contact
+
+For bug reports, feature requests or offers of support/sponsorship contact <dusrdev@gmail.com>

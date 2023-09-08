@@ -3,8 +3,18 @@
 ## v1.0.7
 
 * Performance increase in `RollingAverage` and `FibonacciApproximation`
-* `List.RemoveDuplicates` api change: parameter `isSorted` was moved to be after the `comparer` override, since it usually is used less frequently.
+* changes to `List.RemoveDuplicates`:
+  * api change: parameter `isSorted` was moved to be after the `comparer` override, since it usually is used less frequently.
+  * Another overload is available which accepts an `out HashSet<T>` parameter that can return the already allocated `HashSet` that was used to check the collection. Using it with `isSorted = true` is discouraged as the algorithm doesn't use n `HashSet` in that case, and it would be more efficient to just `new HashSet(list)` in that case.
 * Small performance and stability enhancement in `DateTime.ToTimeStamp`
+* `Concurrent.InvokeAsync` memory usage further optimized when using large collections by using an array with exact item count.
+* Added new `Routines` namespace that includes two types: `Routine` and `AsyncRoutine`
+  * Both types allow you to create a routine/background job that will execute a series of functions on a requested interval. And both support configuration with the `Builder` pattern.
+  * `Routine` is the simplest and lightest that works best with simple actions.
+  * `AsyncRoutine` is more complex and made specifically to accommodate async functions, it manages an async timer that will execute a collection of async functions. It has a `CancellationTokenSource` that will manage the cancellation of the timer itself and each of the functions. If you want more control you can provide it yourself. Despite the fact that `AsyncRoutine` can be configured using the `Builder` pattern, unlike `Routine`, the `Start` method returns a task, so to avoid loosing track of the routine, **DO NOT** call `Start` in the same call to the configuration.
+  * `RoutineOptions` is an enum that is accepted to configure an `AsyncRoutine` and currently has 2 options:
+    1. `ExecuteInParallel` this will create execute the functions provided in parallel in every tick, this may increase memory allocation since parallel execution requires a collection of tasks to be re-created upon every execution. But, it might provide a speed benefit when using long-running background functions in the routine.
+    2. `ThrowOnCancellation`, stopping a task using a `cancellationToken` inevitably throws a `TaskCancelledException`. By default to make the routine easier to use it ignores this exception as it should only occur by design. If you toggle this option, it will re-throw the exception and you will be required to handle it. If you want to ensure that the routine finishes when you want to without controlling the token, simply call `Dispose` on the routine.
 
 ## v1.0.6
 
