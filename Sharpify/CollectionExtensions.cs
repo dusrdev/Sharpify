@@ -97,7 +97,24 @@ public static partial class Extensions {
             list.RemoveDuplicatesSorted(comparer);
             return;
         }
-        list.RemoveDuplicatesNotSorted(comparer);
+        list.RemoveDuplicatesNotSorted(comparer, out _);
+    }
+
+    /// <summary>
+    /// Removes duplicates from a list. If <paramref name="isSorted"/> is true, the list is assumed to be sorted and duplicates are removed in one iteration without allocating an additional collection. Otherwise, a HashSet is used to remove duplicates in one iteration. An optional <paramref name="comparer"/> can be provided to compare elements for equality.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the list.</typeparam>
+    /// <param name="list">The list to remove duplicates from.</param>
+    /// <param name="hSet">The HashSet used to remove the duplicates, it should only be used if <paramref name="isSorted"/> is false, otherwise it is allocated needlessly, and just converting it yourself would be more efficient</param>
+    /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
+    /// <param name="comparer">An optional comparer to use for comparing elements for equality. Default is null.</param>
+    public static void RemoveDuplicates<T>(this List<T> list, out HashSet<T> hSet, IEqualityComparer<T>? comparer = null, bool isSorted = false) {
+        if (isSorted) {
+            list.RemoveDuplicatesSorted(comparer);
+            hSet = new(list);
+            return;
+        }
+        list.RemoveDuplicatesNotSorted(comparer, out hSet);
     }
 
     // Removes duplicates from a sorted list in 1 iteration
@@ -119,11 +136,11 @@ public static partial class Extensions {
     }
 
     // Removes duplicates from List using a HashSet in 1 iteration
-    private static void RemoveDuplicatesNotSorted<T>(this List<T> list, IEqualityComparer<T>? comparer) {
+    private static void RemoveDuplicatesNotSorted<T>(this List<T> list, IEqualityComparer<T>? comparer, out HashSet<T> hSet) {
+        hSet = new HashSet<T>(comparer);
         if (list is { Count: <= 1 }) {
             return;
         }
-        var hSet = new HashSet<T>(comparer);
         int i = 0;
         while (i < list.Count) {
             if (hSet.Add(list[i])) {
