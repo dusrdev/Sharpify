@@ -15,6 +15,11 @@
   * `RoutineOptions` is an enum that is accepted to configure an `AsyncRoutine` and currently has 2 options:
     1. `ExecuteInParallel` this will create execute the functions provided in parallel in every tick, this may increase memory allocation since parallel execution requires a collection of tasks to be re-created upon every execution. But, it might provide a speed benefit when using long-running background functions in the routine.
     2. `ThrowOnCancellation`, stopping a task using a `cancellationToken` inevitably throws a `TaskCancelledException`. By default to make the routine easier to use it ignores this exception as it should only occur by design. If you toggle this option, it will re-throw the exception and you will be required to handle it. If you want to ensure that the routine finishes when you want to without controlling the token, simply call `Dispose` on the routine.
+* New collection type `SortedList<T>` in `Sharpify.Collections`, it is a List that maintains a sorted order, unlike the original `SortedList<K,V>` which is based on a sorted dictionary and a tree. This isn't, it is lighter, more customizable. And enables super efficient iteration and even internal `Span<T>` access
+  * Performance stats:
+  * Initialization from collection: O(nlogn)
+  * Add and remove item: O(logn)
+  * Get by index: O(1)
 
 ## v1.0.6
 

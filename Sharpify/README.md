@@ -9,6 +9,7 @@ A collection of high performance language extensions for C#
 * 🚀 Extremely efficient concurrency with `Concurrent` collection wrapper and `IAction`/`IAsyncAction` interfaces
 * 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
 * `Routine` and `AsyncRoutine` bring the user easily usable and configurable interval based background job execution.
+* `SortedList<T>` bridges the performance of `List` and order assurance of `SortedSet`
 * 🧵 `ThreadSafe<T>` makes any variable type thread-safe
 * 🔐 `AesProvider` provides access to industry leading AES-128 encryption with virtually no setup
 * 🏋️ High performance optimized alternatives to core language extensions

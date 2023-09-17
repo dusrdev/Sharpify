@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -83,6 +84,23 @@ public static partial class Extensions {
         }
         list.Sort(comparer);
         return list;
+    }
+
+    // Removes duplicates from a sorted list in 1 iteration
+    internal static void RemoveDuplicatesFromSorted<T>(this List<T> list, IComparer<T> comparer) {
+        if (list is { Count: <= 1 }) {
+            return;
+        }
+        var current = list[0];
+        int i = 1;
+        while (i < list.Count) {
+            if (comparer.Compare(list[i], current) is 0) {
+                list.RemoveAt(i);
+                continue;
+            }
+            current = list[i];
+            i++;
+        }
     }
 
     /// <summary>
