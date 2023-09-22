@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Sharpify.Routines;
 
@@ -70,6 +71,7 @@ public class AsyncRoutine : IDisposable {
     /// </summary>
     /// <param name="options">The new options to apply.</param>
     /// <returns>The current AsyncRoutine instance.</returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public AsyncRoutine ChangeOptions(RoutineOptions options) {
         _options = options;
         return this;
@@ -79,23 +81,25 @@ public class AsyncRoutine : IDisposable {
     /// Starts the async routine and executes the registered actions either sequentially or in parallel.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public async Task Start() {
         Debug.Assert(Actions.Count > 0, "Actions.Count must be > 0");
         try {
             while (_isRunning
                    && Actions.Count > 0
                    && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token)) {
+                // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
                     _tasks = new Task[Actions.Count];
                     for (int i = 0; i < Actions.Count; i++) {
                         _tasks[i] = Actions[i](_cancellationTokenSource.Token);
                     }
                     await Task.WhenAll(_tasks).WaitAsync(_cancellationTokenSource.Token);
-                    continue;
-                }
-                // Execute actions sequentially
-                foreach (var action in Actions) {
-                    await action(_cancellationTokenSource.Token);
+                // Execute sequentially
+                } else {
+                    foreach (var action in Actions) {
+                        await action(_cancellationTokenSource.Token);
+                    }
                 }
             }
         } catch (TaskCanceledException) {
