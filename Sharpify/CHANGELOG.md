@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v1.0.8
+
+* Added 2 new persistent dictionary types: `LocalPersistentDictionary` and `CustomPersistentDictionary`
+  * Both of them Inherit from `PersistentDictionary`, they are essentially a `ConcurrentDictionary<string, string>` data store, which is optimized for maximal performance.
+  * `LocalPersistentDictionary` requires a local path and utilizes Json to serialize and deserialize the dictionary, requiring minimal setup.
+  * `CustomPersistentDictionary` requires 2 function implementations, for serialization and deserializing, This means you can store the data on cloud or wherever you want as long as you provide the implementation for these features.
+  * Both types support a `StringComparer` parameter allowing you to customize the dictionary key management protocol, perhaps you want to ignore case, this is how you configure it.
+
 ## v1.0.7
 
 * Performance increase in `RollingAverage` and `FibonacciApproximation`
