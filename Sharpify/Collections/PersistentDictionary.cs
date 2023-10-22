@@ -47,6 +47,18 @@ public abstract class PersistentDictionary {
     protected abstract ConcurrentDictionary<string, string>? DeserializeDictionary();
 
     /// <summary>
+    /// Removes all keys and values from the dictionary.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public async ValueTask ClearAsync() {
+        if (_dict is null || _dict.Count is 0) {
+            return;
+        }
+        _dict.Clear();
+        await SerializeDictionaryAsync();
+    }
+
+    /// <summary>
     /// Serializes the contents of the dictionary to a persistent store.
     /// </summary>
     protected abstract Task SerializeAsync();

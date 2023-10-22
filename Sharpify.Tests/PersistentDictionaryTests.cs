@@ -1,4 +1,4 @@
-using System.IO;
+using Sharpify.Collections;
 
 namespace Sharpify.Tests;
 
@@ -18,10 +18,30 @@ public class PersistentDictionaryTests {
         }
     }
 
-    private static readonly string DictPath = Path.Combine(Environment.GetFolder(SpecialFolders.Application), "pdict.json");
+    private static readonly string DictPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "pdict.json");
     private readonly PersistentDictionary _dict = new LocalPersistentDictionary(DictPath);
 
     [Fact]
-    public void LocalPersistentDictionary_ReadKey_Null_WhenDoesntExist() {
+    public async Task LocalPersistentDictionary_ReadKey_Null_WhenDoesntExist() {
+        // Arrange
+        await _dict.ClearAsync();
+
+        // Act
+        var result = _dict["test"];
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LocalPersistentDictionary_ReadKey_Valid_WhenExists() {
+        // Arrange
+        await _dict.Upsert("one", "1");
+
+        // Act
+        var result = _dict["one"];
+
+        // Assert
+        result.Should().Be("1");
     }
 }
