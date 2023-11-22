@@ -2,11 +2,14 @@
 
 ## v1.0.8
 
-* Added 2 new persistent dictionary types: `LocalPersistentDictionary` and `CustomPersistentDictionary`
+* Added 2 new persistent dictionary types: `LocalPersistentDictionary` and `LazyLocalPersistentDictionary`
   * Both of them Inherit from `PersistentDictionary`, they are essentially a `ConcurrentDictionary<string, string>` data store, which is optimized for maximal performance.
   * `LocalPersistentDictionary` requires a local path and utilizes Json to serialize and deserialize the dictionary, requiring minimal setup.
-  * `CustomPersistentDictionary` requires 2 function implementations, for serialization and deserializing, This means you can store the data on cloud or wherever you want as long as you provide the implementation for these features.
+  * `LazyLocalPersistentDictionary` is similar to `LocalPersistentDictionary` but doesn't keep a permanent copy in-memory. Instead it loads and unloads the dictionary per operation.
+  * Do not be mistaken by the simplicity of the `ConcurrentDictionary<string, string>` base type, as the string value allows you as much complexity as you want. You can create entire types for the value and just pass their to the dictionary.
+  * `PersistentDictionary` is an abstract class which lays the ground work for creating such dictionaries with efficiency and thread-safety. You can create your own implementation easily by inheriting the class, you will need at the very least to override `SerializeAsync` and `Deserialize` and create your own constructors for setup. It is also possible to override `GetValueByKey` and `SetKeyAndValue` which allows you to implement lazy loading for example. The flexibility of the serialization is what gives you the option to persist the dictionary to where ever you choose, even an online database. For examples just look how `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` are implemented in the source code.
   * Both types support a `StringComparer` parameter allowing you to customize the dictionary key management protocol, perhaps you want to ignore case, this is how you configure it.
+  * Added new extension method `ICollection<T>.IsNullOrEmpty` that check if it is null or empty using pattern matching.
 
 ## v1.0.7
 
