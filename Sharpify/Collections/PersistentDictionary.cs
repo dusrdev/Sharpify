@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Sharpify.Collections;
 
 /// <summary>
-/// Provides a thread-safe way to read and write JSON data to a file using a dictionary-like interface.
+/// Provides a thread-safe concurrent dictionary that can be efficiently persisted.
 /// </summary>
 public abstract class PersistentDictionary {
     /// <summary>
@@ -18,7 +18,21 @@ public abstract class PersistentDictionary {
     /// <summary>
     /// Gets the value associated with the specified key.
     /// </summary>
-    public string? this[string key] => _dict!.TryGetValue(key, out var value) ? value : null;
+    /// <param name="key">The key to retrieve the value for.</param>
+    /// <returns>The value associated with the specified key, or null if the key is not found.</returns>
+    protected virtual string? GetValueByKey(string key) => _dict!.TryGetValue(key, out var value) ? value : null;
+
+    /// <summary>
+    /// Gets the value associated with the specified key.
+    /// </summary>
+    public string? this[string key] => GetValueByKey(key);
+
+    /// <summary>
+    /// Sets the specified key and value in the dictionary.
+    /// </summary>
+    /// <param name="key">The key to set.</param>
+    /// <param name="value">The value to set.</param>
+    protected virtual void SetKeyAndValue(string key, string value) => _dict![key] = value;
 
     /// <summary>
     /// Inserts or updates a key-value pair in the JSON file.
@@ -34,7 +48,7 @@ public abstract class PersistentDictionary {
         // Reducing the number of expensive serialize operations
 
         Interlocked.Increment(ref _pendingUpdates);
-        _dict![key] = value;
+        SetKeyAndValue(key, value);
 
         if (Interlocked.Decrement(ref _pendingUpdates) is 0) {
             await SerializeDictionaryAsync();
@@ -44,7 +58,7 @@ public abstract class PersistentDictionary {
     /// <summary>
     /// Deserializes the dictionary from its persisted state.
     /// </summary>
-    protected abstract ConcurrentDictionary<string, string>? DeserializeDictionary();
+    protected abstract ConcurrentDictionary<string, string>? Deserialize();
 
     /// <summary>
     /// Removes all keys and values from the dictionary.
