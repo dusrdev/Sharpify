@@ -46,7 +46,7 @@ public static partial class Extensions {
 
         Debug.Assert(remainingTimeBuilder.Length > 0);
 
-        if (remainingTimeBuilder.Length >= 0) {
+        if (remainingTimeBuilder.Length > 0) {
             remainingTimeBuilder.Length--;
         }
 
