@@ -40,6 +40,13 @@ public static partial class Utils {
         public static string GetBaseDirectory() => AppDomain.CurrentDomain.BaseDirectory;
 
         /// <summary>
+        /// Combines the base directory path with the specified filename.
+        /// </summary>
+        /// <param name="filename">The name of the file.</param>
+        /// <returns>The combined path.</returns>
+        public static string PathInBaseDirectory(string filename) => Path.Combine(GetBaseDirectory(), filename);
+
+        /// <summary>
         /// Checks whether Internet connection is available
         /// </summary>
         public static bool IsInternetAvailable => System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
