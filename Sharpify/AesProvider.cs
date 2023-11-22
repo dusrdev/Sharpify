@@ -160,40 +160,26 @@ public sealed class AesProvider : IDisposable {
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
-        ref char current = ref Unsafe.As<string, char>(ref base64Url);
-        ref char next = ref Unsafe.Add(ref current, 1);
-        while (next is not '\0') {
-            if (current is '-') {
-                current = '+';
-            } else if (current is '_') {
-                current = '/';
-            }
-            current = ref next;
-            next = ref Unsafe.Add(ref current, 1);
+        var base64 = new StringBuilder(base64Url);
+        base64.Replace('-', '+')
+              .Replace('_', '/');
+        switch (base64.Length % 4) {
+            case 2: base64.Append("=="); break;
+            case 3: base64.Append('='); break;
         }
-        base64Url = base64Url.Concat((base64Url.Length % 4) switch {
-            2 => "==",
-            3 => "=",
-            _ => ""
-        });
-        return Convert.FromBase64String(base64Url);
+        return Convert.FromBase64String(base64.ToString());
     }
 
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(byte[] bytes) {
         var base64 = Convert.ToBase64String(bytes);
-        ref char current = ref Unsafe.As<string, char>(ref base64);
-        ref char next = ref Unsafe.Add(ref current, 1);
-        while (next is not '\0') {
-            if (current is '+') {
-                current = '-';
-            } else if (current is '/') {
-                current = '_';
-            }
-            current = ref next;
-            next = ref Unsafe.Add(ref current, 1);
+        var sb = new StringBuilder(base64);
+        sb.Replace('+', '-')
+          .Replace('/', '_');
+        while (sb[^1] is '=') {
+            sb.Remove(sb.Length - 1, 1);
         }
-        return base64.TrimEnd('=');
+        return sb.ToString();
     }
 
     /// <summary>

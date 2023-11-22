@@ -24,7 +24,7 @@ public static partial class Utils {
             if (sampleCount is <= 0)
                 return newNumber;
 
-            double denominator = Math.ReciprocalEstimate(sampleCount);
+            double denominator = 1d / sampleCount;
             return (oldAverage * (sampleCount - 1) + newNumber) * denominator;
         }
 
@@ -60,8 +60,8 @@ public static partial class Utils {
             var sqrt5 = Math.Sqrt(5);
             var numerator = Math.Pow(1 + sqrt5, n) - Math.Pow(1 - sqrt5, n);
             var two = 1L << n; // bit hack to get 2^n
-            var denominator = Math.ReciprocalEstimate(two * sqrt5);
-            return numerator * denominator;
+            var denominator = two * sqrt5;
+            return numerator / denominator;
         }
     }
 }
