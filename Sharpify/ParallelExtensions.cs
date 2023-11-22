@@ -53,26 +53,28 @@ public static partial class Extensions {
     /// <typeparam name="T"></typeparam>
     /// <param name="concurrentReference"></param>
     /// <param name="action"></param>
-    /// <param name="degreeOfParallelization">sets the number of tasks per batch</param>
+    /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
     /// <param name="token"></param>
-    /// <remarks>If <paramref name="degreeOfParallelization"/> is set to -1, batch size will be equal to the number of cores in the CPU</remarks>
+    /// <remarks>
+    /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Task ForEachAsync<T>(
         this Concurrent<T> concurrentReference,
         IAsyncAction<T> action,
-        int degreeOfParallelization = -1,
+        int degreeOfParallelism = -1,
         CancellationToken token = default) {
         if (concurrentReference.Source.Count is 0) {
             return Task.CompletedTask;
         }
 
-        if (degreeOfParallelization is -1) {
-            degreeOfParallelization = Environment.ProcessorCount;
+        if (degreeOfParallelism is -1) {
+            degreeOfParallelism = Environment.ProcessorCount;
         }
 
-        int batchCount = concurrentReference.Source.Count <= degreeOfParallelization
+        var batchCount = concurrentReference.Source.Count <= degreeOfParallelism
             ? 1
-            : concurrentReference.Source.Count / degreeOfParallelization;
+            : concurrentReference.Source.Count / degreeOfParallelism;
 
         async Task AwaitPartition(IEnumerator<T> partition) {
             using (partition) {
