@@ -12,7 +12,7 @@ public sealed class LocalPersistentDictionary : PersistentDictionary {
     /// <summary>
     /// Creates a new instance of <see cref="LocalPersistentDictionary"/> with the <paramref name="path"/> and <paramref name="comparer"/> specified.
     /// </summary>
-    /// <param name="path">The path to the file to persist the dictionary to.</param>
+    /// <param name="path">The full path to the file to persist the dictionary to.</param>
     /// <param name="comparer">The comparer to use for the dictionary.</param>
     public LocalPersistentDictionary(string path, StringComparer comparer) {
         _path = path;
@@ -20,7 +20,7 @@ public sealed class LocalPersistentDictionary : PersistentDictionary {
             _dict = new ConcurrentDictionary<string, string>(comparer);
             return;
         }
-        var sDict = DeserializeDictionary();
+        var sDict = Deserialize();
         if (sDict is null) {
             _dict = new ConcurrentDictionary<string, string>(comparer);
             return;
@@ -39,7 +39,7 @@ public sealed class LocalPersistentDictionary : PersistentDictionary {
     };
 
     /// <inheritdoc/>
-    protected override ConcurrentDictionary<string, string>? DeserializeDictionary() {
+    protected override ConcurrentDictionary<string, string>? Deserialize() {
         var json = File.ReadAllText(_path);
         return JsonSerializer.Deserialize<ConcurrentDictionary<string, string>>(json, Options);
     }
