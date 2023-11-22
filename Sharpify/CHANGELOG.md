@@ -9,7 +9,9 @@
   * Do not be mistaken by the simplicity of the `ConcurrentDictionary<string, string>` base type, as the string value allows you as much complexity as you want. You can create entire types for the value and just pass their to the dictionary.
   * `PersistentDictionary` is an abstract class which lays the ground work for creating such dictionaries with efficiency and thread-safety. You can create your own implementation easily by inheriting the class, you will need at the very least to override `SerializeAsync` and `Deserialize` and create your own constructors for setup. It is also possible to override `GetValueByKey` and `SetKeyAndValue` which allows you to implement lazy loading for example. The flexibility of the serialization is what gives you the option to persist the dictionary to where ever you choose, even an online database. For examples just look how `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` are implemented in the source code.
   * Both types support a `StringComparer` parameter allowing you to customize the dictionary key management protocol, perhaps you want to ignore case, this is how you configure it.
-  * Added new extension method `ICollection<T>.IsNullOrEmpty` that check if it is null or empty using pattern matching.
+* Added new extension method `ICollection<T>.IsNullOrEmpty` that check if it is null or empty using pattern matching.
+* Added new function `Utils.Env.PathInBaseDirectory(filename)` that returns the combined path of the base directory of the executable and the filename.
+* Performance optimization in `AesProvider`
 
 ## v1.0.7
 
