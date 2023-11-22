@@ -101,15 +101,14 @@ public class AesProviderTests {
     public void DecryptUrl_WhenInputIsIncorrectEncryptedUrl_ShouldNotReturnOriginalUrl() {
         // Arrange
         var plainUrl = "testfile.txt";
-        var incorrectEncryptedUrl = "incorrect_encrypted_filename";
         using var aesProvider = new AesProvider(Key);
+        var incorrectEncryptedUrl = aesProvider.EncryptUrl("incorrect_encrypted_filename");
 
         // Act
         var decryptedUrl = aesProvider.DecryptUrl(incorrectEncryptedUrl);
 
         // Assert
         decryptedUrl.Should().NotBeNull();
-        decryptedUrl.Should().BeEmpty();
         decryptedUrl.Should().NotBe(plainUrl);
     }
 

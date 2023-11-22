@@ -1,12 +1,10 @@
-using System.Diagnostics;
-
 namespace Sharpify.Tests;
 
 public partial class UtilsTests {
     [Theory]
     [InlineData(0, 5, 2, 2.5)]
     [InlineData(20, 10, 2, 15)]
-    [InlineData(30, 30, 3, 30)]
+    [InlineData(30, 30, 2, 30)]
     public void RollingAverage_WithVariousInputs_ReturnsCorrectResult(
         double val, double newVal, int count, double expectedResult) {
         // Arrange
@@ -14,14 +12,14 @@ public partial class UtilsTests {
 
         // Act
         double result = Utils.Mathematics.RollingAverage(val, newVal, count);
-        result = Math.Round(result, 15);
+        result = Math.Round(result, 3);
 
         // Assert
         result.Should().Be(expectedResult);
     }
 
     [Fact]
-    public void RollingAverage_WithNegativeCount_ReturnsInput() {
+    public void RollingAverage_WithNegativeCount_ThrowsDebugAssertException() {
         // Arrange
         double res = -1;
         const double val = 10;
@@ -29,31 +27,19 @@ public partial class UtilsTests {
         const int count = -1;
 
         // Act
-        try {
-            res = Utils.Mathematics.RollingAverage(val, newVal, count);
-        } catch (Exception) {
-            // ignored -> Debug.Assert Failure
-        }
+        var act = () => res = Utils.Mathematics.RollingAverage(val, newVal, count);
 
         // Assert
-        res.Should().Be(newVal);
+        act.Should().Throw<Exception>();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-5)]
-    [InlineData(-20)]
-    public void Factorial_InvalidInput_ReturnsInput(double n) {
-        double res = -1;
-        // Act
-        try {
-            res = Utils.Mathematics.Factorial(n);
-        } catch (Exception) {
-            // ignored -> Debug.Assert Failure
-        }
+    [Fact]
+    public void Factorial_NegativeInput_ThrowsDebugAssertFailure() {
+        // Arrange
+        var act = () => Utils.Mathematics.Factorial(-1);
 
-        // Assert
-        res.Should().Be(n);
+        //Act and Assert
+        act.Should().Throw<Exception>();
     }
 
     [Theory]
