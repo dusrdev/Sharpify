@@ -11,7 +11,6 @@
   * Both types support a `StringComparer` parameter allowing you to customize the dictionary key management protocol, perhaps you want to ignore case, this is how you configure it.
 * Added new extension method `ICollection<T>.IsNullOrEmpty` that check if it is null or empty using pattern matching.
 * Added new function `Utils.Env.PathInBaseDirectory(filename)` that returns the combined path of the base directory of the executable and the filename.
-* Performance optimization in `AesProvider`
 
 ## v1.0.7
 
