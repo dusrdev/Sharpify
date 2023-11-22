@@ -18,11 +18,12 @@ public class PersistentDictionaryTests {
         }
     }
 
-    private static readonly string DictPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "pdict.json");
+    private static readonly string DictPath = Utils.Env.PathInBaseDirectory("pdict.json");
     private readonly PersistentDictionary _dict = new LocalPersistentDictionary(DictPath);
+    private readonly PersistentDictionary _lazyDict = new LocalPersistentDictionary(DictPath);
 
     [Fact]
-    public async Task LocalPersistentDictionary_ReadKey_Null_WhenDoesntExist() {
+    public async Task LocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
         // Arrange
         await _dict.ClearAsync();
 
@@ -40,6 +41,30 @@ public class PersistentDictionaryTests {
 
         // Act
         var result = _dict["one"];
+
+        // Assert
+        result.Should().Be("1");
+    }
+
+    [Fact]
+    public async Task LazyLocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
+        // Arrange
+        await _lazyDict.ClearAsync();
+
+        // Act
+        var result = _lazyDict["test"];
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LazyLocalPersistentDictionary_ReadKey_Valid_WhenExists() {
+        // Arrange
+        await _lazyDict.Upsert("one", "1");
+
+        // Act
+        var result = _lazyDict["one"];
 
         // Assert
         result.Should().Be("1");
