@@ -3,8 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <PackageVersion>1.0.7</PackageVersion>
+    <PackageVersion>1.0.8</PackageVersion>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>David Shnayder</Authors>
     <Copyright>David Shnayder</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
