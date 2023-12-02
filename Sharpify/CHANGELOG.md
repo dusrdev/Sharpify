@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.9
+
+* Updated to support .NET 8.0
+
 ## v1.0.8
 
 * Added 2 new persistent dictionary types: `LocalPersistentDictionary` and `LazyLocalPersistentDictionary`
