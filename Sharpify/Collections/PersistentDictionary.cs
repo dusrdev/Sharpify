@@ -28,6 +28,21 @@ public abstract class PersistentDictionary {
     public string? this[string key] => GetValueByKey(key);
 
     /// <summary>
+    /// Gets the value associated with the specified key, or creates a new key-value pair if the key does not exist.
+    /// </summary>
+    /// <param name="key">The key of the element to get or create.</param>
+    /// <param name="default">The default value to use if the key does not exist.</param>
+    /// <returns>The value associated with the specified key, or the default value if the key does not exist.</returns>
+    public async Task<string?> GetOrCreateAsync(string key, string @default) {
+        if (_dict!.TryGetValue(key, out var value)) {
+            return value;
+        }
+
+        await Upsert(key, @default);
+        return @default;
+    }
+
+    /// <summary>
     /// Sets the specified key and value in the dictionary.
     /// </summary>
     /// <param name="key">The key to set.</param>

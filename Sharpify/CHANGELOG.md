@@ -3,6 +3,7 @@
 ## v1.0.9
 
 * Updated to support .NET 8.0
+* Added `GetOrCreateAsync(key, val)` method to `PersistentDictionary`
 
 ## v1.0.8
 
