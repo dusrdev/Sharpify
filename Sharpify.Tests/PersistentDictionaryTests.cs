@@ -2,6 +2,7 @@ using Sharpify.Collections;
 
 namespace Sharpify.Tests;
 
+[Collection("Non-Parallel Collection")]
 public class SpecialCollectionsTests {
     [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
@@ -76,36 +77,23 @@ public class SpecialCollectionsTests {
             File.Delete(path);
         }
         var dict = new TestLocalPersistentDictionary(path);
-        var reset = new ManualResetEventSlim(false);
+        // var reset = new ManualResetEventSlim(false);
 
         // Act
-        var upsertTasks = new Task[5];
-        for (int i = 0; i < upsertTasks.Length; i++) {
-            upsertTasks[i] = Task.Run(async () => {
-                reset.Wait();
-                await dict.Upsert($"key{i}", $"value{i}");
-            });
-        }
-        reset.Set();
+        Task[] upsertTasks = [
+            Task.Run(() => dict.Upsert("one", "1")),
+            Task.Run(() => dict.Upsert("two", "2")),
+            Task.Run(() => dict.Upsert("three", "3")),
+            Task.Run(() => dict.Upsert("four", "4")),
+            Task.Run(() => dict.Upsert("five", "5")),
+        ];
+        // reset.Set();
         await Task.WhenAll(upsertTasks);
 
         // Assert
-        dict.SerializedCount.Should().BeLessThanOrEqualTo(upsertTasks.Length);
-        await Task.Delay(250); // Give it a moment to serialize
+        dict.SerializedCount.Should().Be(1);
         var sdict = new LocalPersistentDictionary(path);
         sdict.Count.Should().Be(upsertTasks.Length);
-    }
-
-    private readonly struct UpsertAction : IAsyncAction<int> {
-        private readonly TestLocalPersistentDictionary _dict;
-
-        public UpsertAction(TestLocalPersistentDictionary dict) {
-            _dict = dict;
-        }
-
-        public Task InvokeAsync(int item) {
-            return _dict.Upsert($"key{item}", $"value{item}").AsTask();
-        }
     }
 
     [Fact]

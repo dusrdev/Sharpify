@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 
 namespace Sharpify.Collections;
 
@@ -66,29 +67,6 @@ public abstract class PersistentDictionary {
     /// </summary>
     /// <param name="key">The key to insert or update.</param>
     /// <param name="value">The value to insert or update.</param>
-    // public virtual async ValueTask Upsert(string key, string value) {
-    //     if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value)) {
-    //         return;
-    //     }
-
-    //     // Reduce the number of times we need to serialize the dictionary.
-
-    //     Interlocked.Increment(ref _pendingUpdates);
-    //     SetKeyAndValue(key, value);
-
-    //     if (Interlocked.Decrement(ref _pendingUpdates) != 0) {
-    //         return;
-    //     }
-
-    //     await _semaphore.WaitAsync();
-    //     try {
-    //         if (_pendingUpdates is 0) {
-    //             await SerializeDictionaryAsync();
-    //         }
-    //     } finally {
-    //         _semaphore.Release();
-    //     }
-    // }
     public virtual async ValueTask Upsert(string key, string value) {
         if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value)) {
             return;
@@ -96,11 +74,14 @@ public abstract class PersistentDictionary {
 
         // Reduce the number of times we need to serialize the dictionary.
 
-
-        await _semaphore.WaitAsync();
-        SetKeyAndValue(key, value);
-        await SerializeDictionaryAsync();
-        _semaphore.Release();
+        _queue.Enqueue((key, value));
+        if (0 == Interlocked.Exchange(ref _pendingUpdates, 1)) {
+            while (_queue.TryDequeue(out var item)) {
+                SetKeyAndValue(item.Key, item.Value);
+            }
+            await SerializeDictionaryAsync();
+            Interlocked.Exchange(ref _pendingUpdates, 0);
+        }
     }
 
     /// <summary>
