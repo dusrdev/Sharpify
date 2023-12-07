@@ -4,6 +4,10 @@
 
 * Updated to support .NET 8.0
 * Added `GetOrCreateAsync(key, val)` method to `PersistentDictionary`
+* Further performance improvement to the `FormatBytes` extension
+* `Either`s default empty constructor now throws an exception instead of simply warning during usage.
+* `AesProvider.IsPasswordValid` was further optimized using spans (*Only applies when running > .NET8*)
+* Updated outdates summary documentations
 
 ## v1.0.8
 
