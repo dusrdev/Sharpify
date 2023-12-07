@@ -2,7 +2,7 @@ using Sharpify.Collections;
 
 namespace Sharpify.Tests;
 
-public class PersistentDictionaryTests {
+public class SpecialCollectionsTests {
     [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
         // Arrange
@@ -18,17 +18,17 @@ public class PersistentDictionaryTests {
         }
     }
 
-    private static readonly string DictPath = Utils.Env.PathInBaseDirectory("pdict.json");
-    private readonly PersistentDictionary _dict = new LocalPersistentDictionary(DictPath);
-    private readonly PersistentDictionary _lazyDict = new LocalPersistentDictionary(DictPath);
-
     [Fact]
-    public async Task LocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
+    public void LocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
         // Arrange
-        await _dict.ClearAsync();
+        var path = Utils.Env.PathInBaseDirectory("pdict.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new TestLocalPersistentDictionary(path);
 
         // Act
-        var result = _dict["test"];
+        var result = dict["test"];
 
         // Assert
         result.Should().BeNull();
@@ -37,22 +37,88 @@ public class PersistentDictionaryTests {
     [Fact]
     public async Task LocalPersistentDictionary_ReadKey_Valid_WhenExists() {
         // Arrange
-        await _dict.Upsert("one", "1");
+        var path = Utils.Env.PathInBaseDirectory("pdict.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new TestLocalPersistentDictionary(path);
 
         // Act
-        var result = _dict["one"];
+        await dict.Upsert("one", "1");
 
         // Assert
-        result.Should().Be("1");
+        dict["one"].Should().Be("1");
     }
 
     [Fact]
-    public async Task LazyLocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
+    public async Task LocalPersistentDictionary_GetOrCreate() {
         // Arrange
-        await _lazyDict.ClearAsync();
+        var path = Utils.Env.PathInBaseDirectory("pdict.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new TestLocalPersistentDictionary(path);
 
         // Act
-        var result = _lazyDict["test"];
+        var result = await dict.GetOrCreateAsync("one", "1");
+        var check = dict["one"] is "1";
+
+        // Assert
+        result.Should().Be("1");
+        check.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LocalPersistentDictionary_Upsert_Concurrent_SerializesOnce() {
+        // Arrange
+        var path = Utils.Env.PathInBaseDirectory("pdictC.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new TestLocalPersistentDictionary(path);
+        var reset = new ManualResetEventSlim(false);
+
+        // Act
+        var upsertTasks = new Task[5];
+        for (int i = 0; i < upsertTasks.Length; i++) {
+            upsertTasks[i] = Task.Run(async () => {
+                reset.Wait();
+                await dict.Upsert($"key{i}", $"value{i}");
+            });
+        }
+        reset.Set();
+        await Task.WhenAll(upsertTasks);
+
+        // Assert
+        dict.SerializedCount.Should().BeLessThanOrEqualTo(upsertTasks.Length);
+        await Task.Delay(250); // Give it a moment to serialize
+        var sdict = new LocalPersistentDictionary(path);
+        sdict.Count.Should().Be(upsertTasks.Length);
+    }
+
+    private readonly struct UpsertAction : IAsyncAction<int> {
+        private readonly TestLocalPersistentDictionary _dict;
+
+        public UpsertAction(TestLocalPersistentDictionary dict) {
+            _dict = dict;
+        }
+
+        public Task InvokeAsync(int item) {
+            return _dict.Upsert($"key{item}", $"value{item}").AsTask();
+        }
+    }
+
+    [Fact]
+    public void LazyLocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
+        // Arrange
+        var path = Utils.Env.PathInBaseDirectory("lpdict.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new LazyLocalPersistentDictionary(path);
+
+        // Act
+        var result = dict["test"];
 
         // Assert
         result.Should().BeNull();
@@ -61,12 +127,30 @@ public class PersistentDictionaryTests {
     [Fact]
     public async Task LazyLocalPersistentDictionary_ReadKey_Valid_WhenExists() {
         // Arrange
-        await _lazyDict.Upsert("one", "1");
+        var path = Utils.Env.PathInBaseDirectory("lpdict.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new LazyLocalPersistentDictionary(path);
 
         // Act
-        var result = _lazyDict["one"];
+        await dict.Upsert("one", "1");
 
         // Assert
-        result.Should().Be("1");
+        dict["one"].Should().Be("1");
+    }
+}
+
+public class TestLocalPersistentDictionary : LocalPersistentDictionary {
+    private volatile int _serializedCount;
+
+    public TestLocalPersistentDictionary(string path) : base(path) {
+    }
+
+    public int SerializedCount => _serializedCount;
+
+    public override async Task SerializeDictionaryAsync() {
+        Interlocked.Increment(ref _serializedCount);
+        await base.SerializeDictionaryAsync();
     }
 }

@@ -6,7 +6,7 @@ namespace Sharpify.Collections;
 /// <summary>
 /// Represents a dictionary that persists its data to a local file.
 /// </summary>
-public sealed class LazyLocalPersistentDictionary : PersistentDictionary {
+public class LazyLocalPersistentDictionary : PersistentDictionary {
     private readonly string _path;
     private readonly StringComparer _stringComparer;
 

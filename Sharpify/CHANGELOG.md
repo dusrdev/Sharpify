@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.1.1
+
+* Changed `PersistentDictionary.GetOrCreateAsync(key, val)` to return a `ValueTask` reducing resource usage
+
 ## v1.1.0
 
 * Changed nullability of return type of `PersistentDictionary.GetOrCreateAsync(key, val)`
