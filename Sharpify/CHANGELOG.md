@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.1.0
+
+* Changed nullability of return type of `PersistentDictionary.GetOrCreateAsync(key, val)`
+* Finalized features, seems it is a good place to end the patches and start the next minor release
+
 ## v1.0.9
 
 * Updated to support .NET 8.0
