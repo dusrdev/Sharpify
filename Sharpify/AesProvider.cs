@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -11,7 +10,7 @@ namespace Sharpify;
 /// This implements <see cref="IDisposable"/>, make sure to properly dispose after use.
 /// </remarks>
 public sealed class AesProvider : IDisposable {
-    private static readonly byte[] Vector = { 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 23, 19, 17 };
+    private static readonly byte[] Vector = [181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 23, 19, 17];
     private readonly Aes _aes;
 
     private const int SaltSize = 24;
@@ -63,11 +62,22 @@ public sealed class AesProvider : IDisposable {
     /// <returns>bool</returns>
     public static bool IsPasswordValid(string password, string hashedPassword) {
         //extract original values from delimited hash text
+#if NET8_0_OR_GREATER
+        ReadOnlySpan<char> hpSpan = hashedPassword;
+        Span<Range> parts = stackalloc Range[3];
+        hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
+            | StringSplitOptions.TrimEntries);
+        var origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
+        int origIterations = 0;
+        hpSpan[parts[1]].ConvertToInt32Unsigned(ref origIterations);
+        var origHash = hashedPassword[parts[2]];
+#elif NET7_0_OR_GREATER
         var origHashedParts = hashedPassword.Split('|', StringSplitOptions.RemoveEmptyEntries);
         var origSalt = Convert.FromBase64String(origHashedParts[0]);
         int origIterations = 0;
         origHashedParts[1].AsSpan().ConvertToInt32Unsigned(ref origIterations);
         var origHash = origHashedParts[2];
+#endif
 
         //generate hash from test password and original salt and iterations
         using var pbkdf2 = new Rfc2898DeriveBytes(password, origSalt, origIterations, HashAlgorithmName.SHA512);
@@ -90,7 +100,6 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Encrypts the text using the key
     /// </summary>
-    /// <param name="encrypted"></param>
     /// <remarks>Returns an empty string if it fails</remarks>
     public string Decrypt(string encrypted) {
         var buffer = Convert.FromBase64String(encrypted);
@@ -103,13 +112,11 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Encrypts the bytes using the key
     /// </summary>
-    /// <param name="unencrypted"></param>
     public byte[] EncryptBytes(byte[] unencrypted) => _aes.EncryptCbc(unencrypted, _aes.IV);
 
     /// <summary>
     /// Decrypts the bytes using the key
     /// </summary>
-    /// <param name="encrypted"></param>
     /// <remarks>Return an empty array if it failed</remarks>
     public byte[] DecryptBytes(byte[] encrypted) {
         try {
