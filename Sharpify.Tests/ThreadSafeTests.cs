@@ -16,7 +16,7 @@ public class ThreadSafeTests {
         ThreadSafe<int> wrapper = new(5);
         const int newValue = 99;
 
-        int result = wrapper.Modify(value => newValue);
+        int result = wrapper.Modify(_ => newValue);
 
         result.Should().Be(newValue);
     }
