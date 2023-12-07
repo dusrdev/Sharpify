@@ -3,8 +3,6 @@ namespace Sharpify;
 /// <summary>
 /// Discriminated union of two types.
 /// </summary>
-/// <typeparam name="T0"></typeparam>
-/// <typeparam name="T1"></typeparam>
 public readonly record struct Either<T0, T1> {
     private readonly T0? _value0;
     private readonly T1? _value1;
@@ -35,10 +33,7 @@ public readonly record struct Either<T0, T1> {
     /// <remarks>
     /// This is an implementation of the default constructor, do not use this. Use only the implicit converters from either T0 or T1.
     /// </remarks>
-    public Either() {
-        _value0 = default;
-        _value1 = default;
-    }
+    public Either() => throw new InvalidOperationException("Either cannot be instantiated directly. Use implicit converters from either T0 or T1.");
 
     private Either(T0 value) {
         _value0 = value;
@@ -57,7 +52,6 @@ public readonly record struct Either<T0, T1> {
     /// <summary>
     /// Implicitly converts from T0 to <see cref="Either{T0, T1}"/>.
     /// </summary>
-    /// <param name="value"></param>
     public static implicit operator Either<T0, T1>(T0 value) => new(value);
 
     /// <summary>
@@ -68,8 +62,6 @@ public readonly record struct Either<T0, T1> {
     /// <summary>
     /// Switches on the type of the value.
     /// </summary>
-    /// <param name="handleT0"></param>
-    /// <param name="handleT1"></param>
     public void Switch(Action<T0> handleT0, Action<T1> handleT1) {
         if (IsT0) {
             handleT0(_value0!);
@@ -83,16 +75,7 @@ public readonly record struct Either<T0, T1> {
     /// <summary>
     /// Matches on the type of the value to return a <typeparamref name="TResult"/>.
     /// </summary>
-    /// <typeparam name="TResult"></typeparam>
-    /// <param name="handleT0"></param>
-    /// <param name="handleT1"></param>
-    public TResult Match<TResult>(Func<T0, TResult> handleT0, Func<T1, TResult> handleT1) {
-        if (IsT0) {
-            return handleT0(_value0!);
-        }
-        if (IsT1) {
-            return handleT1(_value1!);
-        }
-        throw new InvalidOperationException("T0 and T1 are both null");
-    }
+    public TResult Match<TResult>(Func<T0, TResult> handleT0, Func<T1, TResult> handleT1) => IsT0
+        ? handleT0(_value0!)
+        : handleT1(_value1!);
 }
