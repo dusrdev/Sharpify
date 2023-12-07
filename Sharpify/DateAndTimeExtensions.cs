@@ -8,7 +8,6 @@ public static partial class Extensions {
     /// <summary>
     /// Formats a <see cref="TimeSpan"/> to a pretty string
     /// </summary>
-    /// <param name="elapsed"></param>
     public static string Format(this TimeSpan elapsed) => elapsed.TotalSeconds switch {
         < 1 => $"{Math.Round(elapsed.TotalMilliseconds, 2)}ms",
         < 60 => $"{Math.Round(elapsed.TotalSeconds, 2)}s",
@@ -22,7 +21,6 @@ public static partial class Extensions {
     /// <summary>
     /// Formats time span to human readable format
     /// </summary>
-    /// <param name="time"></param>
     public static string ToRemainingDuration(this TimeSpan time) {
         if (time.TotalSeconds <= 1) {
             return "0s";
@@ -56,7 +54,6 @@ public static partial class Extensions {
     /// <summary>
     /// Returns a Time Stamp -> HHMM-dd-mmm-yy
     /// </summary>
-    /// <param name="time"></param>
     public static string ToTimeStamp(this DateTime time) {
         Span<char> buffer = stackalloc char[14];
         const char zero = '0';

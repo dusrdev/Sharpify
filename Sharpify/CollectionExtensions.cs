@@ -17,8 +17,6 @@ public static partial class Extensions {
     /// <summary>
     /// Returns the span of a list
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="list"></param>
     public static Span<T> AsSpan<T>(this List<T> list) => CollectionsMarshal.AsSpan(list);
 
     /// <summary>
@@ -28,7 +26,7 @@ public static partial class Extensions {
     /// <param name="key">The key used for lookup.</param>
     /// <remarks>
     /// Items should not be added or removed from the <see cref="Dictionary{TKey, TValue}"/> while the ref <typeparamref name="TValue"/> is in use.
-    /// The ref null can be detected using <see cref="Unsafe.IsNullRef{T}(ref T)"/>
+    /// The ref null can be detected using Unsafe.IsNullRef{T}(ref readonly T)"
     /// </remarks>
     public static ref TValue GetValueRefOrNullRef<TKey, TValue>(
         this Dictionary<TKey, TValue> dictionary,
@@ -55,9 +53,6 @@ public static partial class Extensions {
     /// <summary>
     /// Returns a new array with the elements sorted using the default comparer for the element type.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="source"></param>
-    /// <param name="comparer"></param>
     /// <remarks>
     /// If you are using a built-in type you can specify the <see cref="Comparer{T}.Default"/>
     /// </remarks>
@@ -76,9 +71,6 @@ public static partial class Extensions {
     /// <summary>
     /// Returns a new list with the elements sorted using the default comparer for the element type.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="source"></param>
-    /// <param name="comparer"></param>
     /// <remarks>
     /// If you are using a built-in type you can specify the <see cref="Comparer{T}.Default"/>
     /// </remarks>
@@ -115,8 +107,8 @@ public static partial class Extensions {
     /// </summary>
     /// <typeparam name="T">The type of elements in the list.</typeparam>
     /// <param name="list">The list to remove duplicates from.</param>
-    /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
     /// <param name="comparer">An optional comparer to use for comparing elements for equality. Default is null.</param>
+    /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
     public static void RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T>? comparer = null, bool isSorted = false) {
         if (isSorted) {
             list.RemoveDuplicatesSorted(comparer);
@@ -131,8 +123,8 @@ public static partial class Extensions {
     /// <typeparam name="T">The type of elements in the list.</typeparam>
     /// <param name="list">The list to remove duplicates from.</param>
     /// <param name="hSet">The HashSet used to remove the duplicates, it should only be used if <paramref name="isSorted"/> is false, otherwise it is allocated needlessly, and just converting it yourself would be more efficient</param>
-    /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
     /// <param name="comparer">An optional comparer to use for comparing elements for equality. Default is null.</param>
+    /// <param name="isSorted">Whether the list is sorted. Default is false.</param>
     public static void RemoveDuplicates<T>(this List<T> list, out HashSet<T> hSet, IEqualityComparer<T>? comparer = null, bool isSorted = false) {
         if (isSorted) {
             list.RemoveDuplicatesSorted(comparer);

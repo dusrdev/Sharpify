@@ -7,21 +7,16 @@ public static partial class Extensions {
     /// <summary>
     /// A simple wrapper over <see cref="string.IsNullOrEmpty(string)"/> to make it easier to use.
     /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
     public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
 
     /// <summary>
     /// A simple wrapper over <see cref="string.IsNullOrWhiteSpace(string)"/> to make it easier to use.
     /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
     public static bool IsNullOrWhiteSpace(this string str) => string.IsNullOrWhiteSpace(str);
 
     /// <summary>
     /// Converts a string to an int32.
     /// </summary>
-    /// <param name="value"></param>
     public static int ConvertToInt32(this string value) {
         if (string.IsNullOrWhiteSpace(value)) {
             return 0;
@@ -53,7 +48,6 @@ public static partial class Extensions {
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/> to an int32 (Use when you are sure it will only be positive).
     /// </summary>
-    /// <param name="str"></param>
     /// <remarks>
     /// Here, invalid returns -1, you could use this to check if the conversion was successful.
     /// </remarks>
@@ -66,12 +60,10 @@ public static partial class Extensions {
     /// <summary>
     /// Converts a string or <see cref="ReadOnlySpan{T}"/> into an int32 ref.
     /// </summary>
-    /// <param name="str"></param>
-    /// <param name="num"></param>
-    public static void ConvertToInt32Unsigned(this ReadOnlySpan<char> str, ref int num) {
+    public static void ConvertToInt32Unsigned(this ReadOnlySpan<char> str, ref int result) {
         // Check for empty string or larger than Int.MaxValue
         if (str.IsEmpty) {
-            num = -1;
+            result = -1;
             return;
         }
         for (var i = 0; i < str.Length; i++) {
@@ -79,24 +71,23 @@ public static partial class Extensions {
 
             // Check for invalid digit
             if (digit is < 0 or > 9) {
-                num = -1;
+                result = -1;
                 break;
             }
 
             // Check for overflow
-            if (num > (int.MaxValue - digit) / 10) {
-                num = -1;
+            if (result > (int.MaxValue - digit) / 10) {
+                result = -1;
                 return;
             }
 
-            num = (num * 10) + digit;
+            result = (result * 10) + digit;
         }
     }
 
     /// <summary>
     /// Converts a string to an int32 (Use when you are sure it will only be positive).
     /// </summary>
-    /// <param name="str"></param>
     /// <remarks>
     /// Here, invalid returns -1, you could use this to check if the conversion was successful.
     /// </remarks>
@@ -106,35 +97,33 @@ public static partial class Extensions {
     /// <summary>
     /// Tries to convert a string to an int32.
     /// </summary>
-    /// <param name="value"></param>
-    /// <param name="num"></param>
     /// <remarks>
     /// In case it fails, the value of num is not changed.
     /// </remarks>
-    public static bool TryConvertToInt32(this string value, ref int num) {
+    public static bool TryConvertToInt32(this string value, ref int result) {
         // Check for empty string or larger than Int.MaxValue
         if (value.Length is 0 or > 10) {
             return false;
         }
         var str = value.AsSpan();
-        int prevValue = num;
-        num = 0;
+        int prevValue = result;
+        result = 0;
         for (var i = 0; i < str.Length; i++) {
             var digit = str[i] - '0';
 
             // Check for invalid digit
             if (digit is < 0 or > 9) {
-                num = prevValue;
+                result = prevValue;
                 return false;
             }
 
             // Check for overflow
-            if (num > (int.MaxValue - digit) / 10) {
-                num = prevValue;
+            if (result > (int.MaxValue - digit) / 10) {
+                result = prevValue;
                 return false;
             }
 
-            num = (num * 10) + digit;
+            result = (result * 10) + digit;
         }
         return true;
     }
@@ -142,8 +131,8 @@ public static partial class Extensions {
     /// <summary>
     /// Suffixes a string with a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/>.
     /// </summary>
-    /// <param name="value"></param>
-    /// <param name="suffix"></param>
+    /// <param name="value">The first portion</param>
+    /// <param name="suffix">The second portion</param>
     /// <remarks>
     /// <para>
     /// This method is slightly slower than <see cref="string.Concat(ReadOnlySpan{char}, ReadOnlySpan{char})"/>
@@ -190,7 +179,6 @@ public static partial class Extensions {
     /// <summary>
     /// Checks if a string is a valid binary string (0,1,' ','\t','\n','\r')
     /// </summary>
-    /// <param name="str"></param>
     public static bool IsBinary(this string str) {
         foreach (var c in str.AsSpan()) {
             if (c is '0' or '1' || char.IsWhiteSpace(c)) {

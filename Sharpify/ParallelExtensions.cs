@@ -7,8 +7,6 @@ public static partial class Extensions {
     /// <summary>
     /// Returns a <see cref="Concurrent{T}"/> wrapper for the given collection.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="source"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Concurrent<T> Concurrent<T>(this ICollection<T> source) => source is null
         ? throw new ArgumentNullException(nameof(source))
@@ -17,10 +15,6 @@ public static partial class Extensions {
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="concurrentReference"></param>
-    /// <param name="action"></param>
-    /// <param name="token"></param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Task InvokeAsync<T>(
         this Concurrent<T> concurrentReference,
@@ -37,9 +31,6 @@ public static partial class Extensions {
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="concurrentReference"></param>
-    /// <param name="action"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ForEach<T>(
         this Concurrent<T> concurrentReference,
@@ -50,11 +41,10 @@ public static partial class Extensions {
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel asynchronously and in batches.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="concurrentReference"></param>
-    /// <param name="action"></param>
+    /// <param name="concurrentReference">The reference to the concurrent instance</param>
+    /// <param name="action">the async action object</param>
     /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
-    /// <param name="token"></param>
+    /// <param name="token">a cancellation token</param>
     /// <remarks>
     /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
     /// </remarks>

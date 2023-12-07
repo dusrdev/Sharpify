@@ -3,7 +3,6 @@ namespace Sharpify;
 /// <summary>
 /// A wrapper around a value that makes it thread safe.
 /// </summary>
-/// <typeparam name="T"></typeparam>
 public sealed class ThreadSafe<T> {
     private readonly object _lock = new();
     private T _value;
@@ -11,7 +10,6 @@ public sealed class ThreadSafe<T> {
     /// <summary>
     /// Creates a new instance of ThreadSafe with an initial value.
     /// </summary>
-    /// <param name="value"></param>
     public ThreadSafe(T value) {
         _value = value;
     }
@@ -38,7 +36,6 @@ public sealed class ThreadSafe<T> {
     /// <summary>
     /// Provides a thread-safe way to modify the value.
     /// </summary>
-    /// <param name="modificationFunc"></param>
     /// <returns>The value after the modification</returns>
     public T Modify(Func<T, T> modificationFunc) {
         lock (_lock) {
@@ -50,8 +47,6 @@ public sealed class ThreadSafe<T> {
     /// <summary>
     /// Provides a thread-safe way to modify the value.
     /// </summary>
-    /// <param name="modifier"></param>
-    /// <param name="newValue"></param>
     /// <returns>The value after the modification</returns>
     public T Modify(IModifier<T> modifier, T newValue) {
         lock (_lock) {

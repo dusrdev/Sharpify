@@ -34,8 +34,6 @@ public readonly record struct Result {
     /// <summary>
     /// Deconstructs the <see cref="Result"/> into <paramref name="isOk"/> and <paramref name="message"/>
     /// </summary>
-    /// <param name="isOk"></param>
-    /// <param name="message"></param>
     public void Deconstruct(
         out bool isOk,
         out string? message) => (isOk, message) = (IsOk, Message);
@@ -43,29 +41,21 @@ public readonly record struct Result {
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/>
     /// </summary>
-    /// <param name="message"></param>
     public static Result Ok(string? message = null) => new(true, message);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/> and <paramref name="value"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="message"></param>
-    /// <param name="value"></param>
-    public static Result<T> Ok<T>(
-        string message, T value) => new(true, message, value);
+    public static Result<T> Ok<T>(string message, T value) => new(true, message, value);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="value"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="value"></param>
     public static Result<T> Ok<T>(T value) => new(true, null, value);
 
     /// <summary>
     /// Returns a result with status failed and <paramref name="message"/>
     /// </summary>
-    /// <param name="message"></param>
     public static Result Fail(string? message = null) => new(false, message);
 
     /// <summary>
@@ -84,7 +74,6 @@ public readonly record struct Result {
 /// <summary>
 /// A representation of <see cref="Result"/> with a value
 /// </summary>
-/// <typeparam name="T"></typeparam>
 public readonly record struct Result<T> {
     /// <summary>
     /// Status
@@ -120,9 +109,6 @@ public readonly record struct Result<T> {
     /// <summary>
     /// Deconstructs the <see cref="Result{T}"/> into <paramref name="isOk"/>, <paramref name="message"/> and <paramref name="value"/>
     /// </summary>
-    /// <param name="isOk"></param>
-    /// <param name="message"></param>
-    /// <param name="value"></param>
     public void Deconstruct(
         out bool isOk,
         out string? message,
@@ -137,7 +123,6 @@ public readonly record struct Result<T> {
     /// <summary>
     /// Converts a <see cref="Result"/> to a <see cref="Result{T}"/> with <see cref="Value"/> set to <see langword="default"/>
     /// </summary>
-    /// <param name="result"></param>
     public static implicit operator Result<T>(Result result) => new(result.IsOk, result.Message, default);
 
     /// <summary>
@@ -160,9 +145,6 @@ public static class ResultExtensions {
     /// <summary>
     /// Creates a <see cref="Result{T}"/> from <see cref="Result"/> with <paramref name="value"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="result"></param>
-    /// <param name="value"></param>
     /// <remarks>
     /// <para>
     /// Throws <see cref="ArgumentNullException"/> if <paramref name="result"/> is <see langword="null"/>
