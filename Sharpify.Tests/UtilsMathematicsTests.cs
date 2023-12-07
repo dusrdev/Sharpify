@@ -18,6 +18,7 @@ public partial class UtilsTests {
         result.Should().Be(expectedResult);
     }
 
+#if DEBUG
     [Fact]
     public void RollingAverage_WithNegativeCount_ThrowsDebugAssertException() {
         // Arrange
@@ -32,7 +33,9 @@ public partial class UtilsTests {
         // Assert
         act.Should().Throw<Exception>();
     }
+#endif
 
+#if DEBUG
     [Fact]
     public void Factorial_NegativeInput_ThrowsDebugAssertFailure() {
         // Arrange
@@ -41,6 +44,7 @@ public partial class UtilsTests {
         //Act and Assert
         act.Should().Throw<Exception>();
     }
+#endif
 
     [Theory]
     [InlineData(5, 120)]
