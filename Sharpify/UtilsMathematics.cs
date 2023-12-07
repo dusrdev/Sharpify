@@ -10,9 +10,9 @@ public static partial class Utils {
         /// <summary>
         /// Returns a rolling average
         /// </summary>
-        /// <param name="oldAverage"></param>
-        /// <param name="newNumber"></param>
-        /// <param name="sampleCount"></param>
+        /// <param name="oldAverage">The previous average value</param>
+        /// <param name="newNumber">The new statistic</param>
+        /// <param name="sampleCount">The number of total samples, previous + 1</param>
         /// <remarks>
         /// If the <paramref name="sampleCount"/> is less or equal to 0, the <paramref name="newNumber"/> is returned.
         /// <para>A message will be displayed during debug if that happens.</para>
@@ -25,7 +25,7 @@ public static partial class Utils {
                 return newNumber;
 
             double denominator = 1d / sampleCount;
-            return (oldAverage * (sampleCount - 1) + newNumber) * denominator;
+            return ((oldAverage * (sampleCount - 1)) + newNumber) * denominator;
         }
 
         /// <summary>
@@ -55,7 +55,6 @@ public static partial class Utils {
         /// <summary>
         /// Returns an estimate of the <paramref name="n"/>-th number in the Fibonacci sequence
         /// </summary>
-        /// <param name="n"></param>
         public static double FibonacciApproximation(int n) {
             var sqrt5 = Math.Sqrt(5);
             var numerator = Math.Pow(1 + sqrt5, n) - Math.Pow(1 - sqrt5, n);
