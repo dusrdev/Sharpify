@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageVersion>1.0.9</PackageVersion>
     <Nullable>enable</Nullable>
@@ -19,7 +20,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Extensions;HighPerformance;DiscriminatedUnion;Result</PackageTags>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
