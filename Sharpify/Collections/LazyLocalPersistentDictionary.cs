@@ -1,10 +1,9 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Sharpify.Collections;
 
 /// <summary>
-/// Represents a dictionary that persists its data to a local file.
+/// Represents a dictionary that persists its data to a local file but not in memory.
 /// </summary>
 public class LazyLocalPersistentDictionary : PersistentDictionary {
     private readonly string _path;
@@ -53,33 +52,29 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
     /// <param name="value">The value to set.</param>
     protected override void SetKeyAndValue(string key, string value) {
         if (!File.Exists(_path)) {
-            _dict ??= new ConcurrentDictionary<string, string>(_stringComparer);
+            _dict ??= new Dictionary<string, string>(_stringComparer);
             _dict[key] = value;
             return;
         }
         var sDict = Deserialize();
         if (sDict is null) {
-            _dict ??= new ConcurrentDictionary<string, string>(_stringComparer);
+            _dict ??= new Dictionary<string, string>(_stringComparer);
             _dict[key] = value;
             return;
         }
-        _dict ??= new ConcurrentDictionary<string, string>(sDict, _stringComparer);
+        _dict ??= new Dictionary<string, string>(sDict, _stringComparer);
         _dict[key] = value;
     }
 
-    private static readonly JsonSerializerOptions Options = new() {
-        WriteIndented = true
-    };
-
     /// <inheritdoc/>
-    protected override ConcurrentDictionary<string, string>? Deserialize() {
+    protected override Dictionary<string, string>? Deserialize() {
         var json = File.ReadAllText(_path);
-        return JsonSerializer.Deserialize<ConcurrentDictionary<string, string>>(json, Options);
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, InternalHelper.JsonOptions);
     }
 
     /// <inheritdoc/>
     protected override async Task SerializeAsync() {
-        var json = JsonSerializer.Serialize(_dict, Options);
+        var json = JsonSerializer.Serialize(_dict, InternalHelper.JsonOptions);
         await File.WriteAllTextAsync(_path, json);
         _dict = null;
     }

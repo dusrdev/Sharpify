@@ -1,23 +1,22 @@
 using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
+
+using KVP = (string Key, string Value);
 
 namespace Sharpify.Collections;
 
 /// <summary>
-/// Provides a thread-safe concurrent dictionary that can be efficiently persisted.
+/// Provides a thread-safe dictionary that can be efficiently persisted.
 /// </summary>
 public abstract class PersistentDictionary {
     /// <summary>
     /// A thread-safe dictionary that stores string keys and values.
     /// </summary>
-    protected ConcurrentDictionary<string, string>? _dict;
+    protected Dictionary<string, string>? _dict;
 
-    private readonly ConcurrentQueue<(string Key, string Value)> _queue = new();
+    private readonly ConcurrentQueue<KVP> _queue = new();
 
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-
-    private volatile int _pendingUpdates;
+    private volatile int _updatingConcurrently;
 
     /// <summary>
     /// Gets the number of key-value pairs contained in the PersistentDictionary.
@@ -29,7 +28,13 @@ public abstract class PersistentDictionary {
     /// </summary>
     /// <param name="key">The key to retrieve the value for.</param>
     /// <returns>The value associated with the specified key, or null if the key is not found.</returns>
-    protected virtual string? GetValueByKey(string key) => _dict!.TryGetValue(key, out var value) ? value : null;
+    protected virtual string? GetValueByKey(string key) {
+        if (_dict is null) {
+            return null;
+        }
+        ref var value = ref _dict.GetValueRefOrNullRef(key);
+        return Unsafe.IsNullRef(ref value) ? null : value;
+    }
 
     /// <summary>
     /// Gets the value associated with the specified key.
@@ -47,7 +52,8 @@ public abstract class PersistentDictionary {
             throw new ArgumentNullException(nameof(key));
         }
 
-        if (_dict!.TryGetValue(key, out var value)) {
+        var value = GetValueByKey(key);
+        if (value is not null) {
             return value;
         }
 
@@ -75,19 +81,23 @@ public abstract class PersistentDictionary {
         // Reduce the number of times we need to serialize the dictionary.
 
         _queue.Enqueue((key, value));
-        if (0 == Interlocked.Exchange(ref _pendingUpdates, 1)) {
+
+        // If it was 0, the method wasn't in use (no concurrent writes)
+        // So we insert the KVPs and serialize the dictionary.
+        // If it is in use we just insert the KVPs and the previous concurrent call will serialize the dictionary.
+        if (0 == Interlocked.Exchange(ref _updatingConcurrently, 1)) {
             while (_queue.TryDequeue(out var item)) {
                 SetKeyAndValue(item.Key, item.Value);
             }
             await SerializeDictionaryAsync();
-            Interlocked.Exchange(ref _pendingUpdates, 0);
+            Interlocked.Exchange(ref _updatingConcurrently, 0);
         }
     }
 
     /// <summary>
     /// Deserializes the dictionary from its persisted state.
     /// </summary>
-    protected abstract ConcurrentDictionary<string, string>? Deserialize();
+    protected abstract Dictionary<string, string>? Deserialize();
 
     /// <summary>
     /// Removes all keys and values from the dictionary.

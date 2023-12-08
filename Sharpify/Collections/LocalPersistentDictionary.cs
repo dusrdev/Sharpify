@@ -17,15 +17,15 @@ public class LocalPersistentDictionary : PersistentDictionary {
     public LocalPersistentDictionary(string path, StringComparer comparer) {
         _path = path;
         if (!File.Exists(_path)) {
-            _dict = new ConcurrentDictionary<string, string>(comparer);
+            _dict = new Dictionary<string, string>(comparer);
             return;
         }
         var sDict = Deserialize();
         if (sDict is null) {
-            _dict = new ConcurrentDictionary<string, string>(comparer);
+            _dict = new Dictionary<string, string>(comparer);
             return;
         }
-        _dict = new ConcurrentDictionary<string, string>(sDict, comparer);
+        _dict = new Dictionary<string, string>(sDict, comparer);
     }
 
     /// <summary>
@@ -34,19 +34,15 @@ public class LocalPersistentDictionary : PersistentDictionary {
     /// <param name="path">The path to the file to persist the dictionary to.</param>
     public LocalPersistentDictionary(string path) : this(path, StringComparer.Ordinal) { }
 
-    private static readonly JsonSerializerOptions Options = new() {
-        WriteIndented = true
-    };
-
     /// <inheritdoc/>
-    protected override ConcurrentDictionary<string, string>? Deserialize() {
+    protected override Dictionary<string, string>? Deserialize() {
         var json = File.ReadAllText(_path);
-        return JsonSerializer.Deserialize<ConcurrentDictionary<string, string>>(json, Options);
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, InternalHelper.JsonOptions);
     }
 
     /// <inheritdoc/>
     protected override async Task SerializeAsync() {
-        var json = JsonSerializer.Serialize(_dict, Options);
+        var json = JsonSerializer.Serialize(_dict, InternalHelper.JsonOptions);
         await File.WriteAllTextAsync(_path, json);
     }
 }
