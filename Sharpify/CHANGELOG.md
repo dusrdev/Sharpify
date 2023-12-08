@@ -3,6 +3,10 @@
 ## v1.1.1
 
 * Changed `PersistentDictionary.GetOrCreateAsync(key, val)` to return a `ValueTask` reducing resource usage
+* Major changes in `PersistentDictionary` implementation, it now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster, and a `ConcurrentQueue` is used internally to handle concurrent writes very efficiently with a more robust and consistent solution than before.
+  * `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` were both updated to support this new structure and also now utilize a single internal instance of the `JsonOptions` for serialization, thus reducing resource usage in some scenarios.
+  * *BREAKING* user implementations that derive from `PersistentDictionary` might need to re-implement the abstract methods `SerializeAsync` and `Deserialize` due to moving to a regular `Dictionary<string, string>`.
+  * Edge cases of concurrent operation with the `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post in the repo.
 
 ## v1.1.0
 
