@@ -7,6 +7,7 @@
   * `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` were both updated to support this new structure and also now utilize a single internal instance of the `JsonOptions` for serialization, thus reducing resource usage in some scenarios.
   * *BREAKING* user implementations that derive from `PersistentDictionary` might need to re-implement the abstract methods `SerializeAsync` and `Deserialize` due to moving to a regular `Dictionary<string, string>`.
   * Edge cases of concurrent operation with the `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post in the repo.
+* Added `OpenLink(string url)` function to `Utils.Env` that supports opening a link on Windows, Mac, and Linux
 
 ## v1.1.0
 

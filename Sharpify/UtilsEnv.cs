@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 
@@ -50,5 +51,30 @@ public static partial class Utils {
         /// Checks whether Internet connection is available
         /// </summary>
         public static bool IsInternetAvailable => System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
+
+        /// <summary>
+        /// Opens the specified URL in the default web browser based on the operating system.
+        /// </summary>
+        /// <param name="url">The URL to open.</param>
+        /// <remarks>
+        /// Currently only Windows, Linux and Mac are supported.
+        /// </remarks>
+        public static void OpenLink(string url) {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                using var process = new Process {
+                    StartInfo = new() {
+                        FileName = url,
+                        UseShellExecute = true
+                    }
+                };
+                process.Start();
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                Process.Start("x-www-browser", url);
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                Process.Start("open", url);
+            } else {
+                throw new PlatformNotSupportedException();
+            }
+        }
     }
 }
