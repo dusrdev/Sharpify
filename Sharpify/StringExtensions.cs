@@ -5,6 +5,17 @@ namespace Sharpify;
 
 public static partial class Extensions {
     /// <summary>
+    /// Gets a reference to the first character of the string.
+    /// </summary>
+    /// <param name="text">The string.</param>
+    /// <returns>A reference to the first character of the string.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref char GetReference(this string text)
+    {
+        return ref Unsafe.AsRef(in text.GetPinnableReference());
+    }
+
+    /// <summary>
     /// A simple wrapper over <see cref="string.IsNullOrEmpty(string)"/> to make it easier to use.
     /// </summary>
     public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
