@@ -69,7 +69,7 @@ public abstract class PersistentDictionary {
     /// <param name="key">The key of the value.</param>
     /// <param name="default">The default value to create if the key does not exist.</param>
     /// <returns>The value associated with the key, or the created default value.</returns>
-    public async ValueTask<T> GetOrCreateAsync<T>(string key, T @default) where T : IParsable<T> {
+    public async ValueTask<T> GetOrCreateAsync<T>(string key, T @default) where T : struct, IParsable<T> {
         var value = await GetOrCreateAsync(key, @default.ToString() ?? "");
         return T.Parse(value, CultureInfo.InvariantCulture);
     }
@@ -114,7 +114,7 @@ public abstract class PersistentDictionary {
     /// <param name="key">The key to upsert the value for.</param>
     /// <param name="value">The value to upsert.</param>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-    public ValueTask Upsert<T>(string key, T value) where T : IConvertible {
+    public ValueTask UpsertAsync<T>(string key, T value) where T : struct, IConvertible {
         if (string.IsNullOrWhiteSpace(key)) {
             throw new ArgumentNullException(nameof(key));
         }

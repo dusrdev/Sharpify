@@ -122,6 +122,29 @@ public class SpecialCollectionsTests {
     }
 
     [Fact]
+    public async Task LocalPersistentDictionary_GenericGetAndUpsert() {
+        // Arrange
+        var filename = Random.Shared.Next(999, 10000).ToString();
+        var path = Utils.Env.PathInBaseDirectory($"{filename}.json");
+        if (File.Exists(path)) {
+            File.Delete(path);
+        }
+        var dict = new TestLocalPersistentDictionary(path);
+
+        // Act
+        await dict.UpsertAsync("one", 1);
+        await dict.UpsertAsync("two", 2);
+        var sdict = new LocalPersistentDictionary(path);
+        int one = await sdict.GetOrCreateAsync("one", 0);
+        int two = await sdict.GetOrCreateAsync("two", 0);
+
+        // Assert
+        one.Should().Be(1);
+        two.Should().Be(2);
+        File.Delete(path);
+    }
+
+    [Fact]
     public void LazyLocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
         // Arrange
         var path = Utils.Env.PathInBaseDirectory("lpdict.json");

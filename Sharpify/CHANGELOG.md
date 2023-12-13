@@ -3,6 +3,7 @@
 ## v1.2.0
 
 * Modifications to `PersistentDictionary` (Some are *breaking changes*):
+  * `Upsert` has been renamed to `UpsertAsync` to make its nature more obvious (Possible *BREAKING* change)
   * `GetOrCreateAsync(key, val)` and `UpsertAsync(key, val)` now return a `ValueTask` reducing resource usage
   * `PersistentDictionary` now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster, and a `ConcurrentQueue` is used internally to handle concurrent writes very efficiently with a more robust and consistent performance than before. This is the *BREAKING* change as custom inherited types will need to be updated to also serialize and deserialize to a regular `Dictionary`.
   * More methods of `PersistentDictionary` that had a base implementation were marked as `virtual` for more customization options with inheritance.
