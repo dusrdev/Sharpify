@@ -30,7 +30,7 @@ public class ResultTests {
 
         // Assert
         result.IsOk.Should().BeTrue();
-        result.Message.Should().BeNull();
+        result.Message.Should().BeEmpty();
     }
 
     [Fact]

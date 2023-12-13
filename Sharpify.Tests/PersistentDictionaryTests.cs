@@ -95,9 +95,30 @@ public class SpecialCollectionsTests {
         // The reason not to check for 1 is that the tasks may not be executed perfectly in parallel.
         var sdict = new LocalPersistentDictionary(path);
         sdict.Count.Should().Be(upsertTasks.Length);
+        File.Delete(path);
+    }
+
+    [Fact]
+    public async Task LocalPersistentDictionary_Upsert_Sequential_NoItemsMissing() {
+        // Arrange
+        var filename = Random.Shared.Next(999, 10000).ToString();
+        var path = Utils.Env.PathInBaseDirectory($"{filename}.json");
         if (File.Exists(path)) {
             File.Delete(path);
         }
+        var dict = new TestLocalPersistentDictionary(path);
+
+        // Act
+        await dict.UpsertAsync("one", "1");
+        await dict.UpsertAsync("two", "2");
+        await dict.UpsertAsync("three", "3");
+        await dict.UpsertAsync("four", "4");
+        await dict.UpsertAsync("five", "5");
+
+        // Assert
+        var sdict = new LocalPersistentDictionary(path);
+        sdict.Count.Should().Be(5);
+        File.Delete(path);
     }
 
     [Fact]
