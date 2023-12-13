@@ -1,13 +1,16 @@
 # CHANGELOG
 
-## v1.1.1
+## v1.2.0
 
-* Changed `PersistentDictionary.GetOrCreateAsync(key, val)` to return a `ValueTask` reducing resource usage
-* Major changes in `PersistentDictionary` implementation, it now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster, and a `ConcurrentQueue` is used internally to handle concurrent writes very efficiently with a more robust and consistent solution than before.
+* Modifications to `PersistentDictionary` (Some are *breaking changes*):
+  * `GetOrCreateAsync(key, val)` and `UpsertAsync(key, val)` now return a `ValueTask` reducing resource usage
+  * `PersistentDictionary` now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster, and a `ConcurrentQueue` is used internally to handle concurrent writes very efficiently with a more robust and consistent performance than before. This is the *BREAKING* change as custom inherited types will need to be updated to also serialize and deserialize to a regular `Dictionary`.
+  * More methods of `PersistentDictionary` that had a base implementation were marked as `virtual` for more customization options with inheritance.
+  * Overloads for `T` types were added to both `GetOrCreateAsync(key, T val)` and `UpsertAsync(key, T val)` to make usage even easier for primitive types, and they both rely on the `string` overloads so that inherited types would'nt need to implement both.
   * `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` were both updated to support this new structure and also now utilize a single internal instance of the `JsonOptions` for serialization, thus reducing resource usage in some scenarios.
-  * *BREAKING* user implementations that derive from `PersistentDictionary` might need to re-implement the abstract methods `SerializeAsync` and `Deserialize` due to moving to a regular `Dictionary<string, string>`.
-  * Edge cases of concurrent operation with the `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post in the repo.
+  * Edge cases of concurrent writing with `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post the issue in the repo or email me.
 * Added `OpenLink(string url)` function to `Utils.Env` that supports opening a link on Windows, Mac, and Linux
+* `Result.Message` and `Result<T>.Message` is no longer nullable, and instead will default to an empty string.
 
 ## v1.1.0
 
