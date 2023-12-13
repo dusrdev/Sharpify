@@ -19,14 +19,14 @@ public readonly record struct Result {
     /// <summary>
     /// Message to pass along with the status
     /// </summary>
-    public readonly string? Message { get; init; }
+    public readonly string Message { get; init; }
 
     /// <summary>
     /// DO NOT USE CONSTRUCTOR, USE <see cref="Ok(string?)"/> or <see cref="Fail(string?)"/> or their overloads INSTEAD
     /// </summary>
     public Result() => throw new InvalidOperationException("Result cannot be instantiated directly. Use Ok or Fail methods.");
 
-    internal Result(bool isOk, string? message) {
+    internal Result(bool isOk, string message) {
         IsOk = isOk;
         Message = message;
     }
@@ -36,12 +36,12 @@ public readonly record struct Result {
     /// </summary>
     public void Deconstruct(
         out bool isOk,
-        out string? message) => (isOk, message) = (IsOk, Message);
+        out string message) => (isOk, message) = (IsOk, Message);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/>
     /// </summary>
-    public static Result Ok(string? message = null) => new(true, message);
+    public static Result Ok(string message = "") => new(true, message);
 
     /// <summary>
     /// Returns a result with status success and <paramref name="message"/> and <paramref name="value"/>
@@ -51,12 +51,12 @@ public readonly record struct Result {
     /// <summary>
     /// Returns a result with status success and <paramref name="value"/>
     /// </summary>
-    public static Result<T> Ok<T>(T value) => new(true, null, value);
+    public static Result<T> Ok<T>(T value) => new(true, "", value);
 
     /// <summary>
     /// Returns a result with status failed and <paramref name="message"/>
     /// </summary>
-    public static Result Fail(string? message = null) => new(false, message);
+    public static Result Fail(string message = "") => new(false, message);
 
     /// <summary>
     /// Returns the <see cref="Result"/> as a <see cref="Task"/>
@@ -88,7 +88,7 @@ public readonly record struct Result<T> {
     /// <summary>
     /// Message to pass along with the status
     /// </summary>
-    public readonly string? Message { get; init; }
+    public readonly string Message { get; init; }
 
     /// <summary>
     /// Inner value
@@ -100,7 +100,7 @@ public readonly record struct Result<T> {
     /// </summary>
     public Result() => throw new InvalidOperationException("Result cannot be instantiated directly. Use Ok or Fail methods.");
 
-    internal Result(bool isOk, string? message, T? value) {
+    internal Result(bool isOk, string message, T? value) {
         IsOk = isOk;
         Message = message;
         Value = value;
@@ -111,7 +111,7 @@ public readonly record struct Result<T> {
     /// </summary>
     public void Deconstruct(
         out bool isOk,
-        out string? message,
+        out string message,
         out T? value) => (isOk, message, value) = (IsOk, Message, Value);
 
     /// <summary>
