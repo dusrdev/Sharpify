@@ -8,6 +8,7 @@ namespace Sharpify.Collections;
 public class LazyLocalPersistentDictionary : PersistentDictionary {
     private readonly string _path;
     private readonly StringComparer _stringComparer;
+    private static readonly Dictionary<string, string> Empty = [];
 
     /// <summary>
     /// Creates a new instance of <see cref="LocalPersistentDictionary"/> with the <paramref name="path"/> and <paramref name="comparer"/> specified.
@@ -76,6 +77,6 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
     protected override async Task SerializeAsync() {
         var json = JsonSerializer.Serialize(_dict, InternalHelper.JsonOptions);
         await File.WriteAllTextAsync(_path, json);
-        _dict = null;
+        _dict = Empty;
     }
 }

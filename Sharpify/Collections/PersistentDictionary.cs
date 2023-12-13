@@ -13,7 +13,7 @@ public abstract class PersistentDictionary {
     /// <summary>
     /// A thread-safe dictionary that stores string keys and values.
     /// </summary>
-    protected Dictionary<string, string>? _dict;
+    protected Dictionary<string, string> _dict = [];
 
     private readonly ConcurrentQueue<KVP> _queue = new();
 
@@ -22,7 +22,7 @@ public abstract class PersistentDictionary {
     /// <summary>
     /// Gets the number of key-value pairs contained in the PersistentDictionary.
     /// </summary>
-    public int Count => _dict is null ? 0 : _dict.Count;
+    public int Count => _dict.Count;
 
     /// <summary>
     /// Gets the value associated with the specified key.
@@ -30,7 +30,7 @@ public abstract class PersistentDictionary {
     /// <param name="key">The key to retrieve the value for.</param>
     /// <returns>The value associated with the specified key, or null if the key is not found.</returns>
     protected virtual string? GetValueByKey(string key) {
-        if (_dict is null) {
+        if (Count is 0) {
             return null;
         }
         ref var value = ref _dict.GetValueRefOrNullRef(key);
@@ -132,7 +132,7 @@ public abstract class PersistentDictionary {
     /// </summary>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
     public virtual async ValueTask ClearAsync() {
-        if (_dict is null || _dict.Count is 0) {
+        if (Count is 0) {
             return;
         }
         _dict.Clear();
