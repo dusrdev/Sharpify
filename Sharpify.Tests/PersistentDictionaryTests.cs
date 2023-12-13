@@ -44,7 +44,7 @@ public class SpecialCollectionsTests {
         var dict = new TestLocalPersistentDictionary(path);
 
         // Act
-        await dict.Upsert("one", "1");
+        await dict.UpsertAsync("one", "1");
 
         // Assert
         dict["one"].Should().Be("1");
@@ -80,11 +80,11 @@ public class SpecialCollectionsTests {
 
         // Act
         Task[] upsertTasks = [
-            Task.Run(() => dict.Upsert("one", "1")),
-            Task.Run(() => dict.Upsert("two", "2")),
-            Task.Run(() => dict.Upsert("three", "3")),
-            Task.Run(() => dict.Upsert("four", "4")),
-            Task.Run(() => dict.Upsert("five", "5")),
+            Task.Run(() => dict.UpsertAsync("one", "1")),
+            Task.Run(() => dict.UpsertAsync("two", "2")),
+            Task.Run(() => dict.UpsertAsync("three", "3")),
+            Task.Run(() => dict.UpsertAsync("four", "4")),
+            Task.Run(() => dict.UpsertAsync("five", "5")),
         ];
         await Task.WhenAll(upsertTasks);
 
@@ -126,7 +126,7 @@ public class SpecialCollectionsTests {
         var dict = new LazyLocalPersistentDictionary(path);
 
         // Act
-        await dict.Upsert("one", "1");
+        await dict.UpsertAsync("one", "1");
 
         // Assert
         dict["one"].Should().Be("1");
