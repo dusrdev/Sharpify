@@ -59,6 +59,16 @@ public readonly record struct Result {
     public static Result Fail(string message = "") => new(false, message);
 
     /// <summary>
+    /// Creates a failed result with the specified value.
+    /// </summary>
+    public static Result<T> Fail<T>(T value) => new(false, "", value);
+
+    /// <summary>
+    /// Creates a failed result with the specified massage and value.
+    /// </summary>
+    public static Result<T> Fail<T>(string message, T value) => new(false, message, value);
+
+    /// <summary>
     /// Returns the <see cref="Result"/> as a <see cref="Task"/>
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -14,6 +14,7 @@
 * Added `OpenLink(string url)` function to `Utils.Env` that supports opening a link on Windows, Mac, and Linux
 * `Result.Message` and `Result<T>.Message` is no longer nullable, and instead will default to an empty string.
 * Added `object.TryUnbox<T>` and `string.GetReference` extensions
+* Added `Result.Fail` overloads that support a value, to allow usage of static defaults or empty collections
 
 ## v1.1.0
 
