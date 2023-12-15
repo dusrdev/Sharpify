@@ -17,7 +17,7 @@ public abstract class PersistentDictionary {
 
     private readonly ConcurrentQueue<KVP> _queue = new();
 
-    private volatile int _updatingConcurrently;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
     /// Gets the number of key-value pairs contained in the PersistentDictionary.
@@ -91,20 +91,28 @@ public abstract class PersistentDictionary {
             return;
         }
 
-        // Reduce the number of times we need to serialize the dictionary.
-
+        // Each call adds the key-value pair to the queue, and then tries to acquire the semaphore.
         _queue.Enqueue((key, value));
 
-        // If it was 0, the method wasn't in use (no concurrent writes)
-        // So we insert the KVPs and serialize the dictionary.
-        // If it is in use we just insert the KVPs and the previous concurrent call will serialize the dictionary.
-        if (0 == Interlocked.Exchange(ref _updatingConcurrently, 1)) {
-            while (_queue.TryDequeue(out var item)) {
-                SetKeyAndValue(item.Key, item.Value);
-            }
-            await SerializeDictionaryAsync();
-            Interlocked.Exchange(ref _updatingConcurrently, 0);
+        // Concurrent calls, will be stuck here until the semaphore is released.
+        // Upon which the other thread inside might have already added the key-value pair to the dictionary.
+        // And serialized.
+        // We check after the release if anything left is in the queue and repeat the process.
+        // In perfect conditions with truly concurrent writes, it will cause the serialization to happen only once.
+        // Improving performance and reducing resource usage for writes.
+        await _semaphore.WaitAsync();
+
+        if (_queue.IsEmpty) {
+            _semaphore.Release();
+            return;
         }
+
+        while (_queue.TryDequeue(out var item)) {
+            SetKeyAndValue(item.Key, item.Value);
+        }
+        await SerializeDictionaryAsync();
+
+        _semaphore.Release();
     }
 
     /// <summary>
