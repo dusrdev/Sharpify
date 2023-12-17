@@ -2,8 +2,6 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-using KVP = (string Key, string Value);
-
 namespace Sharpify.Collections;
 
 /// <summary>
@@ -14,6 +12,8 @@ public abstract class PersistentDictionary {
     /// A thread-safe dictionary that stores string keys and values.
     /// </summary>
     protected Dictionary<string, string> _dict = [];
+
+    private record KVP(string Key, string Value);
 
     private readonly ConcurrentQueue<KVP> _queue = new();
 
@@ -92,7 +92,7 @@ public abstract class PersistentDictionary {
         }
 
         // Each call adds the key-value pair to the queue, and then tries to acquire the semaphore.
-        _queue.Enqueue((key, value));
+        _queue.Enqueue(new KVP(key, value));
 
         // Concurrent calls, will be stuck here until the semaphore is released.
         // Upon which the other thread inside might have already added the key-value pair to the dictionary.
