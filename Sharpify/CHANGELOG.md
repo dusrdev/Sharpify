@@ -2,10 +2,10 @@
 
 ## v1.2.0
 
-* Modifications to `PersistentDictionary` (Some are *breaking changes*):
-  * `Upsert` has been renamed to `UpsertAsync` to make its nature more obvious (Possible *BREAKING* change)
+* Modifications to `PersistentDictionary` (Some are **breaking changes**):
+  * `Upsert` has been renamed to `UpsertAsync` to make its nature more obvious (Possible **BREAKING** change)
   * `GetOrCreateAsync(key, val)` and `UpsertAsync(key, val)` now return a `ValueTask` reducing resource usage
-  * `PersistentDictionary` now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster. This is the *BREAKING* change as custom inherited types will need to be updated to also serialize and deserialize to a regular `Dictionary`.
+  * `PersistentDictionary` now uses a regular `Dictionary` as the internal data structure to be lighter and handle reads even faster. This is the ***BREAKING** change as custom inherited types will need to be updated to also serialize and deserialize to a regular `Dictionary`.
   * To allow concurrent writes, a very efficient and robust concurrency model using a `ConcurrentQueue` and a `SemaphoreSlim` is used. It perfect conditions it will even reduce serialization counts.
   * The base `Dictionary` is also not nullable anymore, which reduces null checks.
   * More methods of `PersistentDictionary` that had a base implementation were marked as `virtual` for more customization options with inheritance.
@@ -28,7 +28,7 @@
 * Added `GetOrCreateAsync(key, val)` method to `PersistentDictionary`
 * Further performance improvement to the `FormatBytes` extension
 * `Either`s default empty constructor now throws an exception instead of simply warning during usage.
-* `AesProvider.IsPasswordValid` was further optimized using spans (*Only applies when running > .NET8*)
+* `AesProvider.IsPasswordValid` was further optimized using spans (**Only applies when running > .NET8**)
 * Updated outdates summary documentations
 
 ## v1.0.8

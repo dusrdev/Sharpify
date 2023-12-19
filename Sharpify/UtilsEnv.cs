@@ -61,20 +61,22 @@ public static partial class Utils {
         /// </remarks>
         public static void OpenLink(string url) {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                using var process = new Process {
-                    StartInfo = new() {
-                        FileName = url,
-                        UseShellExecute = true
-                    }
+                var processInfo = new ProcessStartInfo {
+                    FileName = url,
+                    UseShellExecute = true
                 };
-                process.Start();
-            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                Process.Start("x-www-browser", url);
-            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                Process.Start("open", url);
-            } else {
-                throw new PlatformNotSupportedException();
+                using var process = Process.Start(processInfo);
+                return;
             }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                using var process = Process.Start("x-www-browser", url);
+                return;
+            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                using var process = Process.Start("open", url);
+                return;
+            }
+            throw new PlatformNotSupportedException();
         }
     }
 }
