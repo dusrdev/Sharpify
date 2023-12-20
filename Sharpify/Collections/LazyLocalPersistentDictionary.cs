@@ -38,11 +38,7 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
             return null;
         }
         ReadOnlySpan<byte> jsonUtf8Bytes = File.ReadAllBytes(_path);
-        var options = new JsonReaderOptions {
-            AllowTrailingCommas = true,
-            CommentHandling = JsonCommentHandling.Skip
-        };
-        var reader = new Utf8JsonReader(jsonUtf8Bytes, options);
+        var reader = new Utf8JsonReader(jsonUtf8Bytes, InternalHelper.JsonReaderOptions);
         while (reader.Read()) {
             if (reader.TokenType is not JsonTokenType.PropertyName) {
                 continue;

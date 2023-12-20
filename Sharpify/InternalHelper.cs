@@ -6,4 +6,9 @@ internal static class InternalHelper {
     internal static readonly JsonSerializerOptions JsonOptions = new() {
         WriteIndented = true
     };
+
+    internal static readonly JsonReaderOptions JsonReaderOptions = new() {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip
+    };
 }
