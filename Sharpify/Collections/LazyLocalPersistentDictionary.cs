@@ -37,11 +37,26 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
         if (!File.Exists(_path)) {
             return null;
         }
-        var sDict = Deserialize();
-        if (sDict is null) {
-            return null;
+        ReadOnlySpan<byte> jsonUtf8Bytes = File.ReadAllBytes(_path);
+        var options = new JsonReaderOptions {
+            AllowTrailingCommas = true,
+            CommentHandling = JsonCommentHandling.Skip
+        };
+        var reader = new Utf8JsonReader(jsonUtf8Bytes, options);
+        while (reader.Read()) {
+            if (reader.TokenType is not JsonTokenType.PropertyName) {
+                continue;
+            }
+            var property = reader.GetString();
+            if (!_stringComparer.Equals(property, key)) {
+                _ = reader.TrySkip();
+                continue;
+            }
+            reader.Read();
+            var value = reader.GetString();
+            return value;
         }
-        return sDict.TryGetValue(key, out var value) ? value : null;
+        return null;
     }
 
     /// <summary>
@@ -63,7 +78,7 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
             _dict[key] = value;
             return;
         }
-        _dict ??= new Dictionary<string, string>(sDict, _stringComparer);
+        _dict = sDict;
         _dict[key] = value;
     }
 
