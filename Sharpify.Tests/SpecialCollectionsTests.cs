@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using Sharpify.Collections;
 
 namespace Sharpify.Tests;
@@ -170,11 +172,17 @@ public class SpecialCollectionsTests {
         }
         var dict = new LazyLocalPersistentDictionary(path);
 
+        var testJson = new {
+            Name = "test",
+            Age = 21
+        };
+
         // Act
-        await dict.UpsertAsync("one", "1");
+        await dict.UpsertAsync("one", JsonSerializer.Serialize(testJson));
+        await dict.UpsertAsync("two", "2");
 
         // Assert
-        dict["one"].Should().Be("1");
+        dict["two"].Should().Be("2");
     }
 }
 
