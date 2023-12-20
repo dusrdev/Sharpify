@@ -11,6 +11,7 @@
   * More methods of `PersistentDictionary` that had a base implementation were marked as `virtual` for more customization options with inheritance.
   * Overloads for `T` types were added to both `GetOrCreateAsync(key, T val)` and `UpsertAsync(key, T val)` to make usage even easier for primitive types, and they both rely on the `string` overloads so that inherited types would'nt need to implement both.
   * `LocalPersistentDictionary` and `LazyLocalPersistentDictionary` were both updated to support this new structure and also now utilize a single internal instance of the `JsonOptions` for serialization, thus reducing resource usage in some scenarios.
+  * `LazyLocalPersistentDictionary` get key implementation was revised and improved to reduce memory allocations.
   * Edge cases of concurrent writing with `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post the issue in the repo or email me.
 * Added `OpenLink(string url)` function to `Utils.Env` that supports opening a link on Windows, Mac, and Linux
 * `Result.Message` and `Result<T>.Message` is no longer nullable, and instead will default to an empty string.
