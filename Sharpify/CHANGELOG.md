@@ -17,6 +17,7 @@
 * `Result.Message` and `Result<T>.Message` is no longer nullable, and instead will default to an empty string.
 * Added `object.TryUnbox<T>` and `string.GetReference` extensions
 * Added `Result.Fail` overloads that support a value, to allow usage of static defaults or empty collections
+* Added `HashSet.ToArrayFast()` method which converts a hash set to an array more efficiently than Linq.
 
 ## v1.1.0
 

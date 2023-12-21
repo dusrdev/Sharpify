@@ -196,4 +196,16 @@ public static partial class Extensions {
         }
         return list;
     }
+
+    /// <summary>
+    /// Converts a HashSet to an array in a fast manner.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the HashSet.</typeparam>
+    /// <param name="hashSet">The HashSet to convert.</param>
+    /// <returns>An array containing the elements of the HashSet.</returns>
+    public static T[] ToArrayFast<T>(this HashSet<T> hashSet) {
+        var arr = new T[hashSet.Count];
+        hashSet.CopyTo(arr);
+        return arr;
+    }
 }
