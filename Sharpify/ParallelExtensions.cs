@@ -20,7 +20,11 @@ public static partial class Extensions {
         this Concurrent<T> concurrentReference,
         in IAsyncAction<T> action,
         CancellationToken token = default) {
-        var tasks = new Task[concurrentReference.Source.Count];
+        var length = concurrentReference.Source.Count;
+        if (length is 0) {
+            return Task.CompletedTask;
+        }
+        var tasks = new Task[length];
         var i = 0;
         foreach (var item in concurrentReference.Source) {
             tasks[i++] = action.InvokeAsync(item);
@@ -35,6 +39,9 @@ public static partial class Extensions {
     public static void ForEach<T>(
         this Concurrent<T> concurrentReference,
         IAction<T> action) {
+        if (concurrentReference.Source.Count is 0) {
+            return;
+        }
         Parallel.ForEach(concurrentReference.Source, action.Invoke);
     }
 
