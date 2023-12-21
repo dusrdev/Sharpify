@@ -91,6 +91,12 @@ public abstract class PersistentDictionary {
             return;
         }
 
+        // Skip updating if the key exists and the value is the same
+        var existingValue = GetValueByKey(key);
+        if (existingValue is not null && existingValue.AsSpan().Equals(value.AsSpan(), StringComparison.Ordinal)) {
+            return;
+        }
+
         // Each call adds the key-value pair to the queue, and then tries to acquire the semaphore.
         _queue.Enqueue(new KVP(key, value));
 
