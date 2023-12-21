@@ -19,6 +19,7 @@
 * Added `object.TryUnbox<T>` and `string.GetReference` extensions
 * Added `Result.Fail` overloads that support a value, to allow usage of static defaults or empty collections
 * Added `HashSet.ToArrayFast()` method which converts a hash set to an array more efficiently than Linq.
+* Further optimized `AesProvider.GeneratePassword`
 
 ## v1.1.0
 

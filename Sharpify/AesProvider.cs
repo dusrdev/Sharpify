@@ -50,8 +50,21 @@ public sealed class AesProvider : IDisposable {
         using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA512);
         var hash = pbkdf2.GetBytes(SaltSize);
 
-        //return delimited string with salt | #iterations | hash
-        return string.Join('|', Convert.ToBase64String(salt), iterations, Convert.ToBase64String(hash));
+        // create format for hash text
+        // salt|iterations|hash
+        var saltString = Convert.ToBase64String(salt);
+        var hashString = Convert.ToBase64String(hash);
+
+        // length = salt + iteration count (3 digits max) + hash + 2 delimiters
+        Span<char> pass = stackalloc char[saltString.Length + 3 + hashString.Length + 2];
+        int index = 0;
+        saltString.AsSpan().CopyTo(pass);
+        index += saltString.Length;
+        pass[index++] = '|';
+        index += iterations.TryFormat(pass[index..], out var charsWritten) ? charsWritten : 0;
+        pass[index++] = '|';
+        hashString.AsSpan().CopyTo(pass[index..]);
+        return new string(pass);
     }
 
     /// <summary>
