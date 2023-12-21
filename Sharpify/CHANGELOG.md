@@ -2,7 +2,7 @@
 
 ## v1.2.0
 
-* Modifications to `PersistentDictionary` (Some are **breaking changes**):
+* Modifications to `PersistentDictionary`:
   * `Upsert` has been renamed to `UpsertAsync` to make its nature more obvious (Possible **BREAKING** change)
   * `Upsert` now handles a special case in which the key exists and value is the same as new value, it will completely forgo the operation, requiring no `Task` creation and no serialization.
   * `GetOrCreateAsync(key, val)` and `UpsertAsync(key, val)` now return a `ValueTask` reducing resource usage
@@ -20,6 +20,8 @@
 * Added `Result.Fail` overloads that support a value, to allow usage of static defaults or empty collections
 * Added `HashSet.ToArrayFast()` method which converts a hash set to an array more efficiently than Linq.
 * Further optimized `AesProvider.GeneratePassword`
+* **BREAKING**, The `FormatBytes` function for `long` and `double` was moved to `Utils.Strings` class and is no longer an extension function, this will make the usage clearer.
+* Further optimized `TimeSpan.Format`
 
 ## v1.1.0
 
