@@ -8,13 +8,25 @@ public static partial class Extensions {
     /// <summary>
     /// Formats a <see cref="TimeSpan"/> to a pretty string
     /// </summary>
-    public static string Format(this TimeSpan elapsed) => elapsed.TotalSeconds switch {
-        < 1 => $"{Math.Round(elapsed.TotalMilliseconds, 2)}ms",
-        < 60 => $"{Math.Round(elapsed.TotalSeconds, 2)}s",
-        < 3600 => $"{Math.Round(elapsed.TotalMinutes, 2)}m",
-        < 86400 => $"{Math.Round(elapsed.TotalHours, 2)}hr",
-        _ => $"{Math.Round(elapsed.TotalDays, 2)}d"
-    };
+    public static string Format(this TimeSpan elapsed) {
+        (double value, string suffix) = elapsed.TotalSeconds switch {
+            < 1 => (elapsed.TotalMilliseconds, "ms"),
+            < 60 => (elapsed.TotalSeconds, "s"),
+            < 3600 => (elapsed.TotalMinutes, "m"),
+            < 86400 => (elapsed.TotalHours, "hr"),
+            _ => (elapsed.TotalDays, "d")
+        };
+        // The longest possible number is going to be days, since it's the largest unit of time
+        // 23 digits long is fully formatted 10^14 which is 2 magnitudes more than the amount of days since earth was formed
+        // it is rather a safe bet that we wouldn't surpass it
+        Span<char> buffer = stackalloc char[25]; // and 2 for the suffix
+        int index = 0;
+        Math.Round(value, 2).TryFormat(buffer, out var charsWritten);
+        index += charsWritten;
+        suffix.CopyTo(buffer[index..]);
+        index += suffix.Length;
+        return new string(buffer[0..index]);
+    }
 
     private static readonly ThreadLocal<StringBuilder> RemainingTimeBuilder = new(static () => new StringBuilder());
 
