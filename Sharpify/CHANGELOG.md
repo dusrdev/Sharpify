@@ -22,6 +22,8 @@
 * Further optimized `AesProvider.GeneratePassword`
 * **BREAKING**, The `FormatBytes` function for `long` and `double` was moved to `Utils.Strings` class and is no longer an extension function, this will make the usage clearer.
 * Further optimized `TimeSpan.Format`
+* Multiple string creating functions which used to stack allocate the buffers, now rent them instead, potentially reducing overall application memory usage.
+* Added another class `Utils.Unsafe` that has "hacky" utilities that allow you to reuse existing code in other high performance apis
 
 ## v1.1.0
 
