@@ -8,7 +8,7 @@ public static partial class Utils {
     /// Provides utility methods for <see cref="string"/>
     /// </summary>
     public static class Strings {
-        private static readonly ReadOnlyMemory<string> FileSizeSuffix = new(["B", "KB", "MB", "GB", "TB", "PB"]);
+        private static ReadOnlySpan<string> FileSizeSuffix => new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
 
         /// <summary>
         /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
@@ -35,7 +35,7 @@ public static partial class Utils {
             Math.Round(bytes, 2).TryFormat(buffer, out var charsWritten);
             index += charsWritten;
             buffer[index++] = ' ';
-            var suffixString = FileSizeSuffix.Span[suffix];
+            var suffixString = FileSizeSuffix[suffix];
             suffixString.CopyTo(buffer[index..]);
             index += suffixString.Length;
             var res = new string(buffer[0..index]);
