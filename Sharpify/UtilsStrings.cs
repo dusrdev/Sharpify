@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace Sharpify;
@@ -28,7 +29,8 @@ public static partial class Utils {
                 bytes *= divisor;
                 suffix++;
             }
-            Span<char> buffer = stackalloc char[9];
+            var arr = ArrayPool<char>.Shared.Rent(9);
+            Span<char> buffer = arr;
             int index = 0;
             Math.Round(bytes, 2).TryFormat(buffer, out var charsWritten);
             index += charsWritten;
@@ -36,7 +38,9 @@ public static partial class Utils {
             var suffixString = FileSizeSuffix.Span[suffix];
             suffixString.CopyTo(buffer[index..]);
             index += suffixString.Length;
-            return new string(buffer[0..index]);
+            var res = new string(buffer[0..index]);
+            ArrayPool<char>.Shared.Return(arr);
+            return res;
         }
     }
 }

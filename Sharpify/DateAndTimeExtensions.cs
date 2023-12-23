@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -19,13 +20,16 @@ public static partial class Extensions {
         // The longest possible number is going to be days, since it's the largest unit of time
         // 23 digits long is fully formatted 10^14 which is 2 magnitudes more than the amount of days since earth was formed
         // it is rather a safe bet that we wouldn't surpass it
-        Span<char> buffer = stackalloc char[25]; // and 2 for the suffix
+        var arr = ArrayPool<char>.Shared.Rent(25); // and 2 for the suffix
+        Span<char> buffer = arr;
         int index = 0;
         Math.Round(value, 2).TryFormat(buffer, out var charsWritten);
         index += charsWritten;
         suffix.CopyTo(buffer[index..]);
         index += suffix.Length;
-        return new string(buffer[0..index]);
+        var res = new string(buffer[0..index]);
+        ArrayPool<char>.Shared.Return(arr);
+        return res;
     }
 
     private static readonly ThreadLocal<StringBuilder> RemainingTimeBuilder = new(static () => new StringBuilder());
@@ -67,7 +71,9 @@ public static partial class Extensions {
     /// Returns a Time Stamp -> HHMM-dd-mmm-yy
     /// </summary>
     public static string ToTimeStamp(this DateTime time) {
-        Span<char> buffer = stackalloc char[14];
+        const int length = 14;
+        var arr = ArrayPool<char>.Shared.Rent(length);
+        Span<char> buffer = arr;
         const char zero = '0';
 
         // Append the hour and minute to the buffer
@@ -91,6 +97,8 @@ public static partial class Extensions {
         buffer[12] = (char)(zero + (time.Year % 100 * 0.1));
         buffer[13] = (char)(zero + (time.Year % 10));
 
-        return new string(buffer);
+        var res = new string(buffer[..length]);
+        ArrayPool<char>.Shared.Return(arr);
+        return res;
     }
 }
