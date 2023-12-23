@@ -80,23 +80,24 @@ public sealed class AesProvider : IDisposable {
         Span<Range> parts = stackalloc Range[3];
         hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
             | StringSplitOptions.TrimEntries);
-        var origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
+        ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
         int origIterations = 0;
         hpSpan[parts[1]].ConvertToInt32Unsigned(ref origIterations);
-        var origHash = hashedPassword[parts[2]];
+        ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
 #elif NET7_0_OR_GREATER
         var origHashedParts = hashedPassword.Split('|', StringSplitOptions.RemoveEmptyEntries);
-        var origSalt = Convert.FromBase64String(origHashedParts[0]);
+        ReadOnlySpan<byte> origSalt = Convert.FromBase64String(origHashedParts[0]);
         int origIterations = 0;
         origHashedParts[1].AsSpan().ConvertToInt32Unsigned(ref origIterations);
-        var origHash = origHashedParts[2];
+        ReadOnlySpan<char> origHash = origHashedParts[2];
 #endif
 
         //generate hash from test password and original salt and iterations
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, origSalt, origIterations, HashAlgorithmName.SHA512);
-        var testHash = pbkdf2.GetBytes(SaltSize);
 
-        return Convert.ToBase64String(testHash) == origHash;
+        var testHash = Rfc2898DeriveBytes.Pbkdf2(password, origSalt, origIterations, HashAlgorithmName.SHA512, SaltSize);
+
+        ReadOnlySpan<char> testAsBase64 = Convert.ToBase64String(testHash);
+        return testAsBase64.SequenceEqual(origHash);
     }
 
     /// <summary>
