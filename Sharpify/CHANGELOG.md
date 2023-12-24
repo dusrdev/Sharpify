@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.2.1
+
+* Removed `String.Suffix` as the abstraction is the same as `String.Concat` which already uses a very good implementation
+
 ## v1.2.0
 
 * Modifications to `PersistentDictionary`:

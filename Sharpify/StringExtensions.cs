@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -68,39 +67,6 @@ public static partial class Extensions {
     }
 #pragma warning restore CS1658 // Warning is overriding an error
 #pragma warning restore CS1584 // XML comment has syntactically incorrect cref attribute
-
-    /// <summary>
-    /// Suffixes a string with a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/>.
-    /// </summary>
-    /// <param name="value">The first portion</param>
-    /// <param name="suffix">The second portion</param>
-    /// <remarks>
-    /// <para>
-    /// This method is slightly slower than <see cref="string.Concat(ReadOnlySpan{char}, ReadOnlySpan{char})"/>
-    /// Or string interpolation but uses half the memory.
-    /// </para>
-    /// <para>This advantage diminishes when more than 2 strings are used.</para>
-    /// </remarks>
-    public static string Suffix(this string value, ReadOnlySpan<char> suffix) {
-        if (value.Length is 0 && suffix.Length is 0) {
-            return string.Empty;
-        }
-        if (value.Length is 0) {
-            return new string(suffix);
-        }
-        if (suffix.Length is 0) {
-            return value;
-        }
-        var str = value.AsSpan();
-        var length = str.Length + suffix.Length;
-        char[] arr = ArrayPool<char>.Shared.Rent(length);
-        Span<char> resSpan = arr;
-        str.CopyTo(resSpan);
-        suffix.CopyTo(resSpan[str.Length..]);
-        var res = new string(arr[0..length]);
-        ArrayPool<char>.Shared.Return(arr);
-        return res;
-    }
 
     /// <summary>
     /// A more convenient way to use <see cref="string.Concat(ReadOnlySpan{char}, ReadOnlySpan{char})"/>

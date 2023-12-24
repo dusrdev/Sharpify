@@ -87,39 +87,6 @@ public class StringExtensionsTests {
         output.Should().Be(0); // Ensure that the value is not changed in case of failure
     }
 
-    [Theory]
-    [InlineData("", "", "")]
-    [InlineData("hello", "", "hello")]
-    [InlineData("", "world", "world")]
-    [InlineData("hello", "world", "helloworld")]
-    public void Suffix_WithVariousInputs_ReturnsCorrectResult(
-        string value, string suffixString, string expectedResult) {
-        // Arrange
-        ReadOnlySpan<char> suffix = suffixString;
-
-        // Act
-        string result = value.Suffix(suffix);
-
-        // Assert
-        result.Should().Be(expectedResult);
-    }
-
-    [Fact]
-    public void Suffix_WithLongSuffix_ReturnsCorrectResult() {
-        // Arrange
-        const string value = "prefix";
-        string suffixString = new('a', 10000);
-        string expectedResult = "prefix" + suffixString;
-        ReadOnlySpan<char> suffix = suffixString;
-
-        // Act
-        string result = value.Suffix(suffix);
-
-        // Assert
-        result.Should().Be(expectedResult);
-    }
-
-
     // Tests for Concat
     [Theory]
     [InlineData("", "", "")]
