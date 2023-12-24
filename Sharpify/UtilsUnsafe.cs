@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using U = System.Runtime.CompilerServices.Unsafe;
 
@@ -19,9 +19,20 @@ public static partial class Utils {
         /// This allows usage of a predicate to count elements that match a given condition, using hardware intrinsics to speed up the process.
         /// The integer return value allows to use this converted function with IEnumerable{T}.Sum which is a hardware accelerated method, but the result will be identical to calling Count(predicate).
         /// </remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Func<T, int> CreateIntegerPredicate<T>(Func<T, bool> predicate) =>
             U.As<Func<T, bool>, Func<T, int>>(ref predicate);
+
+        /// <summary>
+        /// Converts a read-only span to a mutable span.
+        /// </summary>
+        /// <typeparam name="T">The type of elements in the span.</typeparam>
+        /// <param name="span">The read-only span to convert.</param>
+        /// <returns>A mutable span.</returns>
+        public static unsafe Span<T> AsMutableSpan<T>(ReadOnlySpan<T> span) {
+            ref var p = ref MemoryMarshal.GetReference(span);
+            void* pointer = U.AsPointer(ref p);
+            return new Span<T>(pointer, span.Length);
+        }
 
         /// <summary>
         /// Attempts to unbox an object to a specified value type.

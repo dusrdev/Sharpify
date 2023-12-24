@@ -27,4 +27,18 @@ public partial class UtilsTests {
         result.Should().BeTrue();
         value.Should().Be(5);
     }
+
+    [Fact]
+    public void AsMutableSpan_ForValidInput_ValidResult() {
+        // Arrange
+        string str = "abc";
+        var span = str.AsSpan();
+
+        // Act
+        var mutableSpan = Utils.Unsafe.AsMutableSpan(span);
+        mutableSpan[2] = '1';
+
+        // Assert
+        str.Should().Be("ab1");
+    }
 }
