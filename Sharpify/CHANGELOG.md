@@ -26,6 +26,7 @@
 * Added another class `Utils.Unsafe` that has "hacky" utilities that allow you to reuse existing code in other high performance apis
 * New exceptions were added to validate function input in places where the JIT could you use this information to optimize the code by removing bound checks and such.
 * **BREAKING** all of the `ConvertToInt32` methods were removed, an in place a method `TryConvertToInt32(ReadOnlySpan{char}, out int result)` was added, it is more efficient and generic as it can work for signed and unsigned integers by relaying on the bool as the operation status.
+* `SortedList<T>`'s fields were changed to be protected and not private, this will make inheritance if you so choose, also added an implicit operator that will return the inner list for places which require a list input.
 
 ## v1.1.0
 
