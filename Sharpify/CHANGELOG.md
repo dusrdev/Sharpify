@@ -16,7 +16,7 @@
   * Edge cases of concurrent writing with `PersistentDictionary` are very hard to detect in unit tests due to inconsistencies in executing upserts in parallel, if you encounter any issues, please post the issue in the repo or email me.
 * Added `OpenLink(string url)` function to `Utils.Env` that supports opening a link on Windows, Mac, and Linux
 * `Result.Message` and `Result<T>.Message` is no longer nullable, and instead will default to an empty string.
-* Added `object.TryUnbox<T>` and `string.GetReference` extensions
+* `string.GetReference` extension
 * Added `Result.Fail` overloads that support a value, to allow usage of static defaults or empty collections
 * Added `HashSet.ToArrayFast()` method which converts a hash set to an array more efficiently than Linq.
 * Further optimized `AesProvider.GeneratePassword`
