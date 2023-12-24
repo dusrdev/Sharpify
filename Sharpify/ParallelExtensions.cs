@@ -25,9 +25,14 @@ public static partial class Extensions {
             return Task.CompletedTask;
         }
         var tasks = new Task[length];
+
+        ArgumentOutOfRangeException.ThrowIfNotEqual(tasks.Length, concurrentReference.Source.Count);
+        // Jit should use the exception to optimize the bounds check away
+
+        Span<Task> taskSpan = tasks;
         var i = 0;
         foreach (var item in concurrentReference.Source) {
-            tasks[i++] = action.InvokeAsync(item);
+            taskSpan[i++] = action.InvokeAsync(item);
         }
         return Task.WhenAll(tasks).WaitAsync(token);
     }
