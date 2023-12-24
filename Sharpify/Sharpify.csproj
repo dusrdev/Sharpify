@@ -10,7 +10,7 @@
     <Authors>David Shnayder</Authors>
     <Copyright>David Shnayder</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Sharpify</Title>
@@ -24,6 +24,7 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
+    <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
