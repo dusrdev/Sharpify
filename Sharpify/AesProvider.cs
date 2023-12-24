@@ -81,14 +81,12 @@ public sealed class AesProvider : IDisposable {
         hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
             | StringSplitOptions.TrimEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
-        int origIterations = 0;
-        hpSpan[parts[1]].ConvertToInt32Unsigned(ref origIterations);
+        hpSpan[parts[1]].TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
 #elif NET7_0_OR_GREATER
         var origHashedParts = hashedPassword.Split('|', StringSplitOptions.RemoveEmptyEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(origHashedParts[0]);
-        int origIterations = 0;
-        origHashedParts[1].AsSpan().ConvertToInt32Unsigned(ref origIterations);
+        origHashedParts[1].AsSpan().TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = origHashedParts[2];
 #endif
 
