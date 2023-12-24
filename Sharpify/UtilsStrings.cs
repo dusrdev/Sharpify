@@ -24,23 +24,32 @@ public static partial class Utils {
         public static string FormatBytes(double bytes) {
             const double kb = 1024d;
             const double divisor = 1 / kb;
-            var suffix = 0;
-            while (bytes >= kb && suffix < FileSizeSuffix.Length) {
-                bytes *= divisor;
-                suffix++;
-            }
-            var arr = ArrayPool<char>.Shared.Rent(9);
+            var arr = ArrayPool<char>.Shared.Rent(10);
             Span<char> buffer = arr;
-            int index = 0;
-            Math.Round(bytes, 2).TryFormat(buffer, out var charsWritten);
-            index += charsWritten;
-            buffer[index++] = ' ';
-            var suffixString = FileSizeSuffix[suffix];
-            suffixString.CopyTo(buffer[index..]);
-            index += suffixString.Length;
-            var res = new string(buffer[0..index]);
-            ArrayPool<char>.Shared.Return(arr);
-            return res;
+            if (bytes < kb) {
+                Math.Round(bytes, 2).TryFormat(buffer, out var index);
+                buffer[index++] = ' ';
+                var suffixString = FileSizeSuffix[0];
+                suffixString.CopyTo(buffer[index..]);
+                index += suffixString.Length;
+                var res = new string(buffer[0..index]);
+                ArrayPool<char>.Shared.Return(arr);
+                return res;
+            } else {
+                var suffix = 0;
+                while (bytes >= kb && suffix < FileSizeSuffix.Length) {
+                    bytes *= divisor;
+                    suffix++;
+                }
+                Math.Round(bytes, 2).TryFormat(buffer, out var index);
+                buffer[index++] = ' ';
+                var suffixString = FileSizeSuffix[suffix];
+                suffixString.CopyTo(buffer[index..]);
+                index += suffixString.Length;
+                var res = new string(buffer[0..index]);
+                ArrayPool<char>.Shared.Return(arr);
+                return res;
+            }
         }
     }
 }
