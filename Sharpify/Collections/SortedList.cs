@@ -7,9 +7,18 @@ namespace Sharpify.Collections;
 /// </summary>
 /// <typeparam name="T">The type of elements in the list.</typeparam>
 public class SortedList<T> : IReadOnlyList<T> {
-	private readonly List<T> _list;
-	private readonly IComparer<T> _comparer;
-	private readonly bool _allowDuplicates;
+	/// <summary>
+	/// The underlying list used for storing elements in the SortedList.
+	/// </summary>
+	protected readonly List<T> _list;
+	/// <summary>
+	/// The comparer used to compare elements in the sorted list.
+	/// </summary>
+	protected readonly IComparer<T> _comparer;
+	/// <summary>
+	/// Gets a value indicating whether the SortedList allows duplicate elements.
+	/// </summary>
+	protected readonly bool _allowDuplicates;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that is empty, has the default initial capacity, and uses the default comparer for the element type.
@@ -131,6 +140,14 @@ public class SortedList<T> : IReadOnlyList<T> {
 	/// Removes all elements from the SortedList.
 	/// </summary>
 	public void Clear() => _list.Clear();
+
+	/// <summary>
+	/// Returns the inner list of the sorted list.
+	/// </summary>
+	/// <remarks>
+	/// Use this to pass the sorted list to methods that expect a list.
+	/// </remarks>
+	public static implicit operator List<T>(SortedList<T> sortedList) => sortedList._list;
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the sorted list.
