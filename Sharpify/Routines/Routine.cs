@@ -9,7 +9,7 @@ public class Routine : IDisposable {
     /// <summary>
     /// List of actions to be executed by the routine.
     /// </summary>
-    public readonly List<Action> Actions = new();
+    public readonly List<Action> Actions = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Routine"/> class with the specified interval.

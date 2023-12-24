@@ -15,7 +15,7 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// List of asynchronous actions to be executed.
     /// </summary>
-    public readonly List<Func<CancellationToken, Task>> Actions = new();
+    public readonly List<Func<CancellationToken, Task>> Actions = [];
 
     private Task[] _tasks;
 
@@ -30,7 +30,7 @@ public class AsyncRoutine : IDisposable {
         _timer = new PeriodicTimer(interval);
         _isRunning = true;
         _cancellationTokenSource = cancellationTokenSource;
-        _tasks = Array.Empty<Task>();
+        _tasks = [];
     }
 
     /// <summary>

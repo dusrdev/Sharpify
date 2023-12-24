@@ -42,8 +42,7 @@ public static partial class Utils {
         /// <param name="value">When this method returns, contains the unboxed value if the unboxing is successful; otherwise, the default value of <typeparamref name="T"/>.</param>
         /// <returns><c>true</c> if the unboxing is successful; otherwise, <c>false</c>.</returns>
         /// <remarks>Copied from CommunityToolkit.HighPerformance</remarks>
-        public static bool TryUnbox<T>(object obj, out T value)
-            where T : struct {
+        public static bool TryUnbox<T>(object obj, out T value) where T : struct {
             if (obj.GetType() == typeof(T)) {
                 value = U.Unbox<T>(obj);
                 return true;
