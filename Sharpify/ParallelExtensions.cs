@@ -26,8 +26,10 @@ public static partial class Extensions {
         }
         var tasks = new Task[length];
 
+#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfNotEqual(tasks.Length, concurrentReference.Source.Count);
         // Jit should use the exception to optimize the bounds check away
+#endif
 
         Span<Task> taskSpan = tasks;
         var i = 0;

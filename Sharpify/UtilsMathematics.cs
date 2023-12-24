@@ -17,7 +17,9 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
+#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(sampleCount, 0);
+#endif
 
             if (sampleCount is <= 0)
                 return newNumber;
@@ -36,7 +38,9 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double Factorial(double n) {
+#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(n, 0);
+#endif
 
             if (n is <= 2) {
                 return n;
