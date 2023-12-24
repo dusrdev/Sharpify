@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Sharpify;
 
 public static partial class Utils {
@@ -19,7 +17,7 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
-            Debug.Assert(sampleCount >= 0, "Count must be greater than or equal to 0");
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(sampleCount, 0);
 
             if (sampleCount is <= 0)
                 return newNumber;
@@ -38,7 +36,7 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double Factorial(double n) {
-            Debug.Assert(n > 0, "Number must be greater than 0");
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(n, 0);
 
             if (n is <= 2) {
                 return n;
