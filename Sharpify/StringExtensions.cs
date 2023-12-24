@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -10,8 +11,7 @@ public static partial class Extensions {
     /// <param name="text">The string.</param>
     /// <returns>A reference to the first character of the string.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref char GetReference(this string text)
-    {
+    public static ref char GetReference(this string text) {
         return ref Unsafe.AsRef(in text.GetPinnableReference());
     }
 
@@ -25,119 +25,51 @@ public static partial class Extensions {
     /// </summary>
     public static bool IsNullOrWhiteSpace(this string str) => string.IsNullOrWhiteSpace(str);
 
-    /// <summary>
-    /// Converts a string to an int32.
-    /// </summary>
-    public static int ConvertToInt32(this string value) {
-        if (string.IsNullOrWhiteSpace(value)) {
-            return 0;
-        }
-        var str = value.AsSpan();
-        bool isNegative = str[0] is '-';
-        if (isNegative) {
-            str = str[1..];
-        }
-        var num = 0;
-        for (var i = 0; i < str.Length; i++) {
-            var digit = str[i] - '0';
 
-            // Check for invalid digit
-            if (digit is < 0 or > 9) {
-                return 0;
-            }
+#pragma warning disable CS1584 // XML comment has syntactically incorrect cref attribute
 
-            // Check for overflow
-            if (num > (int.MaxValue - digit) / 10) {
-                return 0;
-            }
 
-            num = (num * 10) + digit;
-        }
-        return isNegative ? -1 * num : num;
-    }
+#pragma warning disable CS1658 // Warning is overriding an error
 
     /// <summary>
-    /// Converts a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/> to an int32 (Use when you are sure it will only be positive).
+    /// Tries to convert a <see cref="ReadOnlySpan{char}"/> to an <see cref="int"/>.
     /// </summary>
-    /// <remarks>
-    /// Here, invalid returns -1, you could use this to check if the conversion was successful.
-    /// </remarks>
-    public static int ConvertsToInt32Unsigned(this ReadOnlySpan<char> str) {
-        var num = 0;
-        ConvertToInt32Unsigned(str, ref num);
-        return num;
-    }
-
-    /// <summary>
-    /// Converts a string or <see cref="ReadOnlySpan{T}"/> into an int32 ref.
-    /// </summary>
-    public static void ConvertToInt32Unsigned(this ReadOnlySpan<char> str, ref int result) {
-        // Check for empty string or larger than Int.MaxValue
-        if (str.IsEmpty) {
-            result = -1;
-            return;
-        }
-        for (var i = 0; i < str.Length; i++) {
-            var digit = str[i] - '0';
-
-            // Check for invalid digit
-            if (digit is < 0 or > 9) {
-                result = -1;
-                break;
-            }
-
-            // Check for overflow
-            if (result > (int.MaxValue - digit) / 10) {
-                result = -1;
-                return;
-            }
-
-            result = (result * 10) + digit;
-        }
-    }
-
-    /// <summary>
-    /// Converts a string to an int32 (Use when you are sure it will only be positive).
-    /// </summary>
-    /// <remarks>
-    /// Here, invalid returns -1, you could use this to check if the conversion was successful.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ConvertToInt32Unsigned(this string str) => str.AsSpan().ConvertsToInt32Unsigned();
-
-    /// <summary>
-    /// Tries to convert a string to an int32.
-    /// </summary>
-    /// <remarks>
-    /// In case it fails, the value of num is not changed.
-    /// </remarks>
-    public static bool TryConvertToInt32(this string value, ref int result) {
-        // Check for empty string or larger than Int.MaxValue
-        if (value.Length is 0 or > 10) {
+    /// <param name="value">The <see cref="ReadOnlySpan{char}"/> to convert.</param>
+    /// <param name="result">When this method returns, contains the converted <see cref="int"/> if the conversion succeeded, or zero if the conversion failed.</param>
+    /// <returns><c>true</c> if the conversion succeeded; otherwise, <c>false</c>.</returns>
+    public static bool TryConvertToInt32(this ReadOnlySpan<char> value, out int result) {
+        result = 0;
+        if (value.IsWhiteSpace() || value.Length > 11) { // 10 is the max length of an int32 + 1 for sign
             return false;
         }
-        var str = value.AsSpan();
-        int prevValue = result;
-        result = 0;
-        for (var i = 0; i < str.Length; i++) {
-            var digit = str[i] - '0';
+        bool isNegative = value[0] is '-';
+        var length = value.Length;
+        int i = 0;
+        if (isNegative) {
+            i++;
+        }
+        for (; i < length; i++) {
+            var digit = value[i] - '0';
 
             // Check for invalid digit
             if (digit is < 0 or > 9) {
-                result = prevValue;
+                result = 0;
                 return false;
             }
 
-            // Check for overflow
-            if (result > (int.MaxValue - digit) / 10) {
-                result = prevValue;
-                return false;
+            unchecked {
+                result = (result * 10) + digit;
             }
-
-            result = (result * 10) + digit;
+        }
+        if (isNegative) {
+            result *= -1;
         }
         return true;
     }
+#pragma warning restore CS1658 // Warning is overriding an error
+#pragma warning restore CS1584 // XML comment has syntactically incorrect cref attribute
+
+
 
     /// <summary>
     /// Suffixes a string with a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/>.
@@ -159,14 +91,13 @@ public static partial class Extensions {
             return new string(suffix);
         }
         if (suffix.Length is 0) {
-            return new string(value);
+            return value;
         }
         var str = value.AsSpan();
-        Span<char> res = stackalloc char[str.Length + suffix.Length];
+        char[] res = ArrayPool<char>.Shared.Rent(str.Length + suffix.Length);
         Span<char> resSpan = res;
         str.CopyTo(resSpan);
-        resSpan = resSpan[str.Length..];
-        suffix.CopyTo(resSpan);
+        suffix.CopyTo(resSpan[str.Length..]);
         return new string(res);
     }
 
