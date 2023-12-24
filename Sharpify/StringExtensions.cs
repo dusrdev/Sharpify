@@ -69,8 +69,6 @@ public static partial class Extensions {
 #pragma warning restore CS1658 // Warning is overriding an error
 #pragma warning restore CS1584 // XML comment has syntactically incorrect cref attribute
 
-
-
     /// <summary>
     /// Suffixes a string with a <see cref="ReadOnlySpan{T}"/> where T is <see langword="char"/>.
     /// </summary>
@@ -94,11 +92,14 @@ public static partial class Extensions {
             return value;
         }
         var str = value.AsSpan();
-        char[] res = ArrayPool<char>.Shared.Rent(str.Length + suffix.Length);
-        Span<char> resSpan = res;
+        var length = str.Length + suffix.Length;
+        char[] arr = ArrayPool<char>.Shared.Rent(length);
+        Span<char> resSpan = arr;
         str.CopyTo(resSpan);
         suffix.CopyTo(resSpan[str.Length..]);
-        return new string(res);
+        var res = new string(arr[0..length]);
+        ArrayPool<char>.Shared.Return(arr);
+        return res;
     }
 
     /// <summary>
