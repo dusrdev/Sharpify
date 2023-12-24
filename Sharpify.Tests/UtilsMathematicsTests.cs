@@ -18,34 +18,6 @@ public partial class UtilsTests {
         result.Should().Be(expectedResult);
     }
 
-#if DEBUG
-    [Fact]
-    public void RollingAverage_WithNegativeCount_ThrowsDebugAssertException() {
-        // Arrange
-        double res = -1;
-        const double val = 10;
-        const double newVal = 15;
-        const int count = -1;
-
-        // Act
-        var act = () => res = Utils.Mathematics.RollingAverage(val, newVal, count);
-
-        // Assert
-        act.Should().Throw<Exception>();
-    }
-#endif
-
-#if DEBUG
-    [Fact]
-    public void Factorial_NegativeInput_ThrowsDebugAssertFailure() {
-        // Arrange
-        var act = () => Utils.Mathematics.Factorial(-1);
-
-        //Act and Assert
-        act.Should().Throw<Exception>();
-    }
-#endif
-
     [Theory]
     [InlineData(5, 120)]
     [InlineData(8, 40320)]

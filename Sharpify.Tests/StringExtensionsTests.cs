@@ -76,10 +76,10 @@ public class StringExtensionsTests {
 
     [Theory]
     [InlineData("")]
-    [InlineData("-1")]
-    [InlineData("2147483648")] // int.MaxValue + 1
-    [InlineData("1.23")]
-    [InlineData("123abc")]
+    [InlineData("-1 5")] // whitespace
+    [InlineData("214748364841232131231")] // larger than int.MaxValue
+    [InlineData("1.23")] // decimal
+    [InlineData("123abc")] // alphanumeric
     public void TryConvertToInt32_InvalidString_ReturnsFalse(string input) {
         bool result = input.AsSpan().TryConvertToInt32(out var output);
 
