@@ -24,6 +24,8 @@
 * Further optimized `TimeSpan.Format`
 * Multiple string creating functions which used to stack allocate the buffers, now rent them instead, potentially reducing overall application memory usage.
 * Added another class `Utils.Unsafe` that has "hacky" utilities that allow you to reuse existing code in other high performance apis
+* New exceptions were added to validate function input in places where the JIT could you use this information to optimize the code by removing bound checks and such.
+* **BREAKING** all of the `ConvertToInt32` methods were removed, an in place a method `TryConvertToInt32(ReadOnlySpan{char}, out int result)` was added, it is more efficient and generic as it can work for signed and unsigned integers by relaying on the bool as the operation status.
 
 ## v1.1.0
 
