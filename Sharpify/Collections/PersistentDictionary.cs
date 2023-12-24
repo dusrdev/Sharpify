@@ -93,7 +93,7 @@ public abstract class PersistentDictionary {
 
         // Skip updating if the key exists and the value is the same
         var existingValue = GetValueByKey(key);
-        if (existingValue is not null && existingValue.AsSpan().Equals(value.AsSpan(), StringComparison.Ordinal)) {
+        if (existingValue is not null && Equals(existingValue, value, StringComparison.Ordinal)) {
             return;
         }
 
@@ -119,6 +119,10 @@ public abstract class PersistentDictionary {
         await SerializeDictionaryAsync();
 
         _semaphore.Release();
+
+        static bool Equals(ReadOnlySpan<char> left, ReadOnlySpan<char> right, StringComparison comparison) {
+            return left.Equals(right, comparison);
+        }
     }
 
     /// <summary>
