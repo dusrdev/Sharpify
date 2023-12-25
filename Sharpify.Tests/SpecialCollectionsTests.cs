@@ -188,9 +188,10 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_NoCapacity_Throws() {
         // Arrange
-        using var buffer = new StringBuffer();
-
-        Action act = () => buffer.Append('a');
+        Action act = () => {
+            using var buffer = new StringBuffer();
+            buffer.Append('a');
+        };
 
         // Act & Assert
         act.Should().Throw<ArgumentOutOfRangeException>();

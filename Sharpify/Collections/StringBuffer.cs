@@ -5,7 +5,7 @@ namespace Sharpify.Collections;
 /// <summary>
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
-public struct StringBuffer : IDisposable {
+public ref struct StringBuffer {
     private readonly char[] _buffer;
     private readonly int _length;
     private int _position;
@@ -101,6 +101,12 @@ public struct StringBuffer : IDisposable {
     /// </summary>
     /// <param name="buffer"></param>
     public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true);
+
+    /// <summary>
+    /// Returns a string allocated from the StringBuffer.
+    /// </summary>
+    /// <remarks>It is identical to <see cref="Allocate(bool)"/></remarks>
+    public override readonly string ToString() => Allocate(true);
 
     /// <summary>
     /// Releases the resources used by the StringBuffer.
