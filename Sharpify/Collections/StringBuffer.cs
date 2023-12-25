@@ -40,7 +40,7 @@ public ref struct StringBuffer {
 #if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan<int>(_position + 1, _length);
 #elif NET7_0
-        if (_position + 1 >= _length) {
+        if (_position + 1 > _length) {
             throw new ArgumentOutOfRangeException(nameof(_length));
         }
 #endif
@@ -56,7 +56,7 @@ public ref struct StringBuffer {
 #if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan<int>(_position + str.Length, _length);
 #elif NET7_0
-        if (_position + str.Length >= _length) {
+        if (_position + str.Length > _length) {
             throw new ArgumentOutOfRangeException(nameof(_length));
         }
 #endif
@@ -77,7 +77,7 @@ public ref struct StringBuffer {
         var span = _buffer.AsSpan(_position);
         var written = value.TryFormat(span, out var charsWritten, format, provider);
         if (!written) {
-            throw new ArgumentOutOfRangeException("Buffer is full");
+            throw new ArgumentOutOfRangeException(nameof(_length));
         }
 
         _position += charsWritten;
@@ -86,27 +86,31 @@ public ref struct StringBuffer {
     /// <summary>
     /// Allocates a string from the internal buffer.
     /// </summary>
-    /// <param name="trimEnd">Indicates whether to trim the string from the end.</param>
+    /// <param name="trimIfShorter">Indicates whether to trim the string from the end.</param>
+    /// <param name="trimEndWhiteSpace">Will try to trim the end white spaces</param>
     /// <returns>The allocated string.</returns>
-    public readonly string Allocate(bool trimEnd = true) {
+    public readonly string Allocate(bool trimIfShorter = true, bool trimEndWhiteSpace = false) {
         ReadOnlySpan<char> span = _buffer;
-        var str = trimEnd
-            ? new string(span[0.._position])
-            : new string(span[0.._length]);
-        return str;
+        ReadOnlySpan<char> slice = trimIfShorter
+            ? span[0.._position]
+            : span[0.._length];
+        if (trimEndWhiteSpace) {
+            slice = slice.TrimEnd();
+        }
+        return new string(slice);
     }
 
     /// <summary>
     /// Use the allocate function with the trimEnd parameter set to true.
     /// </summary>
     /// <param name="buffer"></param>
-    public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true);
+    public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.
     /// </summary>
-    /// <remarks>It is identical to <see cref="Allocate(bool)"/></remarks>
-    public override readonly string ToString() => Allocate(true);
+    /// <remarks>It is identical to <see cref="Allocate(bool, bool)"/></remarks>
+    public override readonly string ToString() => Allocate(true, false);
 
     /// <summary>
     /// Releases the resources used by the StringBuffer.

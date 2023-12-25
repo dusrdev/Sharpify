@@ -226,6 +226,22 @@ public class SpecialCollectionsTests {
         // Assert
         buffer.Allocate(true).Should().Be("abcd");
     }
+
+    [Fact]
+    public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
+        // Arrange
+        using var buffer = new StringBuffer(5, true);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+        buffer.Append(' ');
+
+        // Assert
+        buffer.Allocate(true, true).Should().Be("abcd");
+    }
 }
 
 public class TestLocalPersistentDictionary : LocalPersistentDictionary {

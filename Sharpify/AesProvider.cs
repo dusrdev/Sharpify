@@ -56,15 +56,13 @@ public sealed class AesProvider : IDisposable {
         var hashString = Convert.ToBase64String(hash);
 
         // length = salt + iteration count (3 digits max) + hash + 2 delimiters
-        Span<char> pass = stackalloc char[saltString.Length + 3 + hashString.Length + 2];
-        int index = 0;
-        saltString.AsSpan().CopyTo(pass);
-        index += saltString.Length;
-        pass[index++] = '|';
-        index += iterations.TryFormat(pass[index..], out var charsWritten) ? charsWritten : 0;
-        pass[index++] = '|';
-        hashString.AsSpan().CopyTo(pass[index..]);
-        return new string(pass);
+        using var buffer = new Collections.StringBuffer(saltString.Length + 3 + hashString.Length + 2);
+        buffer.Append(saltString);
+        buffer.Append('|');
+        buffer.Append(iterations);
+        buffer.Append('|');
+        buffer.Append(hashString);
+        return buffer;
     }
 
     /// <summary>

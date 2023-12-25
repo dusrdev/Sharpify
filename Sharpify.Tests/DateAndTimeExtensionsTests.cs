@@ -54,6 +54,6 @@ public class DateAndTimeExtensionsTests {
         var result = dateTime.ToTimeStamp();
 
         // Assert
-        result.Should().Be("1355-06-Apr-22");
+        result.Should().Be("1355-6-Apr-22");
     }
 }

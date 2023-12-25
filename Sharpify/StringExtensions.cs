@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -85,7 +86,18 @@ public static partial class Extensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ToTitle(this string str) => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
 
+#if NET8_0_OR_GREATER
+    private const string BinaryChars = "01 \t\n\r";
+    private static readonly SearchValues<char> BinarySearchValues = SearchValues.Create(BinaryChars);
+
     /// <summary>
+    /// Checks if a string is a valid binary string (0,1,' ','\t','\n','\r')
+    /// </summary>
+    public static bool IsBinary(this string str) {
+        return !str.AsSpan().ContainsAnyExcept(BinarySearchValues);
+    }
+#elif NET7_0_OR_GREATER
+        /// <summary>
     /// Checks if a string is a valid binary string (0,1,' ','\t','\n','\r')
     /// </summary>
     public static bool IsBinary(this string str) {
@@ -97,4 +109,5 @@ public static partial class Extensions {
         }
         return true;
     }
+#endif
 }
