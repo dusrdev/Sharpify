@@ -184,6 +184,47 @@ public class SpecialCollectionsTests {
         // Assert
         dict["two"].Should().Be("2");
     }
+
+    [Fact]
+    public void StringBuffer_NoCapacity_Throws() {
+        // Arrange
+        using var buffer = new StringBuffer();
+
+        Action act = () => buffer.Append('a');
+
+        // Act & Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_NoTrimming_ReturnFullString() {
+        // Arrange
+        using var buffer = new StringBuffer(5, true);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer.Allocate(false).Should().Be("abcd\0");
+    }
+
+    [Fact]
+    public void StringBuffer_WithTrimming_ReturnTrimmedString() {
+        // Arrange
+        using var buffer = new StringBuffer(5, true);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer.Allocate(true).Should().Be("abcd");
+    }
 }
 
 public class TestLocalPersistentDictionary : LocalPersistentDictionary {
