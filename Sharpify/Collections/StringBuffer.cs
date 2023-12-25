@@ -6,7 +6,8 @@ namespace Sharpify.Collections;
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
 public ref struct StringBuffer {
-    private readonly char[] _buffer;
+    private readonly char[] _source;
+    private readonly Span<char> _buffer;
     private readonly int _length;
     private int _position;
 
@@ -17,10 +18,11 @@ public ref struct StringBuffer {
     /// <param name="clearBuffer">Whether clearing the buffer. Has a slight performance hit</param>
     public StringBuffer(int capacity, bool clearBuffer = false) {
         _length = capacity;
-        _buffer = ArrayPool<char>.Shared.Rent(_length);
+        _source = ArrayPool<char>.Shared.Rent(_length);
         if (clearBuffer) {
-            Array.Clear(_buffer);
+            Array.Clear(_source);
         }
+        _buffer = _source;
         _position = 0;
     }
 
@@ -61,7 +63,7 @@ public ref struct StringBuffer {
         }
 #endif
 
-        str.CopyTo(_buffer.AsSpan(_position));
+        str.CopyTo(_buffer[_position..]);
         _position += str.Length;
     }
 
@@ -74,8 +76,7 @@ public ref struct StringBuffer {
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
     public void Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
-        var span = _buffer.AsSpan(_position);
-        var written = value.TryFormat(span, out var charsWritten, format, provider);
+        var written = value.TryFormat(_buffer[_position..], out var charsWritten, format, provider);
         if (!written) {
             throw new ArgumentOutOfRangeException(nameof(_length));
         }
@@ -115,5 +116,5 @@ public ref struct StringBuffer {
     /// <summary>
     /// Releases the resources used by the StringBuffer.
     /// </summary>
-    public readonly void Dispose() => ArrayPool<char>.Shared.Return(_buffer, false);
+    public readonly void Dispose() => ArrayPool<char>.Shared.Return(_source, false);
 }
