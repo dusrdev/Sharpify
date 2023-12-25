@@ -1,30 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <PackageVersion>1.2.1</PackageVersion>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Authors>David Shnayder</Authors>
-    <Copyright>David Shnayder</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Title>Sharpify</Title>
-    <Description>A collection of high performance language extensions for C#</Description>
-    <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>Extensions;HighPerformance;DiscriminatedUnion;Result</PackageTags>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <PackageVersion>1.2.1</PackageVersion>
+        <AssemblyVersion>1.2.1</AssemblyVersion>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Authors>David Shnayder</Authors>
+        <Copyright>David Shnayder</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Title>Sharpify</Title>
+        <Description>A collection of high performance language extensions for C#</Description>
+        <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Extensions;HighPerformance;DiscriminatedUnion;Result</PackageTags>
+        <PackageLicenseUrl>https://github.com/dusrdev/Sharpify/blob/main/LICENSE.txt</PackageLicenseUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-    <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
-    <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include="CHANGELOG.md" Pack="true" PackagePath="\"/>
+        <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+    </ItemGroup>
 
 </Project>
