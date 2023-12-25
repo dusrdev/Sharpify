@@ -177,6 +177,19 @@ public sealed class AesProvider : IDisposable {
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
+#if NET8_0_OR_GREATER
+        var mutableBuffer = Utils.Unsafe.AsMutableSpan<char>(base64Url);
+        mutableBuffer.Replace('-', '+');
+        mutableBuffer.Replace('_', '/');
+
+        using var buffer = new Collections.StringBuffer(mutableBuffer.Length + 2);
+        buffer.Append(mutableBuffer);
+        switch (mutableBuffer.Length % 4) {
+            case 2: buffer.Append("=="); break;
+            case 3: buffer.Append('='); break;
+        }
+        return Convert.FromBase64String(buffer);
+#elif NET7_0
         var base64 = new StringBuilder(base64Url);
         base64.Replace('-', '+')
               .Replace('_', '/');
@@ -185,11 +198,23 @@ public sealed class AesProvider : IDisposable {
             case 3: base64.Append('='); break;
         }
         return Convert.FromBase64String(base64.ToString());
+#endif
     }
 
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(byte[] bytes) {
         var base64 = Convert.ToBase64String(bytes);
+#if NET8_0_OR_GREATER
+        var mutableBuffer = Utils.Unsafe.AsMutableSpan<char>(base64);
+        mutableBuffer.Replace('+', '-');
+        mutableBuffer.Replace('/', '_');
+
+        if (mutableBuffer[^1] is '=') {
+            mutableBuffer = mutableBuffer[..^1];
+        }
+
+        return new string(mutableBuffer);
+#elif NET7_0
         var sb = new StringBuilder(base64);
         sb.Replace('+', '-')
           .Replace('/', '_');
@@ -197,6 +222,7 @@ public sealed class AesProvider : IDisposable {
             sb.Remove(sb.Length - 1, 1);
         }
         return sb.ToString();
+#endif
     }
 
     /// <summary>
