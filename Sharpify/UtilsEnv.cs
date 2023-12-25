@@ -45,7 +45,7 @@ public static partial class Utils {
         /// </summary>
         /// <param name="filename">The name of the file.</param>
         /// <returns>The combined path.</returns>
-        public static string PathInBaseDirectory(string filename) => Path.Combine(GetBaseDirectory(), filename);
+        public static string PathInBaseDirectory(ReadOnlySpan<char> filename) => Path.Join(GetBaseDirectory(), filename);
 
         /// <summary>
         /// Checks whether Internet connection is available
