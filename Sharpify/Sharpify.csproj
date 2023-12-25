@@ -20,7 +20,6 @@
         <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Extensions;HighPerformance;DiscriminatedUnion;Result</PackageTags>
-        <PackageLicenseUrl>https://github.com/dusrdev/Sharpify/blob/main/LICENSE.txt</PackageLicenseUrl>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
