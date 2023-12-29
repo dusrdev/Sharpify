@@ -242,6 +242,21 @@ public class SpecialCollectionsTests {
         // Assert
         buffer.Allocate(true, true).Should().Be("abcd");
     }
+
+    [Fact]
+    public void StringBuffer_AllocateWithIndexes() {
+        // Arrange
+        using var buffer = new StringBuffer(4);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer.Allocate(1, 1).Should().Be("bc");
+    }
 }
 
 public class TestLocalPersistentDictionary : LocalPersistentDictionary {
