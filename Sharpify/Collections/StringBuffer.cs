@@ -22,7 +22,7 @@ public ref struct StringBuffer {
         if (clearBuffer) {
             Array.Clear(_source);
         }
-        _buffer = _source;
+        _buffer = _source.AsSpan()[0.._length];
         _position = 0;
     }
 
@@ -92,13 +92,24 @@ public ref struct StringBuffer {
     /// <returns>The allocated string.</returns>
     public readonly string Allocate(bool trimIfShorter = true, bool trimEndWhiteSpace = false) {
         ReadOnlySpan<char> span = _buffer;
-        ReadOnlySpan<char> slice = trimIfShorter
-            ? span[0.._position]
-            : span[0.._length];
-        if (trimEndWhiteSpace) {
-            slice = slice.TrimEnd();
+        if (trimIfShorter) {
+            span = span[0.._position];
         }
-        return new string(slice);
+        if (trimEndWhiteSpace) {
+            span = span.TrimEnd();
+        }
+        return new string(span);
+    }
+
+    /// <summary>
+    /// Allocates a substring from the internal buffer.
+    /// </summary>
+    /// <param name="start">The starting index of the substring.</param>
+    /// <param name="fromEnd">The number of characters to exclude from the end of the substring.</param>
+    /// <returns>A string representing the allocated substring.</returns>
+    public readonly string Allocate(int start, int fromEnd) {
+        ReadOnlySpan<char> span = _buffer[start..^fromEnd];
+        return new string(span);
     }
 
     /// <summary>
