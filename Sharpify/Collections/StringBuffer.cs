@@ -101,14 +101,18 @@ public ref struct StringBuffer {
         return new string(span);
     }
 
+
     /// <summary>
-    /// Allocates a substring from the internal buffer.
+    /// Allocates a substring from the internal buffer using the specified range.
     /// </summary>
-    /// <param name="start">The starting index of the substring.</param>
-    /// <param name="fromEnd">The number of characters to exclude from the end of the substring.</param>
-    /// <returns>A string representing the allocated substring.</returns>
-    public readonly string Allocate(int start, int fromEnd) {
-        ReadOnlySpan<char> span = _buffer[start..^fromEnd];
+    public readonly string this[Range range] => Allocate(range);
+
+    /// <summary>
+    /// Allocates a substring from the internal buffer using the specified range.
+    /// </summary>
+    /// <param name="range"></param>
+    private readonly string Allocate(Range range) {
+        ReadOnlySpan<char> span = _buffer[range];
         return new string(span);
     }
 

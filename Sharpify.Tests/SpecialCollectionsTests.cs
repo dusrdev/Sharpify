@@ -255,7 +255,7 @@ public class SpecialCollectionsTests {
         buffer.Append('d');
 
         // Assert
-        buffer.Allocate(1, 1).Should().Be("bc");
+        buffer[1..^1].Should().Be("bc");
     }
 }
 
