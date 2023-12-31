@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using Sharpify.Collections;
+
 namespace Sharpify;
 
 /// <summary>
@@ -56,7 +58,8 @@ public sealed class AesProvider : IDisposable {
         var hashString = Convert.ToBase64String(hash);
 
         // length = salt + iteration count (3 digits max) + hash + 2 delimiters
-        using var buffer = new Collections.StringBuffer(saltString.Length + 3 + hashString.Length + 2);
+        int length = saltString.Length + 3 + hashString.Length + 2;
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[length]);
         buffer.Append(saltString);
         buffer.Append('|');
         buffer.Append(iterations);
@@ -82,7 +85,7 @@ public sealed class AesProvider : IDisposable {
         hpSpan[parts[1]].TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
 #elif NET7_0_OR_GREATER
-        var origHashedParts = hashedPassword.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        var origHashedParts = hashedPassword.Split('|', 3, StringSplitOptions.RemoveEmptyEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(origHashedParts[0]);
         origHashedParts[1].AsSpan().TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = origHashedParts[2];
@@ -178,17 +181,20 @@ public sealed class AesProvider : IDisposable {
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
 #if NET8_0_OR_GREATER
-        var mutableBuffer = Utils.Unsafe.AsMutableSpan<char>(base64Url);
-        mutableBuffer.Replace('-', '+');
-        mutableBuffer.Replace('_', '/');
-
-        using var buffer = new Collections.StringBuffer(mutableBuffer.Length + 2);
-        buffer.Append(mutableBuffer);
-        switch (mutableBuffer.Length % 4) {
-            case 2: buffer.Append("=="); break;
-            case 3: buffer.Append('='); break;
+        Span<char> buffer = stackalloc char[base64Url.Length + 2];
+        var span = base64Url.AsSpan();
+        span.Replace(buffer, '-', '+');
+        MemoryExtensions.Replace(buffer, buffer, '_', '/');
+        int mod = span.Length % 4;
+        int length = span.Length;
+        if (mod is 2) {
+            "==".CopyTo(buffer[span.Length..]);
+            length += 2;
+        } else if (mod is 3) {
+            buffer[span.Length] = '=';
+            length += 1;
         }
-        return Convert.FromBase64String(buffer);
+        return Convert.FromBase64String(new string(buffer[0..length]));
 #elif NET7_0
         var base64 = new StringBuilder(base64Url);
         base64.Replace('-', '+')
@@ -205,6 +211,7 @@ public sealed class AesProvider : IDisposable {
     private static string Base64UrlEncode(byte[] bytes) {
         var base64 = Convert.ToBase64String(bytes);
 #if NET8_0_OR_GREATER
+        // mutation is safe here because base64 is limited to the function scope anyway
         var mutableBuffer = Utils.Unsafe.AsMutableSpan<char>(base64);
         mutableBuffer.Replace('+', '-');
         mutableBuffer.Replace('/', '_');
