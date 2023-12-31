@@ -1,4 +1,6 @@
 nuget:
+dotnet clean -c Release
+dotnet build -c Release
 dotnet pack -c Release -p:SignAssembly=""
 
 dll:
