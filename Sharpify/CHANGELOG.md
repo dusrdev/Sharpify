@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.2.1
+## v1.3.0
 
 * Addressed issue which resulted in some parts of the library having older implementations when downloading the package using nuget.
 * Added new `StringBuffer` collection, which rents a buffer of specified length, and allows efficient appending of elements without using any low level apis, indexing or slice management. And with zero costs to performance (tested in benchmarks), for smaller lengths it is more recommended to use `AllocatedStringBuffer` with `stackalloc`, for larger than about 1024 characters it would be better to use `StringBuffer` as the it would create less pressure on the system, at those scales `stackalloc` can become slow and sometimes may even fail.

@@ -4,8 +4,8 @@
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
-        <PackageVersion>1.2.1</PackageVersion>
-        <AssemblyVersion>1.2.1</AssemblyVersion>
+        <PackageVersion>1.3.0</PackageVersion>
+        <AssemblyVersion>1.3.0</AssemblyVersion>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
