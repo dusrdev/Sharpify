@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using Sharpify.Collections;
+
 namespace Sharpify;
 
 public static partial class Utils {
@@ -24,7 +26,7 @@ public static partial class Utils {
             const double kb = 1024d;
             const double divisor = 1 / kb;
 
-            using var buffer = new Collections.StringBuffer(10);
+            var buffer = AllocatedStringBuffer.Create(stackalloc char[10]);
             if (bytes < kb) {
                 buffer.Append(Math.Round(bytes, 2));
                 buffer.Append(' ');
