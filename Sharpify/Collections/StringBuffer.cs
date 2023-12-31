@@ -35,6 +35,11 @@ public ref struct StringBuffer {
     public StringBuffer() : this(0, false) { }
 
     /// <summary>
+    /// Represents a mutable string buffer that allows efficient concatenation of strings and other types.
+    /// </summary>
+    public static StringBuffer Create(int capacity, bool clearBuffer = false) => new(capacity, clearBuffer);
+
+    /// <summary>
     /// Appends a character to the string buffer.
     /// </summary>
     /// <param name="c">The character to append.</param>
