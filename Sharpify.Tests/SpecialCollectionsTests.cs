@@ -200,7 +200,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
-        using var buffer = new StringBuffer(5, true);
+        using var buffer = StringBuffer.Create(5, true);
 
         // Act
         buffer.Append('a');
@@ -215,7 +215,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = new StringBuffer(5, true);
+        using var buffer = StringBuffer.Create(5, true);
 
         // Act
         buffer.Append('a');
@@ -230,7 +230,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = new StringBuffer(5, true);
+        using var buffer = StringBuffer.Create(5, true);
 
         // Act
         buffer.Append('a');
@@ -246,7 +246,80 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_AllocateWithIndexes() {
         // Arrange
-        using var buffer = new StringBuffer(4);
+        using var buffer = StringBuffer.Create(4);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer[1..^1].Should().Be("bc");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_NoCapacity_Throws() {
+        // Arrange
+        Action act = () => {
+            var buffer = new AllocatedStringBuffer();
+            buffer.Append('a');
+        };
+
+        // Act & Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_NoTrimming_ReturnFullString() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer.Allocate(false).Should().Be("abcd\0");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_WithTrimming_ReturnTrimmedString() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        buffer.Allocate(true).Should().Be("abcd");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+        buffer.Append(' ');
+
+        // Assert
+        buffer.Allocate(true, true).Should().Be("abcd");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_AllocateWithIndexes() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
 
         // Act
         buffer.Append('a');

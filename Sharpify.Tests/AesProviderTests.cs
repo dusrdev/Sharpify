@@ -62,8 +62,10 @@ public class AesProviderTests {
 
         for (int i = 0; i < 100; i++) {
             string url = cset.FileName();
+            string copy = new(url);
             string encryptedUrl = aesProvider.EncryptUrl(url);
             string decryptedUrl = aesProvider.DecryptUrl(encryptedUrl);
+            url.Should().Be(copy);
             decryptedUrl.Should().Be(url);
         }
     }
