@@ -3,3 +3,6 @@ dotnet pack -c Release -p:SignAssembly=""
 
 dll:
 dotnet build -f net8.0 -c Release -p:SignAssembly=""
+
+docs:
+git subtree push --prefix docs https://github.com/dusrdev/Sharpify.wiki.git master
