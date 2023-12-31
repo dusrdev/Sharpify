@@ -4,8 +4,8 @@
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
-        <PackageVersion>1.3.0</PackageVersion>
-        <AssemblyVersion>1.3.0</AssemblyVersion>
+        <PackageVersion>1.3.1</PackageVersion>
+        <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
@@ -22,16 +22,17 @@
         <PackageTags>Extensions;HighPerformance;DiscriminatedUnion;Result</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <SynchReleaseVersion>false</SynchReleaseVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\"/>
-        <None Include="CHANGELOG.md" Pack="true" PackagePath="\"/>
-        <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\"/>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
+        <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>
