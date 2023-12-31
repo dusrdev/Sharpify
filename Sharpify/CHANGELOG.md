@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.3.1
+
+* Fixed issue where assemblies inside the nuget package were older than the package version
+
 ## v1.3.0
 
 * Addressed issue which resulted in some parts of the library having older implementations when downloading the package using nuget.
