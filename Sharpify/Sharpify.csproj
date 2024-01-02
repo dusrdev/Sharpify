@@ -4,7 +4,7 @@
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
-        <PackageVersion>1.3.1</PackageVersion>
+        <PackageVersion>1.4.0</PackageVersion>
         <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
         <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
         <Nullable>enable</Nullable>
