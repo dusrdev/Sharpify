@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.0
+
+* Introduced new `MonitoredSerializableObject{T}` class that will serialize an object to a file, continuously monitor the file and synchronize changes, it also exposes an event that will fire on once the object has changed, whether by internal or external operations. The description says object for lack of a better word, it should work for structs as well.
+
 ## v1.3.1
 
 * Fixed issue where assemblies inside the nuget package were older than the package version
