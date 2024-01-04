@@ -122,10 +122,16 @@ public ref struct StringBuffer {
     }
 
     /// <summary>
-    /// Use the allocate function with the trimEnd parameter set to true.
+    /// Uses the allocate function with the trimEnd parameter set to true.
     /// </summary>
     /// <param name="buffer"></param>
     public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true, false);
+
+    /// <summary>
+    /// Returns a readonly span of the internal buffer up to the index after the last appended item.
+    /// </summary>
+    /// <param name="buffer"></param>
+    public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer._buffer[0..buffer._position];
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.

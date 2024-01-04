@@ -259,6 +259,38 @@ public class SpecialCollectionsTests {
     }
 
     [Fact]
+    public void StringBuffer_ImplicitOperatorString() {
+        // Arrange
+        using var buffer = StringBuffer.Create(4);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        string str = buffer;
+        str.Should().Be("abcd");
+    }
+
+    [Fact]
+    public void StringBuffer_ImplicitOperatorReadOnlySpan() {
+        // Arrange
+        using var buffer = StringBuffer.Create(4);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        ReadOnlySpan<char> span = buffer;
+        span.SequenceEqual("abcd").Should().Be(true);
+    }
+
+    [Fact]
     public void AllocatedStringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
@@ -329,6 +361,38 @@ public class SpecialCollectionsTests {
 
         // Assert
         buffer[1..^1].Should().Be("bc");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_ImplicitOperatorString() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        string str = buffer;
+        str.Should().Be("abcd");
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_ImplicitOperatorReadOnlySpan() {
+        // Arrange
+        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        ReadOnlySpan<char> span = buffer;
+        span.SequenceEqual("abcd").Should().Be(true);
     }
 }
 

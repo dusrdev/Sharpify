@@ -117,6 +117,12 @@ public ref struct AllocatedStringBuffer {
     public static implicit operator string(AllocatedStringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
+    /// Returns a readonly span of the internal buffer up to the index after the last appended item.
+    /// </summary>
+    /// <param name="buffer"></param>
+    public static implicit operator ReadOnlySpan<char>(AllocatedStringBuffer buffer) => buffer._buffer[0..buffer._position];
+
+    /// <summary>
     /// Returns a string allocated from the StringBuffer.
     /// </summary>
     /// <remarks>It is identical to <see cref="Allocate(bool, bool)"/></remarks>
