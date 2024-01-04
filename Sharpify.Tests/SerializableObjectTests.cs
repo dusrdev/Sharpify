@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Sharpify.Tests;
 
-public class MonitoredSerializableObjectTests {
+public class SerializableObjectTests {
     private static readonly string _basePath = Utils.Env.GetBaseDirectory();
 
     [Fact]
