@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sharpify.Data\Sharpify.Data.csproj" />
+    <!-- <ProjectReference Include="..\Sharpify.Data\Sharpify.Data.csproj" /> -->
     <ProjectReference Include="..\Sharpify\Sharpify.csproj" />
   </ItemGroup>
 
