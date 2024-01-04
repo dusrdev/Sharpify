@@ -26,11 +26,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MemoryPack" Version="[1.10.0,)" />
+    <PackageReference Include="Sharpify" Version="[1.4.0,)" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Sharpify\Sharpify.csproj" />
   </ItemGroup>
 
   <ItemGroup>
