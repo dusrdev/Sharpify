@@ -18,6 +18,11 @@ public sealed class AesProvider : IDisposable {
     private const int SaltSize = 24;
 
     /// <summary>
+    /// The reserved buffer size for the artifacts of encryption
+    /// </summary>
+    public const int ReservedBufferSize = 32;
+
+    /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="strKey">Encryption key as string</param>
@@ -128,6 +133,15 @@ public sealed class AesProvider : IDisposable {
     public byte[] EncryptBytes(ReadOnlySpan<byte> unencrypted) => _aes.EncryptCbc(unencrypted, _aes.IV);
 
     /// <summary>
+    /// Encrypts the specified byte array using AES encryption in CBC mode.
+    /// </summary>
+    /// <param name="unencrypted">The byte array to be encrypted.</param>
+    /// <param name="destination">The destination byte array to store the encrypted data.</param>
+    /// <returns>The number of bytes written to the destination array.</returns>
+    /// <remarks>The <paramref name="destination"/> length should be at least the same as <paramref name="unencrypted"/> + <see cref="ReservedBufferSize"/></remarks>
+    public int EncryptBytes(ReadOnlySpan<byte> unencrypted, Span<byte> destination) => _aes.EncryptCbc(unencrypted, _aes.IV, destination);
+
+    /// <summary>
     /// Decrypts the bytes using the key
     /// </summary>
     /// <remarks>Return an empty array if it failed</remarks>
@@ -136,6 +150,21 @@ public sealed class AesProvider : IDisposable {
             return _aes.DecryptCbc(encrypted, _aes.IV);
         } catch (CryptographicException) {
             return Array.Empty<byte>();
+        }
+    }
+
+    /// <summary>
+    /// Decrypts the specified encrypted bytes using AES in CBC mode.
+    /// </summary>
+    /// <param name="encrypted">The encrypted bytes to decrypt.</param>
+    /// <param name="destination">The destination span to store the decrypted bytes.</param>
+    /// <returns>The number of decrypted bytes.</returns>
+    /// <remarks>The <paramref name="destination"/> length should be at least the same as <paramref name="encrypted"/></remarks>
+    public int DecryptBytes(ReadOnlySpan<byte> encrypted, Span<byte> destination) {
+        try {
+            return _aes.DecryptCbc(encrypted, _aes.IV, destination);
+        } catch (CryptographicException) {
+            return 0;
         }
     }
 

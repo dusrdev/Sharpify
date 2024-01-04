@@ -134,6 +134,12 @@ public ref struct StringBuffer {
     public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer._buffer[0..buffer._position];
 
     /// <summary>
+    /// Returns a readonly memory of the internal buffer up to the index after the last appended item.
+    /// </summary>
+    /// <param name="buffer"></param>
+    public static implicit operator ReadOnlyMemory<char>(StringBuffer buffer) => new(buffer._source, 0, buffer._position);
+
+    /// <summary>
     /// Returns a string allocated from the StringBuffer.
     /// </summary>
     /// <remarks>It is identical to <see cref="Allocate(bool, bool)"/></remarks>

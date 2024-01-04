@@ -4,3 +4,5 @@
 * Added implicit converters to `ReadOnlySpan{Char}` for `StringBuffer` and `AllocatedStringBuffer`, which can enable usage of the buffer without any allocation in api's that accept `ReadOnlySpan{Char}`.
 * Added `[Flags]` attribute to `RoutineOptions` to calm down some IDEs.
 * Updated `AesProvider.EncryptBytes` and `AesProvider.DecryptBytes` to use `ReadOnlySpan{byte}` parameters
+* Added `AesProvider.EncryptBytes` and `AesProvider.DecryptBytes` overloads that encrypt into a destination span, with guides to length requirements in the summary.
+* Added implicit converter to `ReadOnlyMemory{char}` for `StringBuffer` that might help usage in some cases.

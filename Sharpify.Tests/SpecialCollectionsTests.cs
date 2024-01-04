@@ -291,6 +291,22 @@ public class SpecialCollectionsTests {
     }
 
     [Fact]
+    public void StringBuffer_ImplicitOperatorReadOnlyMemory() {
+        // Arrange
+        using var buffer = StringBuffer.Create(4);
+
+        // Act
+        buffer.Append('a');
+        buffer.Append('b');
+        buffer.Append('c');
+        buffer.Append('d');
+
+        // Assert
+        ReadOnlyMemory<char> span = buffer;
+        span.Span.SequenceEqual("abcd").Should().Be(true);
+    }
+
+    [Fact]
     public void AllocatedStringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
