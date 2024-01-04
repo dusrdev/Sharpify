@@ -125,13 +125,13 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Encrypts the bytes using the key
     /// </summary>
-    public byte[] EncryptBytes(byte[] unencrypted) => _aes.EncryptCbc(unencrypted, _aes.IV);
+    public byte[] EncryptBytes(ReadOnlySpan<byte> unencrypted) => _aes.EncryptCbc(unencrypted, _aes.IV);
 
     /// <summary>
     /// Decrypts the bytes using the key
     /// </summary>
     /// <remarks>Return an empty array if it failed</remarks>
-    public byte[] DecryptBytes(byte[] encrypted) {
+    public byte[] DecryptBytes(ReadOnlySpan<byte> encrypted) {
         try {
             return _aes.DecryptCbc(encrypted, _aes.IV);
         } catch (CryptographicException) {
