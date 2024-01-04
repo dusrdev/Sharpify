@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 
+using MemoryPack;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -101,6 +103,21 @@ public sealed class Database {
     }
 
     /// <summary>
+    /// Retrieves an object of type T from the database using the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of object to retrieve.</typeparam>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
+    /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
+    public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
+        var bytes = Get(key, encryptionKey);
+        if (bytes.Length is 0) {
+            return default;
+        }
+        return MemoryPackSerializer.Deserialize<T>(bytes);
+    }
+
+    /// <summary>
     /// Returns the value for the <paramref name="key"/> as string. or empty string if the value doesn't exist.
     /// </summary>
     /// <param name="key"></param>
@@ -168,7 +185,7 @@ public sealed class Database {
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
     public void Upsert(string key, byte[] value, string encryptionKey = "") {
-        var val = encryptionKey.Length is 0 ? value : Helper.Instance.Decrypt(value, encryptionKey);
+        byte[] val = encryptionKey.Length is 0 ? value : Helper.Instance.Decrypt(value, encryptionKey);
 
         _queue.Enqueue(new KVP(key, val));
 
@@ -181,6 +198,21 @@ public sealed class Database {
         }
 
         EmptyQueue();
+    }
+
+    /// <summary>
+    /// Upserts a value into the database using the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of the value being upserted.</typeparam>
+    /// <param name="key">The key used to identify the value.</param>
+    /// <param name="value">The value to be upserted.</param>
+    /// <param name="encryptionKey">The encryption key used to encrypt the value.</param>
+    /// <remarks>
+    /// The upsert operation will either insert a new value if the key does not exist,
+    /// or update the existing value if the key already exists.
+    /// </remarks>
+    public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
+        Upsert(key, MemoryPackSerializer.Serialize(value), encryptionKey);
     }
 
     // Adds items to the dictionary and serializes if needed at the end.
