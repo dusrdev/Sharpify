@@ -3,6 +3,7 @@ namespace Sharpify.Routines;
 /// <summary>
 /// Options that can be used to configure the behavior of an async routine.
 /// </summary>
+[Flags]
 public enum RoutineOptions : byte {
     /// <summary>
     /// Represents the possible states of an asynchronous routine.
