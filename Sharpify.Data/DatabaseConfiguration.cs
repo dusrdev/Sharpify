@@ -17,5 +17,5 @@ public record DatabaseConfiguration {
     /// <summary>
     /// General encryption key, the entire file will be encrypted with this.
     /// </summary>
-    public string? EncryptionKey { get; init; }
+    public string EncryptionKey { get; init; } = "";
 }

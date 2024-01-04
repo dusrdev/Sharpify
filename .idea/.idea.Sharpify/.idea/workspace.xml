@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7fdbf935-37c9-4509-949e-d3015563fb5f" name="Changes" comment="" />
+    <list default="true" id="7fdbf935-37c9-4509-949e-d3015563fb5f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Sharpify.Data/Extensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Sharpify.Data/Extensions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Sharpify.Data/Serializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Sharpify.Data/Serializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Sharpify.Data/Sharpify.Data.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Sharpify.Data/Sharpify.Data.csproj" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -58,7 +62,7 @@
       <option name="presentableId" value="Default" />
       <updated>1703493105543</updated>
       <workItem from="1703493108302" duration="2305000" />
-      <workItem from="1704383997413" duration="706000" />
+      <workItem from="1704383997413" duration="1480000" />
     </task>
     <servers />
   </component>

@@ -9,7 +9,7 @@ public enum DatabaseOptions : byte {
     /// Serialize database after upsert or delete.
     /// </summary>
     /// <remarks>
-    /// If <see cref="Database{TValue}.RemoveAny(Func{TValue, bool})"/> is called serialization will only be done once, after execution is finished.
+    /// If <see cref="Database{T}.RemoveAny(Func{T, bool})"/> is called serialization will only be done once, after execution is finished.
     /// </remarks>
     SerializeOnUpdate = 1 << 0,
 
