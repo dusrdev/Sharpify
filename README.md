@@ -23,7 +23,15 @@ A collection of high performance language extensions for C#
 * ❗ Static inner exception throwers guide the JIT to further optimize the code during runtime.
 * 🫴 Focus on giving the user complete control by using flexible and common types, and resulting types that can be further used and just viewed.
 
-Check details out in the GitHub Wiki
+## ⬇ Installation
+
+[![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify/)
+
+## Sharpify.Data
+
+`Sharpify.Data` is an extension package, that should be installed on-top of `Sharpify` and adds 2 types of extreme performance persistent key-value-pair databases, utilizing [MemoryPack](https://github.com/Cysharp/MemoryPack).
+
+For more information check the inner directory.
 
 ## Contact
 
