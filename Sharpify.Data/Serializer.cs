@@ -1,3 +1,5 @@
+using System.Buffers;
+
 using MemoryPack;
 using MemoryPack.Formatters;
 
@@ -10,8 +12,11 @@ internal static class Serializer {
         if (encryptionKey.Length is 0) {
             file.Write(bin);
         } else {
-            ReadOnlySpan<byte> bytes = Helper.Instance.Encrypt(bin, encryptionKey);
+            var buffer = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
+            int length = Helper.Instance.Encrypt(bin, buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             file.Write(bytes);
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -21,8 +26,11 @@ internal static class Serializer {
         if (encryptionKey.Length is 0) {
             await file.WriteAsync(bin);
         } else {
-            ReadOnlyMemory<byte> bytes = Helper.Instance.Encrypt(bin.Span, encryptionKey);
+            var buffer = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
+            int length = Helper.Instance.Encrypt(bin.Span, buffer, encryptionKey);
+            var bytes = new ReadOnlyMemory<byte>(buffer, 0, length);
             await file.WriteAsync(bytes);
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -52,21 +60,39 @@ internal static class Serializer {
                 return new(options.GetComparer());
             }
 
-            ReadOnlySpan<byte> buffer = encryptionKey.Length is 0
-                ? bin
-                : Helper.Instance.Decrypt(bin, encryptionKey);
+            if (encryptionKey.Length is 0) {
+                ReadOnlySpan<byte> buffer = bin;
 
-            var formatter = new DictionaryFormatter<string, TSerialized>(options.GetComparer());
+                var formatter = new DictionaryFormatter<string, TSerialized>(options.GetComparer());
 
-            var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
+                var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
 
-            var reader = new MemoryPackReader(buffer, state);
+                var reader = new MemoryPackReader(buffer, state);
 
-            Dictionary<string, TSerialized>? dict = null;
+                Dictionary<string, TSerialized>? dict = null;
 
-            formatter.Deserialize(ref reader, ref dict!);
+                formatter.Deserialize(ref reader, ref dict!);
 
-            return dict ?? new(options.GetComparer());
+                return dict ?? new(options.GetComparer());
+            } else {
+                var rented = ArrayPool<byte>.Shared.Rent(bin.Length);
+                int length = Helper.Instance.Decrypt(bin, rented, encryptionKey);
+                ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(rented, 0, length);
+
+                var formatter = new DictionaryFormatter<string, TSerialized>(options.GetComparer());
+
+                var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
+
+                var reader = new MemoryPackReader(buffer, state);
+
+                Dictionary<string, TSerialized>? dict = null;
+
+                formatter.Deserialize(ref reader, ref dict!);
+
+                ArrayPool<byte>.Shared.Return(rented);
+
+                return dict ?? new(options.GetComparer());
+            }
         } catch {
             return new(options.GetComparer());
         }

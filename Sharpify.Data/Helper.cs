@@ -16,6 +16,15 @@ internal sealed class Helper {
         return newProvider.EncryptBytes(value);
     }
 
+    internal int Encrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
+        if (_cachedProviders.TryGetValue(key, out var provider)) {
+            return provider.EncryptBytes(value, destination);
+        }
+        var newProvider = new AesProvider(key);
+        _cachedProviders.TryAdd(key, newProvider);
+        return newProvider.EncryptBytes(value, destination);
+    }
+
     internal byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.DecryptBytes(value);
@@ -23,6 +32,15 @@ internal sealed class Helper {
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
         return newProvider.DecryptBytes(value);
+    }
+
+    internal int Decrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
+        if (_cachedProviders.TryGetValue(key, out var provider)) {
+            return provider.DecryptBytes(value, destination);
+        }
+        var newProvider = new AesProvider(key);
+        _cachedProviders.TryAdd(key, newProvider);
+        return newProvider.DecryptBytes(value, destination);
     }
 
     ~Helper() {

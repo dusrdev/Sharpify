@@ -1,3 +1,3 @@
 # CHANGELOG
 
-* Initial release - check github for information
+* Further optimized both database, heavily utilizing array pooling for encryption

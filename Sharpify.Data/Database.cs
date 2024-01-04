@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 
 using MemoryPack;
@@ -123,11 +124,18 @@ public sealed class Database {
     /// <param name="key"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     public string GetAsString(string key, string encryptionKey = "") {
-        var bytes = Get(key, encryptionKey);
-        if (bytes.Length is 0) {
+        if (!_data.TryGetValue(key, out var val)) {
             return "";
         }
-        return bytes.ToUtf8String();
+        if (encryptionKey.Length is 0) {
+            return new ReadOnlySpan<byte>(val).ToUtf8String();
+        }
+        var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
+        int length = Helper.Instance.Decrypt(val, buffer, encryptionKey);
+        var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+        var result = bytes.Length is 0 ? "" : bytes.ToUtf8String();
+        ArrayPool<byte>.Shared.Return(buffer);
+        return result;
     }
 
     /// <summary>
@@ -185,7 +193,13 @@ public sealed class Database {
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
     public void Upsert(string key, byte[] value, string encryptionKey = "") {
-        byte[] val = encryptionKey.Length is 0 ? value : Helper.Instance.Decrypt(value, encryptionKey);
+        byte[] val;
+
+        if (encryptionKey.Length is 0) {
+            val = value;
+        } else {
+            val = Helper.Instance.Encrypt(value, encryptionKey);
+        }
 
         _queue.Enqueue(new KVP(key, val));
 
