@@ -274,10 +274,24 @@ public sealed class Database {
     /// <summary>
     /// Saves the database to the hard disk.
     /// </summary>
-    public void Serialize() => _data.Serialize(Config.Path, Config.EncryptionKey);
+    public void Serialize() {
+        lock (_data) {
+            while (_queue.TryDequeue(out var kvp)) {
+                _data.Add(kvp.Key, kvp.Value);
+            }
+            _data.Serialize(Config.Path, Config.EncryptionKey);
+        }
+    }
 
     /// <summary>
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
-    public Task SerializeAsync() => _data.SerializeAsync(Config.Path, Config.EncryptionKey);
+    public Task SerializeAsync() {
+        lock (_data) {
+            while (_queue.TryDequeue(out var kvp)) {
+                _data.Add(kvp.Key, kvp.Value);
+            }
+        }
+        return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
+    }
 }
