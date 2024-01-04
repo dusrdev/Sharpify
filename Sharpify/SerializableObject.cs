@@ -70,8 +70,12 @@ public class SerializableObject<T> {
             if (string.IsNullOrWhiteSpace(json)) {
                 SetValueAndSerialize(defaultValue);
             } else {
-                Value = JsonSerializer.Deserialize<T>(json, Options)
-                         ?? defaultValue;
+                try {
+                    Value = JsonSerializer.Deserialize<T>(json, Options)
+                             ?? defaultValue;
+                } catch {
+                    SetValueAndSerialize(defaultValue);
+                }
             }
         } else {
             SetValueAndSerialize(defaultValue);
@@ -109,12 +113,13 @@ public class SerializableObject<T> {
         if (string.IsNullOrWhiteSpace(json)) {
             return;
         }
-        var serialized = JsonSerializer.Deserialize<T>(json, Options);
-        if (serialized is null) {
+        try {
+            var serialized = JsonSerializer.Deserialize<T>(json, Options);
+            Value = serialized!;
+            InvokeOnChangedEvent(Value);
+        } catch {
             return;
         }
-        Value = serialized;
-        InvokeOnChangedEvent(Value);
     }
 
     /// <summary>
