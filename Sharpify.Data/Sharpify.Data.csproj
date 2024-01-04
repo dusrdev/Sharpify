@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Authors>David Shnayder</Authors>
+    <Copyright>David Shnayder</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Sharpify.Data</Title>
+    <Description>An extension of Sharpify, focused on Data</Description>
+    <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Extensions;HighPerformance;Data;Database</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sharpify\Sharpify.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
+    <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
+</ItemGroup>
+
+</Project>

@@ -12,7 +12,7 @@ namespace Sharpify;
 /// </remarks>
 public class MonitoredSerializableObject<T> : SerializableObject<T>, IDisposable {
     private readonly FileSystemWatcher _watcher;
-    private volatile uint _isInternalModification = 0;
+    private volatile uint _isInternalModification;
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
