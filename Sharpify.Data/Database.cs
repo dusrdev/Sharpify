@@ -237,7 +237,7 @@ public sealed class Database {
         lock (_data) {
             bool itemsWereAdded = false;
             while (_queue.TryDequeue(out var kvp)) {
-                _data.Add(kvp.Key, kvp.Value);
+                _data[kvp.Key] = kvp.Value;
                 itemsWereAdded = true;
             }
             if (itemsWereAdded && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
@@ -291,7 +291,7 @@ public sealed class Database {
     public void Serialize() {
         lock (_data) {
             while (_queue.TryDequeue(out var kvp)) {
-                _data.Add(kvp.Key, kvp.Value);
+                _data[kvp.Key] = kvp.Value;
             }
             _data.Serialize(Config.Path, Config.EncryptionKey);
         }
@@ -303,7 +303,7 @@ public sealed class Database {
     public Task SerializeAsync() {
         lock (_data) {
             while (_queue.TryDequeue(out var kvp)) {
-                _data.Add(kvp.Key, kvp.Value);
+                _data[kvp.Key] = kvp.Value;
             }
         }
         return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
