@@ -11,11 +11,25 @@ namespace Sharpify;
 /// This class provides functionality to serialize and deserialize the object to/from a file,
 /// and raises an event whenever the object is modified.
 /// </remarks>
-public class SerializableObject<T> {
+public class SerializableObject<T> : IDisposable {
+    /// <summary>
+    /// The value of the SerializableObject.
+    /// </summary>
+    protected T _value = default!;
+
     /// <summary>
     /// Gets value of type T.
     /// </summary>
-    public T Value { get; protected set; } = default!;
+    public T Value {
+        get {
+            _lock.EnterReadLock();
+            try {
+                return _value;
+            } finally {
+                _lock.ExitReadLock();
+            }
+        }
+    }
 
     /// <summary>
     /// The path of the serialized object.
@@ -30,7 +44,7 @@ public class SerializableObject<T> {
     /// <summary>
     /// The lock object used for thread synchronization.
     /// </summary>
-    protected readonly object _lock = new();
+    protected readonly ReaderWriterLockSlim _lock = new();
 
     /// <summary>
     /// The JSON serializer options used for serializing and deserializing objects.
@@ -71,7 +85,7 @@ public class SerializableObject<T> {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    Value = JsonSerializer.Deserialize<T>(json, Options)
+                    _value = JsonSerializer.Deserialize<T>(json, Options)
                              ?? defaultValue;
                 } catch {
                     SetValueAndSerialize(defaultValue);
@@ -82,10 +96,20 @@ public class SerializableObject<T> {
         }
     }
 
+    /// <summary>
+    /// Represents a serializable object.
+    /// </summary>
+    ~SerializableObject() => Dispose();
+
     private void SetValueAndSerialize(T value) {
-        Value = value;
-        var json = JsonSerializer.Serialize(Value, Options);
-        File.WriteAllText(_path, json);
+        _lock.EnterWriteLock();
+        try {
+            _value = value;
+            var json = JsonSerializer.Serialize(_value, Options);
+            File.WriteAllText(_path, json);
+        } finally {
+            _lock.ExitWriteLock();
+        }
     }
 
     /// <summary>
@@ -108,32 +132,30 @@ public class SerializableObject<T> {
         OnChanged?.Invoke(this, new SerializableObjectEventArgs<T>(value));
     }
 
-    private void OnFileChanged(object sender, FileSystemEventArgs e) {
-        var json = File.ReadAllText(_path);
-        if (string.IsNullOrWhiteSpace(json)) {
-            return;
-        }
-        try {
-            var serialized = JsonSerializer.Deserialize<T>(json, Options);
-            Value = serialized!;
-            InvokeOnChangedEvent(Value);
-        } catch {
-            return;
-        }
-    }
-
     /// <summary>
     /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
     /// </summary>
     /// <param name="modifier">The action that modifies the value of the object.</param>
     /// <remarks>A lock is used to prevent concurrent modifications</remarks>
     public virtual void Modify(Func<T, T> modifier) {
-        lock (_lock) {
-            Value = modifier(Value);
-            File.WriteAllText(_path, JsonSerializer.Serialize(Value, Options));
-            InvokeOnChangedEvent(Value);
+        _lock.EnterWriteLock();
+        try {
+            _value = modifier(_value);
+            File.WriteAllText(_path, JsonSerializer.Serialize(_value, Options));
+            InvokeOnChangedEvent(_value);
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
+    /// <inheritdoc/>
+
+
+    public virtual void Dispose() {
+        _lock.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+
 
     /// <summary>
     /// Represents a segmented path consisting of a directory and a file name.

@@ -10,7 +10,7 @@ namespace Sharpify;
 /// This class provides functionality to serialize and deserialize the object to/from a file,
 /// and raises an event whenever the file or the object is modified.
 /// </remarks>
-public class MonitoredSerializableObject<T> : SerializableObject<T>, IDisposable {
+public class MonitoredSerializableObject<T> : SerializableObject<T> {
     private readonly FileSystemWatcher _watcher;
     private volatile uint _isInternalModification;
 
@@ -36,20 +36,32 @@ public class MonitoredSerializableObject<T> : SerializableObject<T>, IDisposable
         _watcher.Changed += OnFileChanged;
     }
 
+    /// <summary>
+    /// Represents a monitored serializable object.
+    /// </summary>
+    ~MonitoredSerializableObject() {
+        Dispose();
+    }
+
     private void OnFileChanged(object sender, FileSystemEventArgs e) {
         if (Interlocked.Exchange(ref _isInternalModification, 0) is 1) {
             return;
         }
-        var json = File.ReadAllText(_path);
-        if (string.IsNullOrWhiteSpace(json)) {
-            return;
+        _lock.EnterWriteLock();
+        try {
+            var json = File.ReadAllText(_path);
+            if (string.IsNullOrWhiteSpace(json)) {
+                return;
+            }
+            var serialized = JsonSerializer.Deserialize<T>(json, Options);
+            if (serialized is null) {
+                return;
+            }
+            _value = serialized;
+            InvokeOnChangedEvent(_value);
+        } finally {
+            _lock.ExitWriteLock();
         }
-        var serialized = JsonSerializer.Deserialize<T>(json, Options);
-        if (serialized is null) {
-            return;
-        }
-        Value = serialized;
-        InvokeOnChangedEvent(Value);
     }
 
     /// <summary>
@@ -58,18 +70,23 @@ public class MonitoredSerializableObject<T> : SerializableObject<T>, IDisposable
     /// <param name="modifier">The action that modifies the value of the object.</param>
     /// <remarks>A lock is used to prevent concurrent modifications</remarks>
     public override void Modify(Func<T, T> modifier) {
-        lock (_lock) {
-            Value = modifier(Value);
+        _lock.EnterWriteLock();
+        try {
+            _value = modifier(_value);
             Interlocked.Exchange(ref _isInternalModification, 1);
-            File.WriteAllText(_path, JsonSerializer.Serialize(Value, Options));
-            InvokeOnChangedEvent(Value);
+            File.WriteAllText(_path, JsonSerializer.Serialize(_value, Options));
+            InvokeOnChangedEvent(_value);
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
     /// <inheritdoc/>
-    public void Dispose() {
+    public override void Dispose() {
         _watcher.Changed -= OnFileChanged;
         _watcher.EnableRaisingEvents = false;
         _watcher.Dispose();
+        _lock.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

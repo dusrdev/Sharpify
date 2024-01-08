@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.4.2
+
+* Updated synchronization aspect of `SerializableObject{T}` and `MonitoredSerializableObject{T}`, they now both implement `IDisposable` and finalizers in case you forget to dispose of them, or their context makes it inconvenient.
+
 ## v1.4.0 - v1.4.1
 
 * Introduced new `SerializableObject{T}` class that will serialize an object to a file and expose an event that will fire on once the object has changed, also a variant `MonitoredSerializableObject` that has the same functionality and in addition it will monitor for external changes within the file system and synchronize them as well.
