@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.5.0
+
+* **BREAKING** `StringBuffer`s and `AllocatedStringBuffer`s constructor have been made internal, to enforce usage of the factory methods. The factory methods of both are now under `StringBuffer` and vary by name to indicate the type you are getting back. `StringBuffer.Rent(capacity)` will return a `StringBuffer` which rents memory from the array pool. And `StringBuffer.Create(Span{char})` will return an `AllocatedStringBuffer` which works on pre-allocated buffer. `StringBuffer` still implements `IDisposable` so should be used together with a `using` statement or keyword. Also, the implicit converters should now be prioritized to be inlined by the compiler.
+  * It should be noted that in some cases **JetBrains Rider** marks it an error when the implicit operator to string is used in return statements of a method, this is not an actual error, it compiles and works fine, rather seems as an intellisense failure. If this bothers you, use `.Allocate(true)` instead, it does the same thing.
+
 ## v1.4.2
 
 * Updated synchronization aspect of `SerializableObject{T}` and `MonitoredSerializableObject{T}`, they now both implement `IDisposable` and finalizers in case you forget to dispose of them, or their context makes it inconvenient.

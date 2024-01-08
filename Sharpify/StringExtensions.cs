@@ -25,16 +25,10 @@ public static partial class Extensions {
     /// </summary>
     public static bool IsNullOrWhiteSpace(this string str) => string.IsNullOrWhiteSpace(str);
 
-
-#pragma warning disable CS1584 // XML comment has syntactically incorrect cref attribute
-
-
-#pragma warning disable CS1658 // Warning is overriding an error
-
     /// <summary>
-    /// Tries to convert a <see cref="ReadOnlySpan{char}"/> to an <see cref="int"/>.
+    /// Tries to convert <paramref name="value"/> to an <see cref="int"/>.
     /// </summary>
-    /// <param name="value">The <see cref="ReadOnlySpan{char}"/> to convert.</param>
+    /// <param name="value">The span of characters to convert.</param>
     /// <param name="result">When this method returns, contains the converted <see cref="int"/> if the conversion succeeded, or zero if the conversion failed.</param>
     /// <returns><c>true</c> if the conversion succeeded; otherwise, <c>false</c>.</returns>
     public static bool TryConvertToInt32(this ReadOnlySpan<char> value, out int result) {

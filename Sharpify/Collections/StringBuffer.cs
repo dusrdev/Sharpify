@@ -1,11 +1,12 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace Sharpify.Collections;
 
 /// <summary>
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
-public ref struct StringBuffer {
+public ref partial struct StringBuffer {
     private readonly char[] _source;
     private readonly Span<char> _buffer;
     private readonly int _length;
@@ -16,7 +17,7 @@ public ref struct StringBuffer {
     /// </summary>
     /// <param name="capacity">The capacity</param>
     /// <param name="clearBuffer">Whether clearing the buffer. Has a slight performance hit</param>
-    public StringBuffer(int capacity, bool clearBuffer = false) {
+    internal StringBuffer(int capacity, bool clearBuffer = false) {
         _length = capacity;
         _source = ArrayPool<char>.Shared.Rent(_length);
         if (clearBuffer) {
@@ -35,17 +36,12 @@ public ref struct StringBuffer {
     public StringBuffer() : this(0, false) { }
 
     /// <summary>
-    /// Represents a mutable string buffer that allows efficient concatenation of strings and other types.
-    /// </summary>
-    public static StringBuffer Create(int capacity, bool clearBuffer = false) => new(capacity, clearBuffer);
-
-    /// <summary>
     /// Appends a character to the string buffer.
     /// </summary>
     /// <param name="c">The character to append.</param>
     public void Append(char c) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan<int>(_position + 1, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, _length);
 #elif NET7_0
         if (_position + 1 > _length) {
             throw new ArgumentOutOfRangeException(nameof(_length));
@@ -59,9 +55,10 @@ public ref struct StringBuffer {
     /// Appends the specified string to the buffer.
     /// </summary>
     /// <param name="str">The string to append.</param>
+    /// <returns>The same instance of the buffer</returns>
     public void Append(ReadOnlySpan<char> str) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan<int>(_position + str.Length, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, _length);
 #elif NET7_0
         if (_position + str.Length > _length) {
             throw new ArgumentOutOfRangeException(nameof(_length));
@@ -125,18 +122,21 @@ public ref struct StringBuffer {
     /// Uses the allocate function with the trimEnd parameter set to true.
     /// </summary>
     /// <param name="buffer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
     /// Returns a readonly span of the internal buffer up to the index after the last appended item.
     /// </summary>
     /// <param name="buffer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer._buffer[0..buffer._position];
 
     /// <summary>
     /// Returns a readonly memory of the internal buffer up to the index after the last appended item.
     /// </summary>
     /// <param name="buffer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlyMemory<char>(StringBuffer buffer) => new(buffer._source, 0, buffer._position);
 
     /// <summary>
@@ -148,5 +148,7 @@ public ref struct StringBuffer {
     /// <summary>
     /// Releases the resources used by the StringBuffer.
     /// </summary>
-    public readonly void Dispose() => ArrayPool<char>.Shared.Return(_source, false);
+    public readonly void Dispose() {
+        ArrayPool<char>.Shared.Return(_source, false);
+    }
 }

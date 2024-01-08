@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Sharpify.Collections;
 
 /// <summary>
@@ -11,7 +13,7 @@ public ref struct AllocatedStringBuffer {
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
     /// </summary>
-    public AllocatedStringBuffer(Span<char> buffer) {
+    internal AllocatedStringBuffer(Span<char> buffer) {
         _buffer = buffer;
         _length = _buffer.Length;
         _position = 0;
@@ -22,11 +24,6 @@ public ref struct AllocatedStringBuffer {
     /// </summary>
     public AllocatedStringBuffer() : this(Span<char>.Empty) {
     }
-
-    /// <summary>
-    /// Represents a buffer efficient concatenation of strings and other types on a preallocated buffer.
-    /// </summary>
-    public static AllocatedStringBuffer Create(Span<char> buffer) => new(buffer);
 
     /// <summary>
     /// Appends a character to the string buffer.
@@ -114,12 +111,14 @@ public ref struct AllocatedStringBuffer {
     /// Use the allocate function with the trimEnd parameter set to true.
     /// </summary>
     /// <param name="buffer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator string(AllocatedStringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
     /// Returns a readonly span of the internal buffer up to the index after the last appended item.
     /// </summary>
     /// <param name="buffer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlySpan<char>(AllocatedStringBuffer buffer) => buffer._buffer[0..buffer._position];
 
     /// <summary>

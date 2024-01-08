@@ -26,23 +26,22 @@ public static partial class Utils {
             const double kb = 1024d;
             const double divisor = 1 / kb;
 
-            var buffer = AllocatedStringBuffer.Create(stackalloc char[10]);
+            var buffer = StringBuffer.Create(stackalloc char[10]);
             if (bytes < kb) {
                 buffer.Append(Math.Round(bytes, 2));
                 buffer.Append(' ');
                 buffer.Append(FileSizeSuffix[0]);
-                return buffer;
-            } else {
-                var suffix = 0;
-                while (bytes >= kb && suffix < FileSizeSuffix.Length) {
-                    bytes *= divisor;
-                    suffix++;
-                }
-                buffer.Append(Math.Round(bytes, 2));
-                buffer.Append(' ');
-                buffer.Append(FileSizeSuffix[suffix]);
-                return buffer;
+                return buffer.Allocate(true);
             }
+            var suffix = 0;
+            while (bytes >= kb && suffix < FileSizeSuffix.Length) {
+                bytes *= divisor;
+                suffix++;
+            }
+            buffer.Append(Math.Round(bytes, 2));
+            buffer.Append(' ');
+            buffer.Append(FileSizeSuffix[suffix]);
+            return buffer.Allocate(true);
         }
     }
 }

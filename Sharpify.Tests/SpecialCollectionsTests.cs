@@ -200,7 +200,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
-        using var buffer = StringBuffer.Create(5, true);
+        using var buffer = StringBuffer.Rent(5, true);
 
         // Act
         buffer.Append('a');
@@ -215,7 +215,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Create(5, true);
+        using var buffer = StringBuffer.Rent(5, true);
 
         // Act
         buffer.Append('a');
@@ -230,7 +230,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Create(5, true);
+        using var buffer = StringBuffer.Rent(5, true);
 
         // Act
         buffer.Append('a');
@@ -246,7 +246,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_AllocateWithIndexes() {
         // Arrange
-        using var buffer = StringBuffer.Create(4);
+        using var buffer = StringBuffer.Rent(4);
 
         // Act
         buffer.Append('a');
@@ -261,7 +261,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_ImplicitOperatorString() {
         // Arrange
-        using var buffer = StringBuffer.Create(4);
+        using var buffer = StringBuffer.Rent(4);
 
         // Act
         buffer.Append('a');
@@ -277,7 +277,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
-        using var buffer = StringBuffer.Create(4);
+        using var buffer = StringBuffer.Rent(4);
 
         // Act
         buffer.Append('a');
@@ -293,7 +293,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void StringBuffer_ImplicitOperatorReadOnlyMemory() {
         // Arrange
-        using var buffer = StringBuffer.Create(4);
+        using var buffer = StringBuffer.Rent(4);
 
         // Act
         buffer.Append('a');
@@ -321,7 +321,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -336,7 +336,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -351,7 +351,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[5]);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -367,7 +367,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_AllocateWithIndexes() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
+        var buffer = StringBuffer.Create(stackalloc char[4]);
 
         // Act
         buffer.Append('a');
@@ -382,7 +382,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_ImplicitOperatorString() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
+        var buffer = StringBuffer.Create(stackalloc char[4]);
 
         // Act
         buffer.Append('a');
@@ -398,7 +398,7 @@ public class SpecialCollectionsTests {
     [Fact]
     public void AllocatedStringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[4]);
+        var buffer = StringBuffer.Create(stackalloc char[4]);
 
         // Act
         buffer.Append('a');

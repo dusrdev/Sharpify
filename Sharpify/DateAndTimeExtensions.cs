@@ -19,10 +19,10 @@ public static partial class Extensions {
         // The longest possible number is going to be days, since it's the largest unit of time
         // 23 digits long is fully formatted 10^14 which is 2 magnitudes more than the amount of days since earth was formed
         // it is rather a safe bet that we wouldn't surpass it
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[25]);
+        var buffer = StringBuffer.Create(stackalloc char[25]);
         buffer.Append(Math.Round(value, 2));
         buffer.Append(suffix);
-        return buffer;
+        return buffer.Allocate(true);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public static partial class Extensions {
             return "0s";
         }
 
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[27]);
+        var buffer = StringBuffer.Create(stackalloc char[27]);
         if (time.Days > 0) {
             buffer.Append(time.Days);
             buffer.Append("d ");
@@ -57,7 +57,7 @@ public static partial class Extensions {
     /// Returns a Time Stamp -> HHMM-dd-mmm-yy
     /// </summary>
     public static string ToTimeStamp(this DateTime time) {
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[14]);
+        var buffer = StringBuffer.Create(stackalloc char[14]);
         buffer.Append(time.Hour);
         buffer.Append(time.Minute);
         buffer.Append('-');
@@ -66,6 +66,6 @@ public static partial class Extensions {
         buffer.Append(CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month));
         buffer.Append('-');
         buffer.Append(time.Year % 100);
-        return buffer;
+        return buffer.Allocate(true);
     }
 }

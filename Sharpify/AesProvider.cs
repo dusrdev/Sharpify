@@ -37,6 +37,13 @@ public sealed class AesProvider : IDisposable {
         _aes.Mode = CipherMode.CBC;
     }
 
+    /// <summary>
+    /// Finalizer
+    /// </summary>
+    ~AesProvider() {
+        Dispose();
+    }
+
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(string strKey) => SHA256.HashData(Encoding.UTF8.GetBytes(strKey));
 
@@ -64,13 +71,13 @@ public sealed class AesProvider : IDisposable {
 
         // length = salt + iteration count (3 digits max) + hash + 2 delimiters
         int length = saltString.Length + 3 + hashString.Length + 2;
-        var buffer = AllocatedStringBuffer.Create(stackalloc char[length]);
+        var buffer = StringBuffer.Create(stackalloc char[length]);
         buffer.Append(saltString);
         buffer.Append('|');
         buffer.Append(iterations);
         buffer.Append('|');
         buffer.Append(hashString);
-        return buffer;
+        return buffer.Allocate(true);
     }
 
     /// <summary>
@@ -266,5 +273,6 @@ public sealed class AesProvider : IDisposable {
     /// </summary>
     public void Dispose() {
         _aes?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
