@@ -5,7 +5,7 @@ using Sharpify.Data;
 namespace Sharpify.Tests.Sharpify.Data.Tests;
 
 public class DatabaseTTests {
-    private static Func<string, (string, Database<Person>)> Factory => p => {
+    private static Func<string, FactoryResult<Database<Person>>> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
@@ -16,63 +16,63 @@ public class DatabaseTTests {
             ToByteArray = static p => MemoryPackSerializer.Serialize(p),
             ToT = static b => MemoryPackSerializer.Deserialize<Person>(b)
         });
-        return (path, database);
+        return new(path, database);
     };
 
     [Fact]
     public void Upsert() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
-        database.Upsert("1", p1);
+        db.Database.Upsert("1", p1);
 
         // Arrange
-        var (_, database2) = Factory(path);
+        using var db2 = Factory(db.Path);
 
         // Assert
-        database2["1"].Should().Be(p1);
+        db2.Database["1"].Should().Be(p1);
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     [Fact]
     public async Task UpsertConcurrently() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
-        var test = new ConcurrentTest(database);
+        var test = new ConcurrentTest(db.Database);
         await items.Concurrent().ForEachAsync(test);
 
         // Arrange
-        var (_, database2) = Factory(path);
+        using var db2 = Factory(db.Path);
 
         // Assert
-        database2.Count.Should().Be(100);
+        db2.Database.Count.Should().Be(100);
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     [Fact]
     public void Remove() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
-        database.Upsert("1", p1);
-        database.Remove("1");
+        db.Database.Upsert("1", p1);
+        db.Database.Remove("1");
 
         // Assert
-        database.ContainsKey("1").Should().BeFalse();
+        db.Database.ContainsKey("1").Should().BeFalse();
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     private class ConcurrentTest : IAsyncAction<int> {

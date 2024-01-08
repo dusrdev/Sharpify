@@ -6,12 +6,14 @@ namespace Sharpify.Data;
 /// <summary>
 /// A high performance database that stores string-T pairs. O(1) CRUD but O(N) Serialization.
 /// </summary>
-public sealed class Database<T> {
+public sealed class Database<T> : IDisposable {
     private record KVP(string Key, T Value);
 
     private readonly Dictionary<string, T> _data;
 
     private readonly ConcurrentQueue<KVP> _queue = new();
+
+    private readonly ReaderWriterLockSlim _lock = new();
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -102,7 +104,14 @@ public sealed class Database<T> {
     /// </para>
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
-    public T? Get(string key) => _data.TryGetValue(key, out var val) ? val : default;
+    public T? Get(string key) {
+        _lock.EnterReadLock();
+        try {
+            return _data.TryGetValue(key, out var val) ? val : default;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
 
     /// <summary>
     /// Removes the <paramref name="key"/> and its value from the inner dictionary.
@@ -110,11 +119,11 @@ public sealed class Database<T> {
     /// <param name="key"></param>
     /// <returns>True if the key was removed, false if it didn't exist or couldn't be removed.</returns>
     public bool Remove(string key) {
-        if (_data.Count is 0) {
-            return false;
-        }
-
-        lock (_data) {
+        _lock.EnterWriteLock();
+        try {
+            if (_data.Count is 0) {
+                return false;
+            }
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
@@ -129,6 +138,8 @@ public sealed class Database<T> {
                 Serialize();
             }
             return true;
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -137,11 +148,11 @@ public sealed class Database<T> {
     /// </summary>
     /// <param name="selector"></param>
     public void RemoveAny(Func<T, bool> selector) {
-        if (_data.Count is 0) {
-            return;
-        }
-
-        lock (_data) {
+        _lock.EnterWriteLock();
+        try {
+            if (_data.Count is 0) {
+                return;
+            }
             int count = 0;
             var length = _data.Count;
             var array = ArrayPool<string>.Shared.Rent(length);
@@ -169,6 +180,8 @@ public sealed class Database<T> {
                 return;
             }
             Serialize();
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -176,16 +189,21 @@ public sealed class Database<T> {
     /// Clears all keys and values from the database.
     /// </summary>
     public void Clear() {
-        _data.Clear();
-        if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
-            Serialize();
-        }
-        if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
-            InvokeDataEvent(new DataChangedEventArgs {
-                Key = "ALL",
-                Value = null,
-                ChangeType = DataChangeType.Remove
-            });
+        _lock.EnterWriteLock();
+        try {
+            _data.Clear();
+            if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+                Serialize();
+            }
+            if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
+                InvokeDataEvent(new DataChangedEventArgs {
+                    Key = "ALL",
+                    Value = null,
+                    ChangeType = DataChangeType.Remove
+                });
+            }
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -213,7 +231,8 @@ public sealed class Database<T> {
     // Essentially synchronizing concurrent writes.
     // While the inner sequential addition to the dictionary makes it thread safe.
     private void EmptyQueue() {
-        lock (_data) {
+        _lock.EnterWriteLock();
+        try {
             bool itemsWereAdded = false;
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
@@ -222,24 +241,31 @@ public sealed class Database<T> {
             if (itemsWereAdded && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
                 Serialize();
             }
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary
     /// </summary>
-    public IReadOnlyCollection<string> GetKeys() => _data.Keys;
+    public IReadOnlyCollection<string> GetKeys() {
+        _lock.EnterReadLock();
+        try {
+            return _data.Keys;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
 
     /// <summary>
     /// Saves the database to the hard disk.
     /// </summary>
     public void Serialize() {
-        lock (_data) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-            }
-            _data.Serialize(Config.Path, Config.EncryptionKey);
+        while (_queue.TryDequeue(out var kvp)) {
+            _data[kvp.Key] = kvp.Value;
         }
+        _data.Serialize(Config.Path, Config.EncryptionKey);
     }
 
 
@@ -247,12 +273,14 @@ public sealed class Database<T> {
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
     public Task SerializeAsync() {
-        lock (_data) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-            }
+        while (_queue.TryDequeue(out var kvp)) {
+            _data[kvp.Key] = kvp.Value;
         }
         return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
     }
 
+    /// <summary>
+    /// Frees the resources used by the database.
+    /// </summary>
+    public void Dispose() => _lock.Dispose();
 }

@@ -8,12 +8,14 @@ namespace Sharpify.Data;
 /// <summary>
 /// A high performance database that stores string-byte[] pairs.
 /// </summary>
-public sealed class Database {
+public sealed class Database : IDisposable {
     private record KVP(string Key, byte[] Value);
 
     private readonly Dictionary<string, byte[]> _data;
 
     private readonly ConcurrentQueue<KVP> _queue = new();
+
+    private readonly ReaderWriterLockSlim _lock = new();
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -94,13 +96,18 @@ public sealed class Database {
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
     public ReadOnlySpan<byte> Get(string key, string encryptionKey = "") {
-        if (!_data.TryGetValue(key, out var val)) {
-            return default;
+        _lock.EnterReadLock();
+        try {
+            if (!_data.TryGetValue(key, out var val)) {
+                return default;
+            }
+            if (encryptionKey.Length is 0) {
+                return val;
+            }
+            return Helper.Instance.Decrypt(val, encryptionKey);
+        } finally {
+            _lock.ExitReadLock();
         }
-        if (encryptionKey.Length is 0) {
-            return val;
-        }
-        return Helper.Instance.Decrypt(val, encryptionKey);
     }
 
     /// <summary>
@@ -124,18 +131,23 @@ public sealed class Database {
     /// <param name="key"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     public string GetAsString(string key, string encryptionKey = "") {
-        if (!_data.TryGetValue(key, out var val)) {
-            return "";
+        _lock.EnterReadLock();
+        try {
+            if (!_data.TryGetValue(key, out var val)) {
+                return "";
+            }
+            if (encryptionKey.Length is 0) {
+                return new ReadOnlySpan<byte>(val).ToUtf8String();
+            }
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
+            int length = Helper.Instance.Decrypt(val, buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+            var result = bytes.Length is 0 ? "" : bytes.ToUtf8String();
+            ArrayPool<byte>.Shared.Return(buffer);
+            return result;
+        } finally {
+            _lock.ExitReadLock();
         }
-        if (encryptionKey.Length is 0) {
-            return new ReadOnlySpan<byte>(val).ToUtf8String();
-        }
-        var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
-        int length = Helper.Instance.Decrypt(val, buffer, encryptionKey);
-        var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-        var result = bytes.Length is 0 ? "" : bytes.ToUtf8String();
-        ArrayPool<byte>.Shared.Return(buffer);
-        return result;
     }
 
     /// <summary>
@@ -144,11 +156,11 @@ public sealed class Database {
     /// <param name="key"></param>
     /// <returns>True if the key was removed, false if it didn't exist or couldn't be removed.</returns>
     public bool Remove(string key) {
-        if (_data.Count is 0) {
-            return false;
-        }
-
-        lock (_data) {
+        _lock.EnterWriteLock();
+        try {
+            if (_data.Count is 0) {
+                return false;
+            }
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
@@ -163,6 +175,8 @@ public sealed class Database {
                 });
             }
             return true;
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -170,16 +184,21 @@ public sealed class Database {
     /// Clears all keys and values from the database.
     /// </summary>
     public void Clear() {
-        _data.Clear();
-        if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
-            Serialize();
-        }
-        if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
-            InvokeDataEvent(new DataChangedEventArgs {
-                Key = "ALL",
-                Value = null,
-                ChangeType = DataChangeType.Remove
-            });
+        _lock.EnterWriteLock();
+        try {
+            _data.Clear();
+            if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+                Serialize();
+            }
+            if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
+                InvokeDataEvent(new DataChangedEventArgs {
+                    Key = "ALL",
+                    Value = null,
+                    ChangeType = DataChangeType.Remove
+                });
+            }
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -234,7 +253,8 @@ public sealed class Database {
     // Essentially synchronizing concurrent writes.
     // While the inner sequential addition to the dictionary makes it thread safe.
     private void EmptyQueue() {
-        lock (_data) {
+        _lock.EnterWriteLock();
+        try {
             bool itemsWereAdded = false;
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
@@ -243,6 +263,8 @@ public sealed class Database {
             if (itemsWereAdded && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
                 Serialize();
             }
+        } finally {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -283,29 +305,37 @@ public sealed class Database {
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary
     /// </summary>
-    public IReadOnlyCollection<string> GetKeys() => _data.Keys;
+    public IReadOnlyCollection<string> GetKeys() {
+        _lock.EnterReadLock();
+        try {
+            return _data.Keys;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
 
     /// <summary>
     /// Saves the database to the hard disk.
     /// </summary>
     public void Serialize() {
-        lock (_data) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-            }
-            _data.Serialize(Config.Path, Config.EncryptionKey);
+        while (_queue.TryDequeue(out var kvp)) {
+            _data[kvp.Key] = kvp.Value;
         }
+        _data.Serialize(Config.Path, Config.EncryptionKey);
     }
 
     /// <summary>
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
     public Task SerializeAsync() {
-        lock (_data) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-            }
+        while (_queue.TryDequeue(out var kvp)) {
+            _data[kvp.Key] = kvp.Value;
         }
         return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
     }
+
+    /// <summary>
+    /// Frees the resources used by the database.
+    /// </summary>
+    public void Dispose() => _lock.Dispose();
 }

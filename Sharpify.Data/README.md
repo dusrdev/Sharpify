@@ -15,6 +15,7 @@ An extension of `Sharpify` focused on data.
 * `Database` has upsert overloads which support any `IMemoryPackable` from [MemoryPack](https://github.com/Cysharp/MemoryPack), that enables to match the performance of `Database{T}` with less abstraction.
 * `Database` retrieval or upserts of values without per-key encryption is equal or rivals the performance of `Database{T}`,
 When used together with `IMemoryPackable` it will make a persistent-in-memory cache that will rival any other.
+* Both `Database` and `Database{T}` implement `IDisposable` and should be disposed after usage to make sure all resources are released, this should also prevent possible issues if the object is removed from memory while an operation is ongoing (i.e the user closes the application when a write isn't finished)
 
 ## Contact
 

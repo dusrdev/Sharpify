@@ -3,7 +3,7 @@ using Sharpify.Data;
 namespace Sharpify.Tests.Sharpify.Data.Tests;
 
 public class DatabaseTests {
-    private static Func<string, (string, Database)> Factory => p => {
+    private static Func<string, FactoryResult<Database>> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
@@ -12,73 +12,81 @@ public class DatabaseTests {
             EncryptionKey = "test",
             Options = DatabaseOptions.SerializeOnUpdate | DatabaseOptions.TriggerUpdateEvents
         });
-        return (path, database);
+        return new(path, database);
     };
 
     [Fact]
     public void Upsert() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
-        database.UpsertAsString("test", "test");
+        db.Database.UpsertAsString("test", "test");
 
         // Arrange
-        var (_, database2) = Factory(path);
+        using var db2 = Factory(db.Path);
 
         // Assert
-        database2.GetAsString("test").Should().Be("test");
+        db2.Database.GetAsString("test").Should().Be("test");
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     [Fact]
     public void UpsertMemoryPackable() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
-        database.Upsert("1", p1);
+        db.Database.Upsert("1", p1);
 
         // Arrange
-        var (_, database2) = Factory(path);
+        using var db2 = Factory(db.Path);
 
         // Assert
-        var p2 = database2.Get<Person>("1");
+        var p2 = db2.Database.Get<Person>("1");
         p2.Should().Be(p1);
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     [Fact]
     public async Task UpsertConcurrently() {
         // Arrange
-        var (path, database) = Factory("");
+        using var db = Factory("");
 
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
-        var test = new ConcurrentTest(database);
+        var test = new ConcurrentTest(db.Database);
         await items.Concurrent().ForEachAsync(test);
 
         // Arrange
-        var (_, database2) = Factory(path);
+        using var db2 = Factory(db.Path);
 
         // Assert
-        database2.Count.Should().Be(100);
+        db2.Database.Count.Should().Be(100);
 
         // Cleanup
-        File.Delete(path);
+        File.Delete(db.Path);
     }
 
     [Fact]
     public void Remove() {
-        var (path, database) = Factory("");
-        database.UpsertAsString("test", "test");
-        database.Remove("test");
-        database.ContainsKey("test").Should().BeFalse();
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.UpsertAsString("test", "test");
+        db.Database.Remove("test");
+
+        // Assert
+        db.Database.ContainsKey("test").Should().BeFalse();
+
+        // Cleanup
+        File.Delete(db.Path);
     }
 
     private class ConcurrentTest : IAsyncAction<int> {

@@ -1,3 +1,3 @@
 # CHANGELOG
 
-* Fixed issue where an exception would be thrown if `Upsert` overrides a key. it should by design override.
+* Upgraded concurrency synchronization model of `Database` and `Database{T}` to get more accurate reads when other threads are writing.
