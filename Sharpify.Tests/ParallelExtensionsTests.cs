@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 
 namespace Sharpify.Tests;
@@ -133,6 +134,27 @@ public class ParallelExtensionsTests {
 			{ 3, 6 }
 		});
     }
+
+    [Fact]
+    public async Task ForeachAsync_WithValidAsyncLocal_ReturnsValidResult() {
+        // Arrange
+        var dict = Enumerable.Range(1, 100).ToDictionary(x => x, x => x);
+        var results = new ConcurrentDictionary<int, int>(Environment.ProcessorCount, dict.Count);
+        var action = new MultiplyActionDictAsync(results);
+
+        var array = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
+        ((ICollection<KeyValuePair<int,int>>)dict).CopyTo(array, 0);
+        IList<KeyValuePair<int,int>> segment = new ArraySegment<KeyValuePair<int, int>>(array, 0, dict.Count);
+
+
+        // Act
+        await segment.AsAsyncLocal().ForEachAsync(action, loadBalance: false);
+        ArrayPool<KeyValuePair<int, int>>.Shared.Return(array);
+        var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
+
+        // Assert
+        results.Should().Equal(expected);
+    }
 }
 
 public readonly struct MultiplyActionAsync : IAsyncAction<int> {
@@ -144,6 +166,19 @@ public readonly struct MultiplyActionAsync : IAsyncAction<int> {
 
     public Task InvokeAsync(int value) {
         _results[value] = value * 2;
+        return Task.CompletedTask;
+    }
+}
+
+public readonly struct MultiplyActionDictAsync : IAsyncAction<KeyValuePair<int,int>> {
+    private readonly ConcurrentDictionary<int, int> _results;
+
+    public MultiplyActionDictAsync(ConcurrentDictionary<int, int> results) {
+        _results = results;
+    }
+
+    public Task InvokeAsync(KeyValuePair<int,int> value) {
+        _results[value.Key] = value.Value * 2;
         return Task.CompletedTask;
     }
 }

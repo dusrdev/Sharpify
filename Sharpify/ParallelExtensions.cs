@@ -13,6 +13,16 @@ public static partial class Extensions {
         : new Concurrent<T>(source);
 
     /// <summary>
+    /// Returns a <see cref="AsyncLocal{T}"/> wrapper for the given collection.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AsyncLocal<IList<T>> AsAsyncLocal<T>(this IList<T> source) => source is null
+        ? throw new ArgumentNullException(nameof(source))
+        : new AsyncLocal<IList<T>> {
+            Value = source
+        };
+
+    /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -90,6 +100,54 @@ public static partial class Extensions {
 
         return Task.WhenAll(Partitioner
             .Create(concurrentReference.Source)
+            .GetPartitions(batchCount)
+            .AsParallel()
+            .Select(AwaitPartition))
+            .WaitAsync(token);
+    }
+
+    /// <summary>
+    /// An extension method to perform an action on a collection of items in parallel asynchronously and in batches.
+    /// </summary>
+    /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
+    /// <param name="action">the async action object</param>
+    /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
+    /// <param name="token">a cancellation token</param>
+    /// <param name="loadBalance"></param>
+    /// <remarks>
+    /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static Task ForEachAsync<T>(
+        this AsyncLocal<IList<T>> asyncLocalReference,
+        IAsyncAction<T> action,
+        int degreeOfParallelism = -1,
+        CancellationToken token = default, bool loadBalance = false) {
+        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
+        var count = asyncLocalReference.Value.Count;
+
+        if (count is 0) {
+            return Task.CompletedTask;
+        }
+
+        if (degreeOfParallelism is -1) {
+            degreeOfParallelism = Environment.ProcessorCount;
+        }
+
+        var batchCount = count <= degreeOfParallelism
+            ? 1
+            : count / degreeOfParallelism;
+
+        async Task AwaitPartition(IEnumerator<T> partition) {
+            using (partition) {
+                while (partition.MoveNext()) {
+                    await action.InvokeAsync(partition.Current).ConfigureAwait(false);
+                }
+            }
+        }
+
+        return Task.WhenAll(Partitioner
+            .Create(asyncLocalReference.Value, loadBalance)
             .GetPartitions(batchCount)
             .AsParallel()
             .Select(AwaitPartition))

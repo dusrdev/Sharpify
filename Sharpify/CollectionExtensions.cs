@@ -51,6 +51,23 @@ public static partial class Extensions {
     }
 
     /// <summary>
+    /// Copies the elements of the dictionary to an array starting at the specified index.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
+    /// <param name="dict">The dictionary to copy from.</param>
+    /// <param name="arr">The one-dimensional array that is the destination of the elements copied from the dictionary.</param>
+    /// <param name="index">The zero-based index in the array at which copying begins.</param>
+    /// <exception cref="ArgumentException">Thrown when the number of elements in the source dictionary is greater than the available space from index to the end of the destination array.</exception>
+    public static void CopyTo<TKey,TValue>(this Dictionary<TKey,TValue> dict, KeyValuePair<TKey,TValue>[] arr, int index) where TKey : notnull {
+        if (arr.Length - index < dict.Count) {
+            throw new ArgumentException("The number of elements in the source Dictionary<TKey, TValue> is greater than the available space from index to the end of the destination array.");
+        }
+        var collection = dict as ICollection<KeyValuePair<TKey, TValue>>;
+        collection.CopyTo(arr, index);
+    }
+
+    /// <summary>
     /// Returns a new array with the elements sorted using the default comparer for the element type.
     /// </summary>
     /// <remarks>
