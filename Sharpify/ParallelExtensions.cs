@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
@@ -112,8 +113,8 @@ public static partial class Extensions {
     /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
     /// <param name="action">the async action object</param>
     /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
-    /// <param name="token">a cancellation token</param>
     /// <param name="loadBalance"></param>
+    /// <param name="token">a cancellation token</param>
     /// <remarks>
     /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
     /// </remarks>
@@ -122,7 +123,8 @@ public static partial class Extensions {
         this AsyncLocal<IList<T>> asyncLocalReference,
         IAsyncAction<T> action,
         int degreeOfParallelism = -1,
-        CancellationToken token = default, bool loadBalance = false) {
+        bool loadBalance = false,
+        CancellationToken token = default) {
         ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
         var count = asyncLocalReference.Value.Count;
 
@@ -138,19 +140,72 @@ public static partial class Extensions {
             ? 1
             : count / degreeOfParallelism;
 
-        async Task AwaitPartition(IEnumerator<T> partition) {
-            using (partition) {
-                while (partition.MoveNext()) {
-                    await action.InvokeAsync(partition.Current).ConfigureAwait(false);
-                }
-            }
-        }
+        var enumeratedPartition = new EnumeratedPartition<T>(action);
 
         return Task.WhenAll(Partitioner
             .Create(asyncLocalReference.Value, loadBalance)
             .GetPartitions(batchCount)
             .AsParallel()
-            .Select(AwaitPartition))
+            .Select(enumeratedPartition.AwaitPartitionAsync))
             .WaitAsync(token);
+    }
+
+    /// <summary>
+    /// An extension method to perform an value action on a collection of items in parallel asynchronously.
+    /// </summary>
+    /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
+    /// <param name="action">the async value action object</param>
+    /// <param name="token">a cancellation token</param>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static async ValueTask WhenAllAsync<T>(
+        this AsyncLocal<IList<T>> asyncLocalReference,
+        IAsyncValueAction<T> action,
+        CancellationToken token = default) {
+        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
+        var count = asyncLocalReference.Value.Count;
+
+        if (count is 0) {
+            return;
+        }
+
+        var totalArray = ArrayPool<ValueTask>.Shared.Rent(count);
+        var totalSegment = new ArraySegment<ValueTask>(totalArray, 0, count);
+        int totalIndex = 0;
+        var requireAllocation = ArrayPool<Task>.Shared.Rent(count);
+        int requireAllocationIndex = 0;
+
+        try {
+            foreach (var item in asyncLocalReference.Value) {
+                totalSegment[totalIndex++] = action.InvokeAsync(item);
+            }
+            foreach (var valueTask in totalSegment) {
+                if (valueTask.IsCompletedSuccessfully) {
+                    continue;
+                }
+                requireAllocation[requireAllocationIndex++] = valueTask.AsTask();
+            }
+            var requireAllocationSegment = new ArraySegment<Task>(requireAllocation, 0, requireAllocationIndex);
+            if (requireAllocationSegment.Count is 0) {
+                return;
+            }
+            await Task.WhenAll(requireAllocationSegment).WaitAsync(token).ConfigureAwait(false);
+        } finally {
+            ArrayPool<ValueTask>.Shared.Return(totalArray);
+            ArrayPool<Task>.Shared.Return(requireAllocation);
+        }
+    }
+
+    private sealed class EnumeratedPartition<T> {
+        private readonly IAsyncAction<T> _action;
+
+        public EnumeratedPartition(IAsyncAction<T> action) => _action = action;
+
+        public async Task AwaitPartitionAsync(IEnumerator<T> partition) {
+            using (partition) {
+                while (partition.MoveNext()) {
+                    await _action.InvokeAsync(partition.Current).ConfigureAwait(false);
+                }
+            }
+        }
     }
 }

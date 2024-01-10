@@ -155,6 +155,27 @@ public class ParallelExtensionsTests {
         // Assert
         results.Should().Equal(expected);
     }
+
+    [Fact]
+    public async Task WhenAllAsync_WithValidAsyncLocal_ReturnsValidResult() {
+        // Arrange
+        var dict = Enumerable.Range(1, 100).ToDictionary(x => x, x => x);
+        var results = new ConcurrentDictionary<int, int>(Environment.ProcessorCount, dict.Count);
+        var action = new MultiplyValueActionDictAsync(results);
+
+        var array = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
+        ((ICollection<KeyValuePair<int,int>>)dict).CopyTo(array, 0);
+        IList<KeyValuePair<int,int>> segment = new ArraySegment<KeyValuePair<int, int>>(array, 0, dict.Count);
+
+
+        // Act
+        await segment.AsAsyncLocal().WhenAllAsync(action);
+        ArrayPool<KeyValuePair<int, int>>.Shared.Return(array);
+        var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
+
+        // Assert
+        results.Should().Equal(expected);
+    }
 }
 
 public readonly struct MultiplyActionAsync : IAsyncAction<int> {
@@ -180,6 +201,19 @@ public readonly struct MultiplyActionDictAsync : IAsyncAction<KeyValuePair<int,i
     public Task InvokeAsync(KeyValuePair<int,int> value) {
         _results[value.Key] = value.Value * 2;
         return Task.CompletedTask;
+    }
+}
+
+public readonly struct MultiplyValueActionDictAsync : IAsyncValueAction<KeyValuePair<int,int>> {
+    private readonly ConcurrentDictionary<int, int> _results;
+
+    public MultiplyValueActionDictAsync(ConcurrentDictionary<int, int> results) {
+        _results = results;
+    }
+
+    public ValueTask InvokeAsync(KeyValuePair<int,int> value) {
+        _results[value.Key] = value.Value * 2;
+        return ValueTask.CompletedTask;
     }
 }
 

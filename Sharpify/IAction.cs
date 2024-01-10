@@ -19,3 +19,13 @@ public interface IAsyncAction<in T> {
     /// </summary>
     Task InvokeAsync(T item);
 }
+
+/// <summary>
+/// Interface to implement for a parallel async action on value task.
+/// </summary>
+public interface IAsyncValueAction<in T> {
+    /// <summary>
+    /// The main action to be performed.
+    /// </summary>
+    ValueTask InvokeAsync(T item);
+}
