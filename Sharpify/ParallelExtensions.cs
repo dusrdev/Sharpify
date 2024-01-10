@@ -53,6 +53,35 @@ public static partial class Extensions {
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static async Task InvokeAsync<T>(
+        this AsyncLocal<IList<T>> asyncLocalReference,
+        IAsyncAction<T> action,
+        CancellationToken token = default) {
+        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
+        var length = asyncLocalReference.Value.Count;
+
+        if (length is 0) {
+            return;
+        }
+
+        var array = ArrayPool<Task>.Shared.Rent(length);
+        var tasks = new ArraySegment<Task>(array, 0, length);
+
+        try {
+            var i = 0;
+            foreach (var item in asyncLocalReference.Value) {
+                tasks[i++] = action.InvokeAsync(item);
+            }
+            await Task.WhenAll(tasks).WaitAsync(token);
+        } finally {
+            array.ReturnRentedBuffer();
+        }
+    }
+
+    /// <summary>
+    /// An extension method to perform an action on a collection of items in parallel.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static void ForEach<T>(
         this Concurrent<T> concurrentReference,
@@ -91,19 +120,13 @@ public static partial class Extensions {
             ? 1
             : concurrentReference.Source.Count / degreeOfParallelism;
 
-        async Task AwaitPartition(IEnumerator<T> partition) {
-            using (partition) {
-                while (partition.MoveNext()) {
-                    await action.InvokeAsync(partition.Current);
-                }
-            }
-        }
+        var enumeratedPartition = new EnumeratedPartition<T>(action);
 
         return Task.WhenAll(Partitioner
             .Create(concurrentReference.Source)
             .GetPartitions(batchCount)
             .AsParallel()
-            .Select(AwaitPartition))
+            .Select(enumeratedPartition.AwaitPartitionAsync))
             .WaitAsync(token);
     }
 
@@ -119,7 +142,7 @@ public static partial class Extensions {
     /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static Task ForEachAsync<T>(
+    public static async Task ForEachAsync<T>(
         this AsyncLocal<IList<T>> asyncLocalReference,
         IAsyncAction<T> action,
         int degreeOfParallelism = -1,
@@ -129,7 +152,7 @@ public static partial class Extensions {
         var count = asyncLocalReference.Value.Count;
 
         if (count is 0) {
-            return Task.CompletedTask;
+            return;
         }
 
         if (degreeOfParallelism is -1) {
@@ -142,12 +165,23 @@ public static partial class Extensions {
 
         var enumeratedPartition = new EnumeratedPartition<T>(action);
 
-        return Task.WhenAll(Partitioner
+        var parallelPartitions = Partitioner
             .Create(asyncLocalReference.Value, loadBalance)
             .GetPartitions(batchCount)
-            .AsParallel()
-            .Select(enumeratedPartition.AwaitPartitionAsync))
-            .WaitAsync(token);
+            .AsParallel();
+
+        var array = ArrayPool<Task>.Shared.Rent(batchCount);
+        var partitions = new ArraySegment<Task>(array, 0, batchCount);
+
+        try {
+            var i = 0;
+            foreach (var partition in parallelPartitions) {
+                partitions[i++] = enumeratedPartition.AwaitPartitionAsync(partition);
+            }
+            await Task.WhenAll(partitions).WaitAsync(token);
+        } finally {
+            array.ReturnRentedBuffer();
+        }
     }
 
     /// <summary>
@@ -190,22 +224,8 @@ public static partial class Extensions {
             }
             await Task.WhenAll(requireAllocationSegment).WaitAsync(token).ConfigureAwait(false);
         } finally {
-            ArrayPool<ValueTask>.Shared.Return(totalArray);
-            ArrayPool<Task>.Shared.Return(requireAllocation);
-        }
-    }
-
-    private sealed class EnumeratedPartition<T> {
-        private readonly IAsyncAction<T> _action;
-
-        public EnumeratedPartition(IAsyncAction<T> action) => _action = action;
-
-        public async Task AwaitPartitionAsync(IEnumerator<T> partition) {
-            using (partition) {
-                while (partition.MoveNext()) {
-                    await _action.InvokeAsync(partition.Current).ConfigureAwait(false);
-                }
-            }
+            totalArray.ReturnRentedBuffer();
+            requireAllocation.ReturnRentedBuffer();
         }
     }
 }

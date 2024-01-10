@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -65,6 +66,37 @@ public static partial class Extensions {
         }
         var collection = dict as ICollection<KeyValuePair<TKey, TValue>>;
         collection.CopyTo(arr, index);
+    }
+
+    /// <summary>
+    /// Rents a buffer and copies the contents of the dictionary into it.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the dictionary keys.</typeparam>
+    /// <typeparam name="TValue">The type of the dictionary values.</typeparam>
+    /// <param name="dict">The dictionary to rent the buffer for.</param>
+    /// <returns>A tuple containing the rented buffer as an array and an array segment representing the copied items.</returns>
+    /// <remarks>
+    /// <para>The array segment is required since the ArrayPool can return a buffer larger than the length of the dictionary, for any operations use the array segment</para>
+    /// <para>The array is returned as the reference for the buffer, and should be used to return the buffer to the array pool after use. You can use <see cref="ReturnRentedBuffer"/> </para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (KeyValuePair<TKey, TValue>[] rentedBuffer, ArraySegment<KeyValuePair<TKey,TValue>> entries) RentBufferAndCopyEntries<TKey,TValue>(this Dictionary<TKey,TValue> dict) where TKey : notnull {
+        var count = dict.Count;
+        var arr = ArrayPool<KeyValuePair<TKey, TValue>>.Shared.Rent(count);
+        dict.CopyTo(arr, 0);
+        var segment = new ArraySegment<KeyValuePair<TKey, TValue>>(arr, 0, count);
+        return (arr, segment);
+    }
+
+    /// <summary>
+    /// Returns a rented buffer to the shared <see cref="ArrayPool{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the array.</typeparam>
+    /// <param name="arr">The array to return.</param>
+    /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the shared array pool</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReturnRentedBuffer<T>(this T[] arr) {
+        ArrayPool<T>.Shared.Return(arr);
     }
 
     /// <summary>

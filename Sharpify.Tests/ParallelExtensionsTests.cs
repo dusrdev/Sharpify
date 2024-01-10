@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Collections.Concurrent;
 
 namespace Sharpify.Tests;
@@ -62,6 +61,24 @@ public class ParallelExtensionsTests {
 
         // Act
         await collection.Concurrent().InvokeAsync(action);
+
+        // Assert
+        results.Should().Equal(new Dictionary<int, int> {
+			{ 1, 2 },
+			{ 2, 4 },
+			{ 3, 6 }
+		});
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithAsyncLocal_ReturnsValidResult() {
+        // Arrange
+        List<int> collection = new() { 1, 2, 3 };
+        var results = new ConcurrentDictionary<int, int>();
+        var action = new MultiplyActionAsync(results);
+
+        // Act
+        await collection.AsAsyncLocal().InvokeAsync(action);
 
         // Assert
         results.Should().Equal(new Dictionary<int, int> {
@@ -142,14 +159,11 @@ public class ParallelExtensionsTests {
         var results = new ConcurrentDictionary<int, int>(Environment.ProcessorCount, dict.Count);
         var action = new MultiplyActionDictAsync(results);
 
-        var array = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
-        ((ICollection<KeyValuePair<int,int>>)dict).CopyTo(array, 0);
-        IList<KeyValuePair<int,int>> segment = new ArraySegment<KeyValuePair<int, int>>(array, 0, dict.Count);
-
+        var (buffer, entries) = dict.RentBufferAndCopyEntries();
 
         // Act
-        await segment.AsAsyncLocal().ForEachAsync(action, loadBalance: false);
-        ArrayPool<KeyValuePair<int, int>>.Shared.Return(array);
+        await entries.AsAsyncLocal().ForEachAsync(action, loadBalance: false);
+        buffer.ReturnRentedBuffer();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -163,14 +177,12 @@ public class ParallelExtensionsTests {
         var results = new ConcurrentDictionary<int, int>(Environment.ProcessorCount, dict.Count);
         var action = new MultiplyValueActionDictAsync(results);
 
-        var array = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
-        ((ICollection<KeyValuePair<int,int>>)dict).CopyTo(array, 0);
-        IList<KeyValuePair<int,int>> segment = new ArraySegment<KeyValuePair<int, int>>(array, 0, dict.Count);
+        var (buffer, entries) = dict.RentBufferAndCopyEntries();
 
 
         // Act
-        await segment.AsAsyncLocal().WhenAllAsync(action);
-        ArrayPool<KeyValuePair<int, int>>.Shared.Return(array);
+        await entries.AsAsyncLocal().WhenAllAsync(action);
+        buffer.ReturnRentedBuffer();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
