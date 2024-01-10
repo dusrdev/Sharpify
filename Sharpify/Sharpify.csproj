@@ -6,8 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Version>1.5.0</Version>
         <PackageVersion>1.5.0</PackageVersion>
-        <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-        <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
