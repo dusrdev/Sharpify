@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.Tests", "Sharpify.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.Data", "Sharpify.Data\Sharpify.Data.csproj", "{439B1080-7153-40A3-A33F-78FC79D4B6B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.Cli", "Sharpify.Cli\Sharpify.Cli.csproj", "{37D56CBF-AD80-4361-8F43-568A93FB1D42}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
