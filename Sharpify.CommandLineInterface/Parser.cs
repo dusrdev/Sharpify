@@ -63,7 +63,7 @@ public static class Parser {
             argsSpan.CopyTo(CollectionsMarshal.AsSpan(list));
             return list;
         } finally {
-            buffer.ReturnRentedBuffer();
+            buffer.ReturnBufferToSharedArrayPool();
         }
     }
 
@@ -88,7 +88,7 @@ public static class Parser {
             var args = ParseArguments(argList, comparer);
             return args;
         } finally {
-            buffer.ReturnRentedBuffer();
+            buffer.ReturnBufferToSharedArrayPool();
         }
     }
 

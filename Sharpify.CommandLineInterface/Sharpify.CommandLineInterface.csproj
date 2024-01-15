@@ -4,8 +4,8 @@
       <TargetFrameworks>net8.0</TargetFrameworks>
       <LangVersion>latest</LangVersion>
       <ImplicitUsings>enable</ImplicitUsings>
-      <Version>1.0.0</Version>
-      <PackageVersion>1.0.0</PackageVersion>
+      <Version>1.0.1</Version>
+      <PackageVersion>1.0.1</PackageVersion>
       <Nullable>enable</Nullable>
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       <Authors>David Shnayder</Authors>
@@ -27,7 +27,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Sharpify" Version="[1.5.0,)" />
+      <PackageReference Include="Sharpify" Version="[1.6.0,)" />
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 

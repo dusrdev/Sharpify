@@ -131,7 +131,7 @@ public sealed class CliRunner {
 			.AppendLine(_metaData.License)
 			.AppendLine()
 			.AppendLine("Commands:");
-		var maxCommandLength = _commands.Max(static c => c.Name.Length);
+		var maxCommandLength = GetMaximumCommandLength();
 		foreach (Command command in _commands.AsSpan()) {
 			builder.Append(command.Name.PadRight(maxCommandLength))
 				.Append(" - ")
@@ -146,5 +146,15 @@ public sealed class CliRunner {
 			.AppendLine("--help")
 			.AppendLine();
 		return builder.ToString();
+	}
+
+	private int GetMaximumCommandLength() {
+		int max = 0;
+		foreach (Command command in _commands.AsSpan()) {
+			if (command.Name.Length > max) {
+				max = command.Name.Length;
+			}
+		}
+		return max;
 	}
 }

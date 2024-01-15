@@ -1,3 +1,4 @@
 # CHANGELOG (LATEST VERSION)
 
-* This is the initial version, it might not be perfectly stable or error-free.
+* Updated `Sharpify` dependency
+* Slightly improved performance of general help text generator
