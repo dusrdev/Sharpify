@@ -1,8 +1,6 @@
 using MemoryPack;
 
-using Sharpify.Data;
-
-namespace Sharpify.Tests.Sharpify.Data.Tests;
+namespace Sharpify.Data.Tests;
 
 public class DatabaseTTests {
     private static Func<string, FactoryResult<Database<Person>>> Factory => p => {

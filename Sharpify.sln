@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.CommandLineInterfa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.CommandLineInterface.Tests", "Sharpify.CommandLineInterface.Tests\Sharpify.CommandLineInterface.Tests.csproj", "{F61581C2-A15B-4456-8CC6-6BE47D9FFC73}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharpify.Data.Tests", "Sharpify.Data.Tests\Sharpify.Data.Tests.csproj", "{0454753C-11D0-47E1-86A8-971BF1C799A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{F61581C2-A15B-4456-8CC6-6BE47D9FFC73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F61581C2-A15B-4456-8CC6-6BE47D9FFC73}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F61581C2-A15B-4456-8CC6-6BE47D9FFC73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0454753C-11D0-47E1-86A8-971BF1C799A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0454753C-11D0-47E1-86A8-971BF1C799A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0454753C-11D0-47E1-86A8-971BF1C799A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0454753C-11D0-47E1-86A8-971BF1C799A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

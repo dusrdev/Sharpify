@@ -1,6 +1,4 @@
-using Sharpify.Data;
-
-namespace Sharpify.Tests.Sharpify.Data.Tests;
+namespace Sharpify.Data.Tests;
 
 public class DatabaseTests {
     private static Func<string, FactoryResult<Database>> Factory => p => {
