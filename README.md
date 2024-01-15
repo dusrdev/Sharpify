@@ -31,7 +31,13 @@ A collection of high performance language extensions for C#
 
 `Sharpify.Data` is an extension package, that should be installed on-top of `Sharpify` and adds 2 types of extreme performance persistent key-value-pair databases, utilizing [MemoryPack](https://github.com/Cysharp/MemoryPack).
 
-For more information check the inner directory.
+For more information check [inner directory](Sharpify.Data/README.md).
+
+## Sharpify.CommandLineInterface
+
+`Sharpify.CommandLineInterface` is another extension package that adds a high performance, reflection free and `AOT-ready` framework for creating command line interfaces
+
+For more information check [inner directory](Sharpify.CommandLineInterface/README.md)
 
 ## Contact
 
