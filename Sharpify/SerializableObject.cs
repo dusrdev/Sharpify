@@ -42,33 +42,34 @@ public class SerializableObject<T> : IDisposable {
     protected readonly SegmentedPath _segmentedPath;
 
     /// <summary>
+    /// The JSON serializer context used for serializing and deserializing objects.
+    /// </summary>
+    protected readonly JsonSerializerContext _jsonSerializerContext;
+
+    /// <summary>
     /// The lock object used for thread synchronization.
     /// </summary>
     protected readonly ReaderWriterLockSlim _lock = new();
 
     /// <summary>
-    /// The JSON serializer options used for serializing and deserializing objects.
-    /// </summary>
-    protected static readonly JsonSerializerOptions Options = new() {
-        WriteIndented = true,
-        IncludeFields = true,
-        NumberHandling = JsonNumberHandling.AllowReadingFromString
-    };
-
-    /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
+    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public SerializableObject(string path) : this(path, default!) { }
+    public SerializableObject(string path, JsonSerializerContext jsonSerializerContext) : this(path, default!, jsonSerializerContext) { }
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
+    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public SerializableObject(string path, T defaultValue) {
+
+
+    public SerializableObject(string path, T defaultValue, JsonSerializerContext jsonSerializerContext) {
+        _jsonSerializerContext = jsonSerializerContext;
         var dir = Path.GetDirectoryName(path);
         var fileName = Path.GetFileName(path);
         if (string.IsNullOrWhiteSpace(dir)) {
@@ -85,8 +86,7 @@ public class SerializableObject<T> : IDisposable {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    _value = JsonSerializer.Deserialize<T>(json, Options)
-                             ?? defaultValue;
+                    _value = (T)JsonSerializer.Deserialize(json, typeof(T), _jsonSerializerContext)!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }
@@ -105,8 +105,8 @@ public class SerializableObject<T> : IDisposable {
         _lock.EnterWriteLock();
         try {
             _value = value;
-            var json = JsonSerializer.Serialize(_value, Options);
-            File.WriteAllText(_path, json);
+            using var file = File.Open(_path, FileMode.Create);
+            JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
         } finally {
             _lock.ExitWriteLock();
         }
@@ -141,7 +141,8 @@ public class SerializableObject<T> : IDisposable {
         _lock.EnterWriteLock();
         try {
             _value = modifier(_value);
-            File.WriteAllText(_path, JsonSerializer.Serialize(_value, Options));
+            using var file = File.Open(_path, FileMode.Create);
+            JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();

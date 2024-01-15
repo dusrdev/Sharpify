@@ -11,7 +11,7 @@ public class SerializableObjectTests {
     public void Constructor_Throws_When_Directory_Does_Not_Exist() {
         // Arrange
         var path = "nonexistent/file.json";
-        var action = () => new MonitoredSerializableObject<Configuration>(path);
+        var action = () => new MonitoredSerializableObject<Configuration>(path, JsonContext.Default);
 
         // Act & Assert
         action.Should().Throw<IOException>();
@@ -20,7 +20,7 @@ public class SerializableObjectTests {
     [Fact]
     public void Constructor_Throws_When_Filename_Is_Invalid() {
         // Arrange
-        var action = () => new MonitoredSerializableObject<Configuration>(_basePath); // no filename
+        var action = () => new MonitoredSerializableObject<Configuration>(_basePath, JsonContext.Default); // no filename
 
         // Act & Assert
         action.Should().Throw<IOException>();
@@ -30,7 +30,7 @@ public class SerializableObjectTests {
     public void Constructor_Creates_File_When_File_Does_Not_Exist() {
         // Arrange
         var path = Path.Join(_basePath, "file.json");
-        var action = () => new MonitoredSerializableObject<Configuration>(path);
+        var action = () => new MonitoredSerializableObject<Configuration>(path, JsonContext.Default);
 
         // Act
         action.Should().NotThrow();
@@ -47,14 +47,14 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        var action = () => new MonitoredSerializableObject<Configuration>(path, config);
+        var action = () => new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
 
         // Act
         action.Should().NotThrow();
         // Assert
         File.Exists(path).Should().BeTrue();
         // Act
-        using var obj = new MonitoredSerializableObject<Configuration>(path);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, JsonContext.Default);
         // Assert
         obj.Value.Should().BeEquivalentTo(config);
 
@@ -67,13 +67,13 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(path, config);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
         const string newName = "Jane Doe";
 
         // Act
         obj.Modify(c => c with { Name = newName });
         // Assert
-        using var obj2 = new MonitoredSerializableObject<Configuration>(path);
+        using var obj2 = new MonitoredSerializableObject<Configuration>(path, JsonContext.Default);
         obj.Value.Name.Should().BeEquivalentTo(newName);
 
         // Cleanup
@@ -85,7 +85,7 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(path, config);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
         const string newName = "Jane Doe";
         int count = 0;
         Configuration lastValue = default;
@@ -109,7 +109,7 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(path, config);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
         int count = 0;
         Configuration lastValue = default;
         obj.OnChanged += (sender, e) => {
@@ -131,7 +131,7 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(path, config);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
         int count = 0;
         Configuration lastValue = default;
         obj.OnChanged += (sender, e) => {
@@ -159,7 +159,7 @@ public class SerializableObjectTests {
         // Arrange
         var path = Path.GetTempFileName();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(path, config);
+        using var obj = new MonitoredSerializableObject<Configuration>(path, config, JsonContext.Default);
         // Assert
         obj.OnChanged += (sender, e) => {
             e.Value.Should().Be("Jane");
@@ -171,9 +171,12 @@ public class SerializableObjectTests {
         // Cleanup
         File.Delete(path);
     }
-
-    private record struct Configuration {
-        public string Name { get; set; }
-        public int Age { get; set; }
-    }
 }
+internal record struct Configuration {
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(Configuration))]
+internal partial class JsonContext : JsonSerializerContext { }

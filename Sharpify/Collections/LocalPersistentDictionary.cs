@@ -35,13 +35,13 @@ public class LocalPersistentDictionary : PersistentDictionary {
 
     /// <inheritdoc/>
     protected override Dictionary<string, string>? Deserialize() {
-        var json = File.ReadAllText(_path);
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, InternalHelper.JsonOptions);
+        using var file = File.Open(_path, FileMode.Open);
+        return JsonSerializer.Deserialize(file, JsonContext.Default.DictionaryStringString);
     }
 
     /// <inheritdoc/>
     protected override async Task SerializeAsync() {
-        var json = JsonSerializer.Serialize(_dict, InternalHelper.JsonOptions);
-        await File.WriteAllTextAsync(_path, json);
+        await using var file = File.Open(_path, FileMode.Create);
+        await JsonSerializer.SerializeAsync(file, _dict, JsonContext.Default.DictionaryStringString);
     }
 }

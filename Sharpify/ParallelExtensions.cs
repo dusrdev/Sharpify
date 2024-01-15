@@ -75,7 +75,7 @@ public static partial class Extensions {
             }
             await Task.WhenAll(tasks).WaitAsync(token);
         } finally {
-            array.ReturnRentedBuffer();
+            array.ReturnBufferToSharedArrayPool();
         }
     }
 
@@ -180,7 +180,7 @@ public static partial class Extensions {
             }
             await Task.WhenAll(partitions).WaitAsync(token);
         } finally {
-            array.ReturnRentedBuffer();
+            array.ReturnBufferToSharedArrayPool();
         }
     }
 
@@ -224,8 +224,8 @@ public static partial class Extensions {
             }
             await Task.WhenAll(requireAllocationSegment).WaitAsync(token).ConfigureAwait(false);
         } finally {
-            totalArray.ReturnRentedBuffer();
-            requireAllocation.ReturnRentedBuffer();
+            totalArray.ReturnBufferToSharedArrayPool();
+            requireAllocation.ReturnBufferToSharedArrayPool();
         }
     }
 }

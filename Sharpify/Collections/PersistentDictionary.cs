@@ -13,9 +13,7 @@ public abstract class PersistentDictionary {
     /// </summary>
     protected Dictionary<string, string> _dict = [];
 
-    private record KVP(string Key, string Value);
-
-    private readonly ConcurrentQueue<KVP> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, string>> _queue = new();
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -98,7 +96,7 @@ public abstract class PersistentDictionary {
         }
 
         // Each call adds the key-value pair to the queue, and then tries to acquire the semaphore.
-        _queue.Enqueue(new KVP(key, value));
+        _queue.Enqueue(new(key, value));
 
         // Concurrent calls, will be stuck here until the semaphore is released.
         // Upon which the other thread inside might have already added the key-value pair to the dictionary.

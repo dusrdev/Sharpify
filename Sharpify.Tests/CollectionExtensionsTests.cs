@@ -105,7 +105,7 @@ public class CollectionExtensionsTests {
         dict.CopyTo(buffer, 0);
         var span = new Span<KeyValuePair<int, int>>(buffer, 0, dict.Count);
         span.ToArray().Should().Equal(dict);
-        buffer.ReturnRentedBuffer();
+        buffer.ReturnBufferToSharedArrayPool();
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class CollectionExtensionsTests {
         try {
             entries.ToArray().Should().Equal(dict);
         } finally {
-            buffer.ReturnRentedBuffer();
+            buffer.ReturnBufferToSharedArrayPool();
         }
     }
 

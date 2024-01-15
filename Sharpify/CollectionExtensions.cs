@@ -77,7 +77,7 @@ public static partial class Extensions {
     /// <returns>A tuple containing the rented buffer as an array and an array segment representing the copied items.</returns>
     /// <remarks>
     /// <para>The array segment is required since the ArrayPool can return a buffer larger than the length of the dictionary, for any operations use the array segment</para>
-    /// <para>The array is returned as the reference for the buffer, and should be used to return the buffer to the array pool after use. You can use <see cref="ReturnRentedBuffer"/> </para>
+    /// <para>The array is returned as the reference for the buffer, and should be used to return the buffer to the array pool after use. You can use <see cref="ReturnBufferToSharedArrayPool"/> </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static (KeyValuePair<TKey, TValue>[] rentedBuffer, ArraySegment<KeyValuePair<TKey,TValue>> entries) RentBufferAndCopyEntries<TKey,TValue>(this Dictionary<TKey,TValue> dict) where TKey : notnull {
@@ -95,8 +95,20 @@ public static partial class Extensions {
     /// <param name="arr">The array to return.</param>
     /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the shared array pool</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ReturnRentedBuffer<T>(this T[] arr) {
+    public static void ReturnBufferToSharedArrayPool<T>(this T[] arr) {
         ArrayPool<T>.Shared.Return(arr);
+    }
+
+    /// <summary>
+    /// Returns a rented buffer to the <paramref name="pool"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the array.</typeparam>
+    /// <param name="arr">The array to return.</param>
+    /// <param name="pool">The array pool to return the buffer to.</param>
+    /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the array pool</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReturnBufferToArrayPool<T>(this T[] arr, ArrayPool<T> pool) {
+        pool.Return(arr);
     }
 
     /// <summary>

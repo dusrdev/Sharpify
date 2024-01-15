@@ -163,7 +163,7 @@ public class ParallelExtensionsTests {
 
         // Act
         await entries.AsAsyncLocal().ForEachAsync(action, loadBalance: false);
-        buffer.ReturnRentedBuffer();
+        buffer.ReturnBufferToSharedArrayPool();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -182,7 +182,7 @@ public class ParallelExtensionsTests {
 
         // Act
         await entries.AsAsyncLocal().WhenAllAsync(action);
-        buffer.ReturnRentedBuffer();
+        buffer.ReturnBufferToSharedArrayPool();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert

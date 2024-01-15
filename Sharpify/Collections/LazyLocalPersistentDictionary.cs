@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 
 namespace Sharpify.Collections;
@@ -37,7 +38,7 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
         if (!File.Exists(_path)) {
             return null;
         }
-        ReadOnlySpan<byte> jsonUtf8Bytes = File.ReadAllBytes(_path);
+        ReadOnlySequence<byte> jsonUtf8Bytes = new(File.ReadAllBytes(_path));
         var reader = new Utf8JsonReader(jsonUtf8Bytes, InternalHelper.JsonReaderOptions);
         while (reader.Read()) {
             if (reader.TokenType is not JsonTokenType.PropertyName) {
@@ -80,14 +81,14 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
 
     /// <inheritdoc/>
     protected override Dictionary<string, string>? Deserialize() {
-        var json = File.ReadAllText(_path);
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, InternalHelper.JsonOptions);
+        using var file = File.Open(_path, FileMode.Open);
+        return JsonSerializer.Deserialize(file, JsonContext.Default.DictionaryStringString);
     }
 
     /// <inheritdoc/>
     protected override async Task SerializeAsync() {
-        var json = JsonSerializer.Serialize(_dict, InternalHelper.JsonOptions);
-        await File.WriteAllTextAsync(_path, json);
+        await using var file = File.Open(_path, FileMode.Create);
+        await JsonSerializer.SerializeAsync(file, _dict, JsonContext.Default.DictionaryStringString);
         _dict = Empty;
     }
 }

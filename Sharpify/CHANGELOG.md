@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v1.6.0
+
+* Performed IO optimizations to `LocalPersistentDictionary` and `LazyLocalPersistentDictionary`
+* **BREAKING** `ReturnRentedBuffer` was renamed to `ReturnBufferToSharedArrayPool` to better explain what it does,
+Also added a method `ReturnToArrayPool` which takes an `ArrayPool` in case anyone wanted an extension method to be used with custom `ArrayPool`. The main reason for both these extensions is because the `ArrayPool`s generic type is on the class and not the method, it usually can't be inferred, resulting in longer and more difficult code to write. The extension methods hide all of the generic types because they are made in a format which the compiler can infer from.
+* **BREAKING** `SerializableObject` and `MonitoredSerializableObject` now require a `JsonSerializationContext` parameter, that makes them use compile time AOT compatible serialization. This was required in order to make the entire library AOT compatible.
+
 ## v1.5.0
 
 * **BREAKING** `StringBuffer`s and `AllocatedStringBuffer`s constructor have been made internal, to enforce usage of the factory methods. The factory methods of both are now under `StringBuffer` and vary by name to indicate the type you are getting back. `StringBuffer.Rent(capacity)` will return a `StringBuffer` which rents memory from the array pool. And `StringBuffer.Create(Span{char})` will return an `AllocatedStringBuffer` which works on pre-allocated buffer. `StringBuffer` still implements `IDisposable` so should be used together with a `using` statement or keyword. Also, the implicit converters should now be prioritized to be inlined by the compiler.
