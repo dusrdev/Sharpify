@@ -1,6 +1,6 @@
 # Sharpify.CommandLineInterface
 
-`Sharpify.CommandLineInterface` is a high performance, reflection free and AOT-ready framework for creating command line interfaces, with a configurable output writer and no direct dependency to `System.Console` enabling it to be embedded and used with inputs from any source.
+`Sharpify.CommandLineInterface` is a high performance, reflection free and AOT-ready framework for creating command line interfaces, with a configurable output writer and no direct dependency to `System.Console` enabling it to be embedded, used with inputs from any source and output to any source.
 
 Most other command line frameworks in c# use `reflection` to provide their "magic" such as generating help text, and providing input validation, `Sharpify.CommandLineInterface` instead uses compile time implemented metadata and static resolve of said metadata for this. each command, must implement the `Command` abstract class, part of which will be to set the command metadata, the main entry `CliRunner` also has an application level metadata object that can be customized in the `CliBuilder` process, using those, `Sharpify.CommandLineInterface` can resolve and format that metadata to generate an output similar to the other frameworks.
 
@@ -63,7 +63,7 @@ public static class Program {
 ```
 
 We can see that we can use high performances compiler optimized `ReadOnlySpan` to consolidate the commands,
-We can also add command one by one, or even using `reflection` to get from executing or other assembly, although this will not be safe for AOT.
+We can also add command one by one, using `params []` or `ReadOnlySpan<Command>`, if you want, you can also dynamically create an array of `Command`s from the executing assembly or any other using `reflection` and pass it as an argument, however this won't be AOT-compatible.
 
 Then we use the fluent api to add the commands, set the output to the console (we can also set it to any `TextWriter`), then we modify the global metadata and build.
 

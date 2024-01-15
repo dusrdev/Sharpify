@@ -23,6 +23,7 @@
       <PublishRepositoryUrl>true</PublishRepositoryUrl>
       <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
       <SynchReleaseVersion>false</SynchReleaseVersion>
+      <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
 
     <ItemGroup>
