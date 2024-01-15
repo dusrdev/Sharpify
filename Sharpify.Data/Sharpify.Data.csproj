@@ -35,6 +35,6 @@
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
-</ItemGroup>
+  </ItemGroup>
 
 </Project>
