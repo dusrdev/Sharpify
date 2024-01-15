@@ -4,6 +4,7 @@ A collection of high performance language extensions for C#
 
 ## Features
 
+* ⚡ Fully Native AOT compatible
 * 🤷 `Either<T0, T1>` - Discriminated union object that forces handling of both cases
 * 🦾 Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
 * 🚀 Extremely efficient concurrency with `Concurrent` collection wrapper and `IAction`/`IAsyncAction` interfaces, and even more efficient with `AsyncLocal` optimized APIs.
