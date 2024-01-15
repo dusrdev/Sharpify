@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Text.Json.Serialization;
 
 using MemoryPack;
 
@@ -9,11 +10,9 @@ namespace Sharpify.Data;
 /// A high performance database that stores string-byte[] pairs.
 /// </summary>
 public sealed class Database : IDisposable {
-    private record KVP(string Key, byte[] Value);
-
     private readonly Dictionary<string, byte[]> _data;
 
-    private readonly ConcurrentQueue<KVP> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -227,7 +226,7 @@ public sealed class Database : IDisposable {
             val = Helper.Instance.Encrypt(value, encryptionKey);
         }
 
-        _queue.Enqueue(new KVP(key, val));
+        _queue.Enqueue(new(key, val));
 
         if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
             InvokeDataEvent(new DataChangedEventArgs {
@@ -297,14 +296,15 @@ public sealed class Database : IDisposable {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
+    /// <param name="jsonSerializerContext">That can be used to serialize T</param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
     /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
     /// </remarks>
-    public void UpsertAsT<T>(string key, T value, string encryptionKey = "") {
+    public void UpsertAsT<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") {
         var bytes = value is null ?
                     Array.Empty<byte>()
-                    : value.Serialize().ToByteArray();
+                    : value.Serialize(jsonSerializerContext).ToByteArray();
 
         Upsert(key, bytes, encryptionKey);
     }

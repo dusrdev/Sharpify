@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.1.0
+
+* **BREAKING** `UpsertAsT` functions signature changed to force usage of new parameter, which is a `JsonSerializerContext` that can serialize `T`.
+* Simplified structures of inner data representation, slightly reducing assembly size.
+* `Sharpify.Data` is now fully AOT compatible
+
 ## v1.0.3
 
 * Upgraded concurrency synchronization model of `Database` and `Database{T}` to get more accurate reads when other threads are writing.

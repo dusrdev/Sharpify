@@ -7,11 +7,9 @@ namespace Sharpify.Data;
 /// A high performance database that stores string-T pairs. O(1) CRUD but O(N) Serialization.
 /// </summary>
 public sealed class Database<T> : IDisposable {
-    private record KVP(string Key, T Value);
-
     private readonly Dictionary<string, T> _data;
 
-    private readonly ConcurrentQueue<KVP> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, T>> _queue = new();
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -220,7 +218,7 @@ public sealed class Database<T> : IDisposable {
     /// <param name="key"></param>
     /// <param name="value"></param>
     public void Upsert(string key, T value) {
-        _queue.Enqueue(new KVP(key, value));
+        _queue.Enqueue(new(key, value));
 
         if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
             InvokeDataEvent(new DataChangedEventArgs {

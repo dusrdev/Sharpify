@@ -47,7 +47,7 @@ internal static class Serializer {
         string encryptionKey,
         DatabaseOptions options = 0,
         CancellationToken token = default) {
-        ReadOnlyMemory<byte> bin = await File.ReadAllBytesAsync(path, token);
+        ReadOnlyMemory<byte> bin = new(await File.ReadAllBytesAsync(path, token));
         return DeserializeDict<TSerialized>(bin.Span, options, encryptionKey);
     }
 
@@ -61,7 +61,7 @@ internal static class Serializer {
             }
 
             if (encryptionKey.Length is 0) {
-                ReadOnlySpan<byte> buffer = bin;
+                var buffer = bin;
 
                 var formatter = new DictionaryFormatter<string, TSerialized>(options.GetComparer());
 
@@ -77,7 +77,7 @@ internal static class Serializer {
             } else {
                 var rented = ArrayPool<byte>.Shared.Rent(bin.Length);
                 int length = Helper.Instance.Decrypt(bin, rented, encryptionKey);
-                ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(rented, 0, length);
+                ReadOnlySpan<byte> buffer = new(rented, 0, length);
 
                 var formatter = new DictionaryFormatter<string, TSerialized>(options.GetComparer());
 
