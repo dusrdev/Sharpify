@@ -11,11 +11,22 @@ public sealed class CliRunner {
 	/// </summary>
 	public static CliBuilder CreateBuilder() => new();
 
+	/// <summary>
+	/// A thread local <see cref="StringBuilder"/> instance that can be used to generate outputs while minimizing allocations.
+	/// </summary>
 	public static readonly ThreadLocal<StringBuilder> StrBuilder = new(() => new StringBuilder());
 
 	private readonly List<Command> _commands;
+
+	/// <summary>
+	/// Gets the output writer for the CLI application.
+	/// </summary>
+	/// <remarks>Defaults to <see cref="TextWriter.Null"/></remarks>
 	public static TextWriter OutputWriter { get; private set; } = TextWriter.Null;
 
+	/// <summary>
+	/// Sets the output writer for the CLI application.
+	/// </summary>
 	public static void SetOutputWriter(TextWriter writer) {
 		OutputWriter = writer;
 	}
@@ -24,7 +35,7 @@ public sealed class CliRunner {
 	private readonly string _help;
 
 	/// <summary>
-	/// Creates a new instance of the <see cref="Cli"/> class.
+	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
     internal CliRunner(List<Command> commands, CliMetadata metaData) {
@@ -36,11 +47,11 @@ public sealed class CliRunner {
 	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
-    public ValueTask<int> RunAsync(string args, bool commandNameRequired = true) {
+    public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
 			return OutputHelper.Return("No command specified", 404, true);
 		}
-		var arguments = Parser.ParseArguments(args.AsSpan());
+		var arguments = Parser.ParseArguments(args);
 		return RunAsync(arguments, commandNameRequired);
 	}
 
@@ -97,6 +108,7 @@ public sealed class CliRunner {
 		return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 	}
 
+	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelp() {
 		var builder = StrBuilder.Value!;
 		builder.Clear()
