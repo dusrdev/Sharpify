@@ -55,6 +55,18 @@ public sealed class Arguments {
     /// <summary>
     /// Tries to retrieve the value of a specified key in the arguments.
     /// </summary>
+	/// <param name="key">The positional argument to check.</param>
+	/// <param name="defaultValue">The default value to return if the key doesn't exist.</param>
+	/// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+	/// <remarks>
+	/// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+	/// </remarks>
+	/// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetValue<T>(int key, T defaultValue, out T value) where T : IParsable<T> => TryGetValue(key.ToString(), defaultValue, out value);
+
+    /// <summary>
+    /// Tries to retrieve the value of a specified key in the arguments.
+    /// </summary>
 	/// <param name="key">The key to check.</param>
 	/// <param name="defaultValue">The default value to return if the key doesn't exist.</param>
 	/// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
@@ -75,6 +87,18 @@ public sealed class Arguments {
 		value = result!;
         return true;
     }
+
+    /// <summary>
+	/// Tries to retrieve the enum value of a specified key in the arguments.
+	/// </summary>
+	/// <param name="key">The positional argument to check.</param>
+	/// <param name="defaultValue">The default value to return if the key doesn't exist.</param>
+	/// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+	/// <remarks>
+	/// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+	/// </remarks>
+	/// <returns>true if the key exists, false otherwise.</returns>
+	public bool TryGetEnum<TEnum>(int key, TEnum defaultValue, out TEnum value) where TEnum : struct, Enum => TryGetEnum(key.ToString(), defaultValue, out value);
 
 	/// <summary>
 	/// Tries to retrieve the enum value of a specified key in the arguments.

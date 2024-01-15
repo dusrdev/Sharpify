@@ -49,11 +49,11 @@ public static class Program {
         .AddCommands(Commands)
         .UseConsoleAsOutputWriter()
         .ModifyMetadata(metadata => {
-       Name = "MyCli";
-       Descriptions = "MyCli Description";
-       Author = "John Doe";
-       Version = "1.0.0";
-       License = "MIT"
+       metadata.Name = "MyCli";
+       metadata.Descriptions = "MyCli Description";
+       metadata.Author = "John Doe";
+       metadata.Version = "1.0.0";
+       metadata.License = "MIT"
         })
         .Build();
 
@@ -83,3 +83,4 @@ Running the app with `RunAsync` parses the `args`, and handles `help` requests, 
 * `Parser` also has overloads for parsing arguments that configure a `StringComparer`, by default a `CurrentCultureIgnoreCase` is used, but whatever you prefer can be used instead.
 * `CliRunner.RunAsync` has overloads for `ReadOnlySpan<char>` (string), `ReadOnlySpan<string>` (array), and `Arguments` giving you full control over your input, and even custom parsing.
 * `Command` help text is resolves using the virtual `GetHelp` method, it can be overridden to suit you needs, you can use `CliRunner.StrBuilder` instance to modify anything virtually allocation free (just remember to clear the `StringBuilder` first)
+* The only place an exception can be thrown is when a `CliRunner` is trying to be created without any commands loaded in the `CliBuilder`, this should not "surprise" anyone as it should never happen after design time.

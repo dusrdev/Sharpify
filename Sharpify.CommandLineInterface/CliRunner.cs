@@ -1,9 +1,10 @@
-﻿using System.Text;
+﻿using System.Collections.ObjectModel;
+using System.Text;
 
 namespace Sharpify.CommandLineInterface;
 
 /// <summary>
-/// Provides the means of running a CLI application and configuring package wide settings.
+/// Provides the means of running a CLI and configuring package wide settings.
 /// </summary>
 public sealed class CliRunner {
 	/// <summary>
@@ -19,13 +20,18 @@ public sealed class CliRunner {
 	private readonly List<Command> _commands;
 
 	/// <summary>
-	/// Gets the output writer for the CLI application.
+	/// Gets the commands registered with the CLI runner.
+	/// </summary>
+	public ReadOnlyCollection<Command> Commands => _commands.AsReadOnly();
+
+	/// <summary>
+	/// Gets the output writer for the CLI runner.
 	/// </summary>
 	/// <remarks>Defaults to <see cref="TextWriter.Null"/></remarks>
 	public static TextWriter OutputWriter { get; private set; } = TextWriter.Null;
 
 	/// <summary>
-	/// Sets the output writer for the CLI application.
+	/// Sets the output writer for the CLI runner.
 	/// </summary>
 	public static void SetOutputWriter(TextWriter writer) {
 		OutputWriter = writer;
@@ -38,16 +44,16 @@ public sealed class CliRunner {
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
-    internal CliRunner(List<Command> commands, CliMetadata metaData) {
-        _commands = commands;
-        _metaData = metaData;
+	internal CliRunner(List<Command> commands, CliMetadata metaData) {
+		_commands = commands;
+		_metaData = metaData;
 		_help = GenerateHelp();
-    }
+	}
 
 	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
-    public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
+	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
 			return OutputHelper.Return("No command specified", 404, true);
 		}
@@ -74,17 +80,17 @@ public sealed class CliRunner {
 			return OutputHelper.Return("Input could not be parsed", 400, true);
 		}
 		if (!commandNameRequired) {
-			if (_commands.Count is 1) {
-				if (arguments.Contains("help")) {
-					OutputWriter.WriteLine(_commands[0].GetHelp());
-				}
-				return _commands[0].ExecuteAsync(arguments);
+			if (_commands.Count is not 1) {
+				return OutputHelper.Return("Command name is required when using more than one command", 405, true);
 			}
-			return OutputHelper.Return("Command name is required when using more than one command", 405, true);
+			if (arguments.Contains("help")) {
+				return OutputHelper.Return(_commands[0].GetHelp(), 0);
+			}
+			return _commands[0].ExecuteAsync(arguments);
 		}
+
 		if (arguments.Count is 1 && arguments.Contains("help")) {
-			OutputWriter.WriteLine(_help);
-			return ValueTask.FromResult(0);
+			return OutputHelper.Return(_help, 0);
 		}
 
 		if (!arguments.TryGetValue(0, out string commandName)) {
@@ -128,8 +134,8 @@ public sealed class CliRunner {
 		var maxCommandLength = _commands.Max(static c => c.Name.Length);
 		foreach (Command command in _commands.AsSpan()) {
 			builder.Append(command.Name.PadRight(maxCommandLength))
-                .Append(" - ")
-                .AppendLine(command.Description);
+				.Append(" - ")
+				.AppendLine(command.Description);
 		}
 		builder
 			.AppendLine()
