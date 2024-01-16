@@ -7,6 +7,7 @@ namespace Sharpify.Collections;
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
 public ref partial struct StringBuffer {
+    private static readonly string NewLine = Environment.NewLine;
     private readonly char[] _source;
     private readonly Span<char> _buffer;
     private readonly int _length;
@@ -84,6 +85,45 @@ public ref partial struct StringBuffer {
         }
 
         _position += charsWritten;
+    }
+
+    /// <summary>
+    /// Appends the platform specific new line to the buffer.
+    /// </summary>
+    public void AppendLine() {
+        Append(NewLine);
+    }
+
+    /// <summary>
+    /// Appends the specified character to the buffer followed by the platform specific new line.
+    /// </summary>
+    /// <param name="c"></param>
+    public void AppendLine(char c) {
+        Append(c);
+        Append(NewLine);
+    }
+
+    /// <summary>
+    /// Appends the specified string to the buffer followed by the platform specific new line.
+    /// </summary>
+    /// <param name="str">The string to append.</param>
+    /// <returns>The same instance of the buffer</returns>
+    public void AppendLine(ReadOnlySpan<char> str) {
+        Append(str);
+        Append(NewLine);
+    }
+
+    /// <summary>
+    /// Appends a value to the string buffer, using the specified format and format provider, followed by the platform specific new line.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to append.</typeparam>
+    /// <param name="value">The value to append.</param>
+    /// <param name="format">The format specifier to apply to the value.</param>
+    /// <param name="provider">The format provider to use.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
+    public void AppendLine<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+        Append(value, format, provider);
+        Append(NewLine);
     }
 
     /// <summary>
