@@ -39,4 +39,9 @@ public record CliMetadata {
 		Author = "John Doe",
 		License = "MIT"
 	};
+
+	/// <summary>
+	/// Returns the total length of the metadata.
+	/// </summary>
+	public int TotalLength => Name.Length + Description.Length + Version.Length + Author.Length + License.Length;
 }

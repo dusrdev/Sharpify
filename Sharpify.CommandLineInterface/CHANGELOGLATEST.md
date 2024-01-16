@@ -1,4 +1,3 @@
 # CHANGELOG (LATEST VERSION)
 
-* Updated `Sharpify` dependency
-* Slightly improved performance of general help text generator
+* Removed thread-local `StringBuilder` from `CliRunner`, replaced all usages with `StringBuffer` from `Sharpify`

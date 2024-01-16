@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 1.0.2
+
+* Removed thread-local `StringBuilder` from `CliRunner`, replaced all usages with `StringBuffer` from `Sharpify`
+
 ## Version 1.0.1
 
 * Updated `Sharpify` dependency

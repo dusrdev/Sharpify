@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text;
+
+using Sharpify.Collections;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -11,11 +12,6 @@ public sealed class CliRunner {
 	/// Creates a new instance of the <see cref="CliBuilder"/> class.
 	/// </summary>
 	public static CliBuilder CreateBuilder() => new();
-
-	/// <summary>
-	/// A thread local <see cref="StringBuilder"/> instance that can be used to generate outputs while minimizing allocations.
-	/// </summary>
-	public static readonly ThreadLocal<StringBuilder> StrBuilder = new(() => new StringBuilder());
 
 	private readonly List<Command> _commands;
 
@@ -116,36 +112,48 @@ public sealed class CliRunner {
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelp() {
-		var builder = StrBuilder.Value!;
-		builder.Clear()
-			.AppendLine()
-			.AppendLine(_metaData.Name)
-			.AppendLine()
-			.AppendLine(_metaData.Description)
-			.AppendLine()
-			.Append("Author: ")
-			.AppendLine(_metaData.Author)
-			.Append("Version: ")
-			.AppendLine(_metaData.Version)
-			.Append("License: ")
-			.AppendLine(_metaData.License)
-			.AppendLine()
-			.AppendLine("Commands:");
+		var length = _metaData.TotalLength + _commands.Count * 128 + 256;
+		var newline = Environment.NewLine.AsSpan();
+		// here the likely help text is larger than per command, so we use a rented buffer
+		var buffer = StringBuffer.Rent(length);
+		buffer.Append(newline);
+		buffer.Append(_metaData.Name);
+		buffer.Append(newline);
+		buffer.Append(newline);
+		buffer.Append(_metaData.Description);
+		buffer.Append(newline);
+		buffer.Append(newline);
+		buffer.Append("Author: ");
+		buffer.Append(_metaData.Author);
+		buffer.Append(newline);
+		buffer.Append("Version: ");
+		buffer.Append(_metaData.Version);
+		buffer.Append(newline);
+		buffer.Append("License: ");
+		buffer.Append(_metaData.License);
+		buffer.Append(newline);
+		buffer.Append(newline);
+		buffer.Append("Commands:");
 		var maxCommandLength = GetMaximumCommandLength();
 		foreach (Command command in _commands.AsSpan()) {
-			builder.Append(command.Name.PadRight(maxCommandLength))
-				.Append(" - ")
-				.AppendLine(command.Description);
+			buffer.Append(command.Name.PadRight(maxCommandLength));
+			buffer.Append(" - ");
+			buffer.Append(command.Description);
+			buffer.Append(newline);
 		}
-		builder
-			.AppendLine()
-			.AppendLine("To get help for a command, use the following syntax:")
-			.AppendLine("<command> --help")
-			.AppendLine()
-			.AppendLine("To get help for the application, use the following syntax:")
-			.AppendLine("--help")
-			.AppendLine();
-		return builder.ToString();
+		buffer.Append(
+			"""
+
+			To get help for a command, use the following syntax:
+			<command> --help
+
+			To get help for the application, use the following syntax:
+			--help
+
+			"""
+		);
+
+		return buffer.Allocate(true);
 	}
 
 	private int GetMaximumCommandLength() {
