@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 using MemoryPack;
@@ -10,9 +11,9 @@ namespace Sharpify.Data;
 /// A high performance database that stores string-byte[] pairs.
 /// </summary>
 public sealed class Database : IDisposable {
-    private readonly Dictionary<string, byte[]> _data;
+    private readonly Dictionary<string, ReadOnlyMemory<byte>> _data;
 
-    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, ReadOnlyMemory<byte>>> _queue = new();
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -45,7 +46,7 @@ public sealed class Database : IDisposable {
             return new Database(new(config.Options.GetComparer()), config);
         }
 
-        Dictionary<string, byte[]> dict = config.Path.Deserialize<byte[]>(
+        Dictionary<string, ReadOnlyMemory<byte>> dict = config.Path.Deserialize<ReadOnlyMemory<byte>>(
                 config.EncryptionKey,
                 config.Options);
 
@@ -60,7 +61,7 @@ public sealed class Database : IDisposable {
             return new Database(new(config.Options.GetComparer()), config);
         }
 
-        Dictionary<string, byte[]> dict = await config.Path.DeserializeAsync<byte[]>(
+        Dictionary<string, ReadOnlyMemory<byte>> dict = await config.Path.DeserializeAsync<ReadOnlyMemory<byte>>(
                 config.EncryptionKey,
                 config.Options,
                 token);
@@ -68,7 +69,7 @@ public sealed class Database : IDisposable {
         return new Database(dict, config);
     }
 
-    private Database(Dictionary<string, byte[]> data, DatabaseConfiguration config) {
+    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config) {
         _data = data;
         Config = config;
     }
@@ -92,6 +93,13 @@ public sealed class Database : IDisposable {
     public bool ContainsKey(string key) => _data.ContainsKey(key);
 
     /// <summary>
+    /// Returns a <see cref="DatabaseFilter{T}"/> that can be used to filter the database by type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public DatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new(this);
+
+    /// <summary>
     /// Returns the value for the <paramref name="key"/> as a byte[].
     /// </summary>
     /// <param name="key"></param>
@@ -101,16 +109,17 @@ public sealed class Database : IDisposable {
     /// </para>
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
-    public ReadOnlySpan<byte> Get(string key, string encryptionKey = "") {
+    public ReadOnlyMemory<byte> Get(string key, string encryptionKey = "") {
         _lock.EnterReadLock();
         try {
-            if (!_data.TryGetValue(key, out var val)) {
-                return default;
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                return ReadOnlyMemory<byte>.Empty;
             }
             if (encryptionKey.Length is 0) {
                 return val;
             }
-            return Helper.Instance.Decrypt(val, encryptionKey);
+            return Helper.Instance.Decrypt(val.Span, encryptionKey);
         } finally {
             _lock.ExitReadLock();
         }
@@ -124,11 +133,24 @@ public sealed class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
     public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
-        var bytes = Get(key, encryptionKey);
-        if (bytes.Length is 0) {
-            return default;
+        _lock.EnterReadLock();
+        try {
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                return default;
+            }
+            if (encryptionKey.Length is 0) {
+                return MemoryPackSerializer.Deserialize<T>(val.Span);
+            }
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
+            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+            var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes)!;
+            buffer.ReturnBufferToSharedArrayPool();
+            return result;
+        } finally {
+            _lock.ExitReadLock();
         }
-        return MemoryPackSerializer.Deserialize<T>(bytes);
     }
 
     /// <summary>
@@ -139,17 +161,18 @@ public sealed class Database : IDisposable {
     public string GetAsString(string key, string encryptionKey = "") {
         _lock.EnterReadLock();
         try {
-            if (!_data.TryGetValue(key, out var val)) {
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
                 return "";
             }
             if (encryptionKey.Length is 0) {
-                return new ReadOnlySpan<byte>(val).ToUtf8String();
+                return MemoryPackSerializer.Deserialize<string>(val.Span)!;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
-            int length = Helper.Instance.Decrypt(val, buffer, encryptionKey);
+            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            var result = bytes.Length is 0 ? "" : bytes.ToUtf8String();
-            ArrayPool<byte>.Shared.Return(buffer);
+            var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
+            buffer.ReturnBufferToSharedArrayPool();
             return result;
         } finally {
             _lock.ExitReadLock();
@@ -217,13 +240,13 @@ public sealed class Database : IDisposable {
     /// <remarks>
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
-    public void Upsert(string key, byte[] value, string encryptionKey = "") {
-        byte[] val;
+    public void Upsert(string key, ReadOnlyMemory<byte> value, string encryptionKey = "") {
+        ReadOnlyMemory<byte> val;
 
         if (encryptionKey.Length is 0) {
             val = value;
         } else {
-            val = Helper.Instance.Encrypt(value, encryptionKey);
+            val = Helper.Instance.Encrypt(value.Span, encryptionKey);
         }
 
         _queue.Enqueue(new(key, val));
@@ -261,12 +284,12 @@ public sealed class Database : IDisposable {
     private void EmptyQueue() {
         _lock.EnterWriteLock();
         try {
-            bool itemsWereAdded = false;
+            nint itemsAdded = 0;
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
-                itemsWereAdded = true;
+                itemsAdded++;
             }
-            if (itemsWereAdded && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            if (itemsAdded is not 0 && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
                 Serialize();
             }
         } finally {
@@ -281,12 +304,12 @@ public sealed class Database : IDisposable {
     /// <param name="value"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
-    /// This is much less efficient time and memory wise than <see cref="Upsert(string, byte[], string?)"/>.
+    /// This is much less efficient time and memory wise than <see cref="Upsert(string, ReadOnlyMemory{byte}, string?)"/>.
     /// </remarks>
     public void UpsertAsString(string key, string value, string encryptionKey = "") {
-        var bytes = string.IsNullOrEmpty(value) ?
-                    Array.Empty<byte>()
-                    : value.ToByteArray();
+        ReadOnlyMemory<byte> bytes = value.Length is 0 ?
+                    ReadOnlyMemory<byte>.Empty
+                    : MemoryPackSerializer.Serialize(value);
 
         Upsert(key, bytes, encryptionKey);
     }
@@ -302,9 +325,9 @@ public sealed class Database : IDisposable {
     /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
     /// </remarks>
     public void UpsertAsT<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") {
-        var bytes = value is null ?
-                    Array.Empty<byte>()
-                    : value.Serialize(jsonSerializerContext).ToByteArray();
+        ReadOnlyMemory<byte> bytes = value is null ?
+                    ReadOnlyMemory<byte>.Empty
+                    : MemoryPackSerializer.Serialize(value.Serialize(jsonSerializerContext));
 
         Upsert(key, bytes, encryptionKey);
     }
@@ -325,8 +348,10 @@ public sealed class Database : IDisposable {
     /// Saves the database to the hard disk.
     /// </summary>
     public void Serialize() {
-        while (_queue.TryDequeue(out var kvp)) {
-            _data[kvp.Key] = kvp.Value;
+        if (!Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            while (_queue.TryDequeue(out var kvp)) {
+                _data[kvp.Key] = kvp.Value;
+            }
         }
         _data.Serialize(Config.Path, Config.EncryptionKey);
     }
@@ -335,8 +360,10 @@ public sealed class Database : IDisposable {
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
     public Task SerializeAsync() {
-        while (_queue.TryDequeue(out var kvp)) {
-            _data[kvp.Key] = kvp.Value;
+        if (!Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            while (_queue.TryDequeue(out var kvp)) {
+                _data[kvp.Key] = kvp.Value;
+            }
         }
         return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
     }

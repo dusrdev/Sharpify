@@ -25,7 +25,8 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.GetAsString("test").Should().Be("test");
+        var result = db2.Database.GetAsString("test");
+        result.Should().Be("test");
 
         // Cleanup
         File.Delete(db.Path);
@@ -46,6 +47,32 @@ public class DatabaseTests {
         // Assert
         var p2 = db2.Database.Get<Person>("1");
         p2.Should().Be(p1);
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void GeneralFilterTest() {
+        using var db = Factory("");
+
+        // Act
+        var p1 = new Person("David", 27);
+        var d1 = new Dog("Buddy", 5);
+
+        db.Database.FilterByType<Person>().Upsert("David", p1);
+        db.Database.FilterByType<Dog>().Upsert("Buddy", d1);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.ContainsKey("David").Should().BeFalse();
+        db2.Database.ContainsKey("Buddy").Should().BeFalse();
+        db.Database.FilterByType<Person>().TryGetValue("David", out var p2).Should().BeTrue();
+        db.Database.FilterByType<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
+        p2.Should().Be(p1);
+        d2.Should().Be(d1);
 
         // Cleanup
         File.Delete(db.Path);
