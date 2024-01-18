@@ -53,6 +53,7 @@ public class DatabaseTests {
 
         // Act
         db.Database.UpsertAsString("test", "test");
+        db.Database.Serialize();
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -60,6 +61,26 @@ public class DatabaseTests {
         // Assert
         var result = db2.Database.GetAsString("test");
         result.Should().Be("test");
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void UpsertBytes() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        ReadOnlyMemory<byte> bytes = new byte[] { 1, 2, 3, 4, 5 };
+        db.Database.Upsert("test", bytes);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        var result = db2.Database.Get("test");
+        result.Span.SequenceEqual(bytes.Span).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -139,6 +160,22 @@ public class DatabaseTests {
         // Act
         db.Database.UpsertAsString("test", "test");
         db.Database.Remove("test");
+
+        // Assert
+        db.Database.ContainsKey("test").Should().BeFalse();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void Clear() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.UpsertAsString("test", "test");
+        db.Database.Clear();
 
         // Assert
         db.Database.ContainsKey("test").Should().BeFalse();
