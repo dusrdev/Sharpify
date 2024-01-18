@@ -1,12 +1,14 @@
 namespace Sharpify.Data.Tests;
 
-public class DatabaseTests {
+public class DatabaseEncryptedIgnoreCaseTests {
     private static Func<string, FactoryResult<Database>> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
         var database = Database.Create(new() {
             Path = path,
+            EncryptionKey = "test",
+            IgnoreCase = true,
             SerializeOnUpdate = true,
             TriggerUpdateEvents = true,
         });

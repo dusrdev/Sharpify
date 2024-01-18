@@ -18,7 +18,10 @@ internal class EncryptedSerializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
         ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length);
+        if (bin.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>();
+        }
+        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
         int length = Helper.Instance.Decrypt(bin, rented, _key);
         ReadOnlySpan<byte> buffer = new(rented, 0, length);
         Dictionary<string, ReadOnlyMemory<byte>> dict =

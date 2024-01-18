@@ -12,6 +12,9 @@ internal class Serializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
         ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
+        if (bin.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>();
+        }
         Dictionary<string, ReadOnlyMemory<byte>> dict =
             MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(bin)
          ?? new Dictionary<string, ReadOnlyMemory<byte>>();

@@ -13,6 +13,9 @@ internal class IgnoreCaseSerializer : Serializer {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Dictionary<string, ReadOnlyMemory<byte>> FromSpan(ReadOnlySpan<byte> bin) {
+        if (bin.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+        }
         var formatter = new OrdinalIgnoreCaseStringDictionaryFormatter<ReadOnlyMemory<byte>>();
         var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
         var reader = new MemoryPackReader(bin, state);

@@ -146,7 +146,7 @@ public sealed class Database : IDisposable {
             if (encryptionKey.Length is 0) {
                 return MemoryPackSerializer.Deserialize<T>(val.Span);
             }
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes)!;
@@ -172,7 +172,7 @@ public sealed class Database : IDisposable {
             if (encryptionKey.Length is 0) {
                 return MemoryPackSerializer.Deserialize<string>(val.Span)!;
             }
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length);
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;

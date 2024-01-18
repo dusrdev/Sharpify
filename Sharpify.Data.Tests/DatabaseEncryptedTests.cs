@@ -1,12 +1,13 @@
 namespace Sharpify.Data.Tests;
 
-public class DatabaseTests {
+public class DatabaseEncryptedTests {
     private static Func<string, FactoryResult<Database>> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
         var database = Database.Create(new() {
             Path = path,
+            EncryptionKey = "test",
             SerializeOnUpdate = true,
             TriggerUpdateEvents = true,
         });

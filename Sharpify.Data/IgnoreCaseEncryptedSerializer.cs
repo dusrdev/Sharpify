@@ -12,7 +12,10 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
 /// <inheritdoc />
     internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
         ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length);
+        if (bin.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+        }
+        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
         int length = Helper.Instance.Decrypt(bin, rented, _key);
         ReadOnlySpan<byte> buffer = new(rented, 0, length);
         var dict = IgnoreCaseSerializer.FromSpan(buffer);
@@ -23,7 +26,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
 /// <inheritdoc />
     internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
         ReadOnlyMemory<byte> bin = await File.ReadAllBytesAsync(_path, cancellationToken);
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length);
+        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
         int length = Helper.Instance.Decrypt(bin.Span, rented, _key);
         ReadOnlyMemory<byte> buffer = new(rented, 0, length);
         var dict = IgnoreCaseSerializer.FromSpan(buffer.Span);
