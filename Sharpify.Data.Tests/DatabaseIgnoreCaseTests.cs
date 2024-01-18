@@ -1,6 +1,6 @@
 namespace Sharpify.Data.Tests;
 
-public class DatabaseIgnoreTests {
+public class DatabaseIgnoreCaseTests {
     private static Func<string, FactoryResult<Database>> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()

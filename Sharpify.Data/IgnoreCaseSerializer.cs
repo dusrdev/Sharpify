@@ -24,12 +24,29 @@ internal class IgnoreCaseSerializer : Serializer {
         return dict ?? new(StringComparer.OrdinalIgnoreCase);
     }
 
-/// <inheritdoc />
-    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() => FromSpan(File.ReadAllBytes(_path));
+    /// <inheritdoc />
+    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize) {
+        if (estimatedSize is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+        }
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        var numRead = file.Read(buffer.Buffer, 0, estimatedSize);
+        buffer.Advance(numRead);
+        var dict = FromSpan(buffer.WrittenSpan);
+        return dict;
+    }
 
-/// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
-        ReadOnlyMemory<byte> bin = await File.ReadAllBytesAsync(_path, cancellationToken);
-        return FromSpan(bin.Span);
+    /// <inheritdoc />
+    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+        if (estimatedSize is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+        }
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        var numRead = await file.ReadAsync(buffer.Buffer, 0, estimatedSize, cancellationToken);
+        buffer.Advance(numRead);
+        var dict = FromSpan(buffer.WrittenSpan);
+        return dict;
     }
 }

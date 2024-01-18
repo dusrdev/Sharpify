@@ -1,4 +1,4 @@
-using System.Buffers;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 
 using MemoryPack;
@@ -16,27 +16,40 @@ internal class EncryptedSerializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
-        ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
-        if (bin.Length is 0) {
+    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize) {
+        if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
-        int length = Helper.Instance.Decrypt(bin, rented, _key);
-        ReadOnlySpan<byte> buffer = new(rented, 0, length);
+
+        // var bytes = File.ReadAllBytes(_path);
+        // using var buffer = new RentedBufferWriter<byte>(bytes.Length);
+        // int numWritten = Helper.Instance.Decrypt(bytes, buffer.GetSpan(), _key);
+        // buffer.Advance(numWritten);
+
+        // Dictionary<string, ReadOnlyMemory<byte>> dict =
+        //     MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer.WrittenSpan)
+        //  ?? new Dictionary<string, ReadOnlyMemory<byte>>();
+
+        // return dict;
+
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        using var transform = Helper.Instance.GetDecryptor(_key);
+        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
+        var numRead = cryptoStream.Read(buffer.Buffer, 0, estimatedSize - AesProvider.ReservedBufferSize);
+        buffer.Advance(numRead);
         Dictionary<string, ReadOnlyMemory<byte>> dict =
-            MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer)
+            MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer.WrittenSpan)
          ?? new Dictionary<string, ReadOnlyMemory<byte>>();
-        rented.ReturnBufferToSharedArrayPool();
         return dict;
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
-        using var file = new FileStream(_path, FileMode.Open);
-        if (file.Length is 0) {
+    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+        if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
+        using var file = new FileStream(_path, FileMode.Open);
         using var transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
         Dictionary<string, ReadOnlyMemory<byte>> dict =
@@ -46,16 +59,21 @@ internal class EncryptedSerializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override void Serialize(Dictionary<string, ReadOnlyMemory<byte>> dict) {
+    internal override void Serialize(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize) {
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize + AesProvider.ReservedBufferSize);
+        MemoryPackSerializer.Serialize(buffer, dict);
         using var file = new FileStream(_path, FileMode.Create);
         using var transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
-        ReadOnlySpan<byte> buffer = MemoryPackSerializer.Serialize(dict);
-        cryptoStream.Write(buffer);
+        cryptoStream.Write(buffer.WrittenSpan);
+        // using var buffer = new RentedBufferWriter<byte>(estimatedSize + AesProvider.ReservedBufferSize);
+        // MemoryPackSerializer.Serialize(buffer, dict);
+        // var bytes = Helper.Instance.Encrypt(buffer.WrittenSpan, _key);
+        // file.Write(bytes);
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         using var transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);

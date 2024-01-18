@@ -10,23 +10,26 @@ internal class Serializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
-        ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
-        if (bin.Length is 0) {
+    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize) {
+        if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        var numRead = file.Read(buffer.Buffer, 0, estimatedSize);
+        buffer.Advance(numRead);
         Dictionary<string, ReadOnlyMemory<byte>> dict =
-            MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(bin)
+            MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer.WrittenSpan)
          ?? new Dictionary<string, ReadOnlyMemory<byte>>();
         return dict;
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
-        using var file = new FileStream(_path, FileMode.Open);
-        if (file.Length is 0) {
+    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+        if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
+        using var file = new FileStream(_path, FileMode.Open);
         Dictionary<string, ReadOnlyMemory<byte>> dict =
             await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(file, cancellationToken: cancellationToken)
              ?? new Dictionary<string, ReadOnlyMemory<byte>>();
@@ -34,14 +37,15 @@ internal class Serializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override void Serialize(Dictionary<string, ReadOnlyMemory<byte>> dict) {
+    internal override void Serialize(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize) {
         using var file = new FileStream(_path, FileMode.Create);
-        ReadOnlySpan<byte> buffer = MemoryPackSerializer.Serialize(dict);
-        file.Write(buffer);
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        MemoryPackSerializer.Serialize(buffer, dict);
+        file.Write(buffer.WrittenSpan);
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         await MemoryPackSerializer.SerializeAsync(file, dict, cancellationToken: cancellationToken);
     }

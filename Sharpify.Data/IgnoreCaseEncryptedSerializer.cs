@@ -1,4 +1,4 @@
-using System.Buffers;
+using System.Security.Cryptography;
 
 namespace Sharpify.Data;
 
@@ -10,27 +10,32 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize() {
-        ReadOnlySpan<byte> bin = File.ReadAllBytes(_path);
-        if (bin.Length is 0) {
+    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize) {
+        if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
         }
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
-        int length = Helper.Instance.Decrypt(bin, rented, _key);
-        ReadOnlySpan<byte> buffer = new(rented, 0, length);
-        var dict = IgnoreCaseSerializer.FromSpan(buffer);
-        rented.ReturnBufferToSharedArrayPool();
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        using var transform = Helper.Instance.GetDecryptor(_key);
+        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
+        var numRead = cryptoStream.Read(buffer.Buffer, 0, estimatedSize - AesProvider.ReservedBufferSize);
+        buffer.Advance(numRead);
+        var dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
         return dict;
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
-        ReadOnlyMemory<byte> bin = await File.ReadAllBytesAsync(_path, cancellationToken);
-        var rented = ArrayPool<byte>.Shared.Rent(bin.Length + AesProvider.ReservedBufferSize);
-        int length = Helper.Instance.Decrypt(bin.Span, rented, _key);
-        ReadOnlyMemory<byte> buffer = new(rented, 0, length);
-        var dict = IgnoreCaseSerializer.FromSpan(buffer.Span);
-        rented.ReturnBufferToSharedArrayPool();
+    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+        if (estimatedSize is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+        }
+        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var file = new FileStream(_path, FileMode.Open);
+        using var transform = Helper.Instance.GetDecryptor(_key);
+        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
+        var numRead = await cryptoStream.ReadAsync(buffer.Buffer, 0, estimatedSize, cancellationToken);
+        buffer.Advance(numRead);
+        var dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
         return dict;
     }
 }

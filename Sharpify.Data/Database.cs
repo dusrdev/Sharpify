@@ -16,6 +16,14 @@ public sealed class Database : IDisposable {
     private readonly ConcurrentQueue<KeyValuePair<string, ReadOnlyMemory<byte>>> _queue = new();
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly DatabaseSerializer _serializer;
+    private volatile int _estimatedSize;
+
+    private const int ReservedFileSize = 4096;
+
+    /// <summary>
+    /// Overestimated size of the database.
+    /// </summary>
+    private int OverestimatedSize => _estimatedSize + ReservedFileSize;
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -46,13 +54,15 @@ public sealed class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer)
-                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer);
+                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer, 0);
         }
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = serializer.Deserialize();
+        var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        return new Database(dict, config, serializer);
+        Dictionary<string, ReadOnlyMemory<byte>> dict = serializer.Deserialize(estimatedSize);
+
+        return new Database(dict, config, serializer, estimatedSize);
     }
 
     /// <summary>
@@ -63,19 +73,22 @@ public sealed class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer)
-                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer);
+                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer, 0);
         }
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = await serializer.DeserializeAsync(token);
+        var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        return new Database(dict, config, serializer);
+        Dictionary<string, ReadOnlyMemory<byte>> dict = await serializer.DeserializeAsync(estimatedSize, token);
+
+        return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config, DatabaseSerializer serializer) {
+    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
+        Interlocked.Exchange(ref _estimatedSize, estimatedSize);
     }
 
     /// <summary>
@@ -191,10 +204,9 @@ public sealed class Database : IDisposable {
     public bool Remove(string key) {
         _lock.EnterWriteLock();
         try {
-            if (_data.Count is 0) {
-                return false;
-            }
             if (!_data.Remove(key, out var val)) {
+                var estimatedSize = key.Length * sizeof(char) + val.Length;
+                Interlocked.Add(ref _estimatedSize, -estimatedSize);
                 return false;
             }
             if (Config.SerializeOnUpdate) {
@@ -220,6 +232,7 @@ public sealed class Database : IDisposable {
         _lock.EnterWriteLock();
         try {
             _data.Clear();
+            Interlocked.Exchange(ref _estimatedSize, 0);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }
@@ -292,6 +305,8 @@ public sealed class Database : IDisposable {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
+                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
             if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
                 Serialize();
@@ -354,9 +369,11 @@ public sealed class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
+                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
         }
-        _serializer.Serialize(_data);
+        _serializer.Serialize(_data, OverestimatedSize);
     }
 
     /// <summary>
@@ -366,9 +383,11 @@ public sealed class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
+                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
         }
-        return _serializer.SerializeAsync(_data, cancellationToken);
+        return _serializer.SerializeAsync(_data, OverestimatedSize, cancellationToken);
     }
 
     /// <summary>
