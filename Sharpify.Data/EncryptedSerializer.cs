@@ -34,6 +34,9 @@ internal class EncryptedSerializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Open);
+        if (file.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>();
+        }
         using var transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
         Dictionary<string, ReadOnlyMemory<byte>> dict =

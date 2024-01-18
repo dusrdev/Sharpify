@@ -14,6 +14,39 @@ public class DatabaseEncryptedTests {
         return new(path, database);
     };
 
+    private static Func<string, Task<FactoryResult<Database>>> AsyncFactory => async p => {
+        var path = p.Length is 0 ?
+                    Path.GetTempFileName()
+                    : p;
+        var database = await Database.CreateAsync(new() {
+            Path = path,
+            SerializeOnUpdate = false,
+            TriggerUpdateEvents = false,
+        });
+        return new(path, database);
+    };
+
+    [Fact]
+    public async Task AsyncSerializeDeserialize() {
+        // Arrange
+        using var db = await AsyncFactory("");
+
+        // Act
+        db.Database.Upsert("test", new Person("David", 27));
+
+        await db.Database.SerializeAsync();
+
+        // Arrange
+        using var db2 = await AsyncFactory(db.Path);
+
+        // Assert
+        var result = db2.Database.Get<Person>("test");
+        result.Should().Be(new Person("David", 27));
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
     [Fact]
     public void Upsert() {
         // Arrange

@@ -24,6 +24,9 @@ internal class Serializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Open);
+        if (file.Length is 0) {
+            return new Dictionary<string, ReadOnlyMemory<byte>>();
+        }
         Dictionary<string, ReadOnlyMemory<byte>> dict =
             await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(file, cancellationToken: cancellationToken)
              ?? new Dictionary<string, ReadOnlyMemory<byte>>();
