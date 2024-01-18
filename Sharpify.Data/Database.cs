@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using MemoryPack;
@@ -12,10 +13,9 @@ namespace Sharpify.Data;
 /// </summary>
 public sealed class Database : IDisposable {
     private readonly Dictionary<string, ReadOnlyMemory<byte>> _data;
-
     private readonly ConcurrentQueue<KeyValuePair<string, ReadOnlyMemory<byte>>> _queue = new();
-
     private readonly ReaderWriterLockSlim _lock = new();
+    private readonly DatabaseSerializer _serializer;
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -42,36 +42,40 @@ public sealed class Database : IDisposable {
     /// Creates a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static Database Create(DatabaseConfiguration config) {
+        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+
         if (!File.Exists(config.Path)) {
-            return new Database(new(config.Options.GetComparer()), config);
+            return config.IgnoreCase
+                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer)
+                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer);
         }
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = config.Path.Deserialize<ReadOnlyMemory<byte>>(
-                config.EncryptionKey,
-                config.Options);
+        Dictionary<string, ReadOnlyMemory<byte>> dict = serializer.Deserialize();
 
-        return new Database(dict, config);
+        return new Database(dict, config, serializer);
     }
 
     /// <summary>
     /// Creates asynchronously a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static async ValueTask<Database> CreateAsync(DatabaseConfiguration config, CancellationToken token = default) {
+        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+
         if (!File.Exists(config.Path)) {
-            return new Database(new(config.Options.GetComparer()), config);
+            return config.IgnoreCase
+                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer)
+                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer);
         }
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = await config.Path.DeserializeAsync<ReadOnlyMemory<byte>>(
-                config.EncryptionKey,
-                config.Options,
-                token);
+        Dictionary<string, ReadOnlyMemory<byte>> dict = await serializer.DeserializeAsync(token);
 
-        return new Database(dict, config);
+        return new Database(dict, config, serializer);
     }
 
-    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config) {
+    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config, DatabaseSerializer serializer) {
         _data = data;
         Config = config;
+        _serializer = serializer;
     }
 
     /// <summary>
@@ -193,10 +197,10 @@ public sealed class Database : IDisposable {
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
-            if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            if (Config.SerializeOnUpdate) {
                 Serialize();
             }
-            if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
+            if (Config.TriggerUpdateEvents) {
                 InvokeDataEvent(new DataChangedEventArgs {
                     Key = key,
                     Value = val,
@@ -216,10 +220,10 @@ public sealed class Database : IDisposable {
         _lock.EnterWriteLock();
         try {
             _data.Clear();
-            if (Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            if (Config.SerializeOnUpdate) {
                 Serialize();
             }
-            if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
+            if (Config.TriggerUpdateEvents) {
                 InvokeDataEvent(new DataChangedEventArgs {
                     Key = "ALL",
                     Value = null,
@@ -251,7 +255,7 @@ public sealed class Database : IDisposable {
 
         _queue.Enqueue(new(key, val));
 
-        if (Config.Options.HasFlag(DatabaseOptions.TriggerUpdateEvents)) {
+        if (Config.TriggerUpdateEvents) {
             InvokeDataEvent(new DataChangedEventArgs {
                 Key = key,
                 Value = value,
@@ -289,7 +293,7 @@ public sealed class Database : IDisposable {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
             }
-            if (itemsAdded is not 0 && Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+            if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
                 Serialize();
             }
         } finally {
@@ -324,10 +328,9 @@ public sealed class Database : IDisposable {
     /// <remarks>
     /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
     /// </remarks>
-    public void UpsertAsT<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") {
-        ReadOnlyMemory<byte> bytes = value is null ?
-                    ReadOnlyMemory<byte>.Empty
-                    : MemoryPackSerializer.Serialize(value.Serialize(jsonSerializerContext));
+    public void UpsertAsT<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") where T : notnull {
+        var asString = JsonSerializer.Serialize(value, typeof(T), jsonSerializerContext);
+        ReadOnlyMemory<byte> bytes = MemoryPackSerializer.Serialize(asString);
 
         Upsert(key, bytes, encryptionKey);
     }
@@ -348,24 +351,24 @@ public sealed class Database : IDisposable {
     /// Saves the database to the hard disk.
     /// </summary>
     public void Serialize() {
-        if (!Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+        if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
             }
         }
-        _data.Serialize(Config.Path, Config.EncryptionKey);
+        _serializer.Serialize(_data);
     }
 
     /// <summary>
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
-    public Task SerializeAsync() {
-        if (!Config.Options.HasFlag(DatabaseOptions.SerializeOnUpdate)) {
+    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
+        if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
             }
         }
-        return _data.SerializeAsync(Config.Path, Config.EncryptionKey);
+        return _serializer.SerializeAsync(_data, cancellationToken);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 
 namespace Sharpify.Data;
 
@@ -16,13 +17,13 @@ internal sealed class Helper {
         return newProvider.EncryptBytes(value);
     }
 
-    internal int Encrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
+    internal ICryptoTransform GetEncryptor(string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.EncryptBytes(value, destination);
+            return provider.CreateEncryptor();
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
-        return newProvider.EncryptBytes(value, destination);
+        return newProvider.CreateEncryptor();
     }
 
     internal byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
@@ -41,6 +42,15 @@ internal sealed class Helper {
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
         return newProvider.DecryptBytes(value, destination);
+    }
+
+    internal ICryptoTransform GetDecryptor(string key) {
+        if (_cachedProviders.TryGetValue(key, out var provider)) {
+            return provider.CreateDecryptor();
+        }
+        var newProvider = new AesProvider(key);
+        _cachedProviders.TryAdd(key, newProvider);
+        return newProvider.CreateDecryptor();
     }
 
     ~Helper() {
