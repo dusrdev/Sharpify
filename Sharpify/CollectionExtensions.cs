@@ -60,7 +60,7 @@ public static partial class Extensions {
     /// <param name="arr">The one-dimensional array that is the destination of the elements copied from the dictionary.</param>
     /// <param name="index">The zero-based index in the array at which copying begins.</param>
     /// <exception cref="ArgumentException">Thrown when the number of elements in the source dictionary is greater than the available space from index to the end of the destination array.</exception>
-    public static void CopyTo<TKey,TValue>(this Dictionary<TKey,TValue> dict, KeyValuePair<TKey,TValue>[] arr, int index) where TKey : notnull {
+    public static void CopyTo<TKey, TValue>(this Dictionary<TKey, TValue> dict, KeyValuePair<TKey, TValue>[] arr, int index) where TKey : notnull {
         if (arr.Length - index < dict.Count) {
             throw new ArgumentException("The number of elements in the source Dictionary<TKey, TValue> is greater than the available space from index to the end of the destination array.");
         }
@@ -80,7 +80,7 @@ public static partial class Extensions {
     /// <para>The array is returned as the reference for the buffer, and should be used to return the buffer to the array pool after use. You can use <see cref="ReturnBufferToSharedArrayPool"/> </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (KeyValuePair<TKey, TValue>[] rentedBuffer, ArraySegment<KeyValuePair<TKey,TValue>> entries) RentBufferAndCopyEntries<TKey,TValue>(this Dictionary<TKey,TValue> dict) where TKey : notnull {
+    public static (KeyValuePair<TKey, TValue>[] rentedBuffer, ArraySegment<KeyValuePair<TKey, TValue>> entries) RentBufferAndCopyEntries<TKey, TValue>(this Dictionary<TKey, TValue> dict) where TKey : notnull {
         var count = dict.Count;
         var arr = ArrayPool<KeyValuePair<TKey, TValue>>.Shared.Rent(count);
         dict.CopyTo(arr, 0);
@@ -95,9 +95,7 @@ public static partial class Extensions {
     /// <param name="arr">The array to return.</param>
     /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the shared array pool</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ReturnBufferToSharedArrayPool<T>(this T[] arr) {
-        ArrayPool<T>.Shared.Return(arr);
-    }
+    public static void ReturnBufferToSharedArrayPool<T>(this T[] arr) => ArrayPool<T>.Shared.Return(arr);
 
     /// <summary>
     /// Returns a rented buffer to the <paramref name="pool"/>.
@@ -107,9 +105,7 @@ public static partial class Extensions {
     /// <param name="pool">The array pool to return the buffer to.</param>
     /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the array pool</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ReturnBufferToArrayPool<T>(this T[] arr, ArrayPool<T> pool) {
-        pool.Return(arr);
-    }
+    public static void ReturnBufferToArrayPool<T>(this T[] arr, ArrayPool<T> pool) => pool.Return(arr);
 
     /// <summary>
     /// Returns a new array with the elements sorted using the default comparer for the element type.
@@ -268,5 +264,22 @@ public static partial class Extensions {
         var arr = new T[hashSet.Count];
         hashSet.CopyTo(arr);
         return arr;
+    }
+
+    /// <summary>
+    /// Copies the HashSet to the destination array starting at the specified index.
+    /// </summary>
+    /// <returns>The number of elements copied to the destination array.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the number of elements in the source HashSet is greater than the available space from index to the end of the destination array.</exception>
+    public static int CopyToArray<T>(this HashSet<T> hashSet, T[] destination, int index) {
+#if NET8_0_OR_GREATER
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(index + hashSet.Count, destination.Length);
+#elif NET7_0
+        if (index + hashSet.Count > destination.Length) {
+            throw new ArgumentOutOfRangeException();
+        }
+#endif
+        hashSet.CopyTo(destination, index);
+        return hashSet.Count;
     }
 }

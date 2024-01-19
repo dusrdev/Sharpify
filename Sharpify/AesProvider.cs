@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -45,7 +46,17 @@ public sealed class AesProvider : IDisposable {
     }
 
     // Creates a usable fixed length key from the string password
-    private static byte[] CreateKey(string strKey) => SHA256.HashData(Encoding.UTF8.GetBytes(strKey));
+    private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
+        var buffer = ArrayPool<byte>.Shared.Rent(strKey.Length * 2);
+        int bytesWritten = Encoding.UTF8.GetBytes(strKey, buffer);
+        ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
+        try {
+            return SHA256.HashData(bytesSpan);
+        } finally {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
 
     /// <summary>
     /// Hashes password
@@ -55,19 +66,16 @@ public sealed class AesProvider : IDisposable {
     /// <returns>hashed string</returns>
     public static string GeneratePassword(string password, int iterations = 991) {
         //generate a random salt for hashing
-        var salt = new byte[SaltSize];
-        using var generator = RandomNumberGenerator.Create();
-        generator.GetBytes(salt.AsSpan());
-
         //hash password given salt and iterations (default to 1000)
         //iterations provide difficulty when cracking
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA512);
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, SaltSize, iterations, HashAlgorithmName.SHA512);
         var hash = pbkdf2.GetBytes(SaltSize);
+        var salt = pbkdf2.Salt;
 
         // create format for hash text
         // salt|iterations|hash
-        var saltString = Convert.ToBase64String(salt);
-        var hashString = Convert.ToBase64String(hash);
+        ReadOnlySpan<char> saltString = Convert.ToBase64String(salt);
+        ReadOnlySpan<char> hashString = Convert.ToBase64String(hash);
 
         // length = salt + iteration count (3 digits max) + hash + 2 delimiters
         int length = saltString.Length + 3 + hashString.Length + 2;
@@ -116,10 +124,19 @@ public sealed class AesProvider : IDisposable {
     /// </summary>
     /// <param name="unencrypted">original text</param>
     /// <returns>Unicode string</returns>
-    public string Encrypt(string unencrypted) {
-        var buffer = Encoding.UTF8.GetBytes(unencrypted);
-        var result = EncryptBytes(buffer);
-        return Convert.ToBase64String(result);
+    public string Encrypt(ReadOnlySpan<char> unencrypted) {
+        var bytesBuffer = ArrayPool<byte>.Shared.Rent(unencrypted.Length * 2);
+        int bytesWritten = Encoding.UTF8.GetBytes(unencrypted, bytesBuffer);
+        ReadOnlySpan<byte> bytesSpan = bytesBuffer.AsSpan(0, bytesWritten);
+        var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);
+        int encryptedWritten = EncryptBytes(bytesSpan, encryptedBuffer);
+        ReadOnlySpan<byte> encrypted = encryptedBuffer.AsSpan(0, encryptedWritten);
+        try {
+            return Convert.ToBase64String(encrypted);
+        } finally {
+            ArrayPool<byte>.Shared.Return(bytesBuffer);
+            ArrayPool<byte>.Shared.Return(encryptedBuffer);
+        }
     }
 
     /// <summary>
@@ -128,10 +145,16 @@ public sealed class AesProvider : IDisposable {
     /// <remarks>Returns an empty string if it fails</remarks>
     public string Decrypt(string encrypted) {
         var buffer = Convert.FromBase64String(encrypted);
-        var result = DecryptBytes(buffer);
-        return result.Length is 0
-            ? string.Empty
-            : Encoding.UTF8.GetString(result);
+        var decryptedBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
+        int decryptedWritten = DecryptBytes(buffer, decryptedBuffer);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.AsSpan(0, decryptedWritten);
+        try {
+            return decrypted.Length is 0
+                ? string.Empty
+                : Encoding.UTF8.GetString(decrypted);
+        } finally {
+            ArrayPool<byte>.Shared.Return(decryptedBuffer);
+        }
     }
 
     /// <summary>
@@ -197,8 +220,18 @@ public sealed class AesProvider : IDisposable {
     /// <param name="url">original url</param>
     /// <returns>Encrypted url with Base64Url encoding</returns>
     public string EncryptUrl(string url) {
-        var encryptedBytes = EncryptBytes(Encoding.UTF8.GetBytes(url));
-        return Base64UrlEncode(encryptedBytes);
+        var buffer = ArrayPool<byte>.Shared.Rent(url.Length * 2);
+        int bytesWritten = Encoding.UTF8.GetBytes(url, buffer);
+        ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
+        var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);
+        int encryptedWritten = EncryptBytes(bytesSpan, encryptedBuffer);
+        ReadOnlySpan<byte> encrypted = encryptedBuffer.AsSpan(0, encryptedWritten);
+        try {
+            return Base64UrlEncode(encrypted);
+        } finally {
+            ArrayPool<byte>.Shared.Return(buffer);
+            ArrayPool<byte>.Shared.Return(encryptedBuffer);
+        }
     }
 
     /// <summary>
@@ -208,26 +241,33 @@ public sealed class AesProvider : IDisposable {
     /// <returns>Decrypted url</returns>
     /// <remarks>Returns an empty string if it fails</remarks>
     public string DecryptUrl(string encryptedUrl) {
-        var decryptedBytes = DecryptBytes(Base64UrlDecode(encryptedUrl));
-        return decryptedBytes.Length is 0
-            ? string.Empty
-            : Encoding.UTF8.GetString(decryptedBytes);
+        var base64 = Base64UrlDecode(encryptedUrl);
+        var decryptedBuffer = ArrayPool<byte>.Shared.Rent(base64.Length);
+        int decryptedWritten = DecryptBytes(base64, decryptedBuffer);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.AsSpan(0, decryptedWritten);
+        try {
+            return decrypted.Length is 0
+                ? string.Empty
+                : Encoding.UTF8.GetString(decrypted);
+        } finally {
+            ArrayPool<byte>.Shared.Return(decryptedBuffer);
+        }
     }
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
 #if NET8_0_OR_GREATER
         Span<char> buffer = stackalloc char[base64Url.Length + 2];
-        var span = base64Url.AsSpan();
-        span.Replace(buffer, '-', '+');
-        MemoryExtensions.Replace(buffer, buffer, '_', '/');
-        int mod = span.Length % 4;
-        int length = span.Length;
+        base64Url.AsSpan().CopyTo(buffer);
+        buffer.Replace('-', '+');
+        buffer.Replace('_', '/');
+        int mod = base64Url.Length % 4;
+        int length = base64Url.Length;
         if (mod is 2) {
-            "==".CopyTo(buffer[span.Length..]);
+            "==".CopyTo(buffer[length..]);
             length += 2;
         } else if (mod is 3) {
-            buffer[span.Length] = '=';
+            buffer[length] = '=';
             length += 1;
         }
         return Convert.FromBase64String(new string(buffer[0..length]));
@@ -244,19 +284,17 @@ public sealed class AesProvider : IDisposable {
     }
 
     // Helper method to convert byte array to Base64Url encoded string
-    private static string Base64UrlEncode(byte[] bytes) {
-        var base64 = Convert.ToBase64String(bytes);
+    private static string Base64UrlEncode(ReadOnlySpan<byte> bytes) {
+        string base64 = Convert.ToBase64String(bytes);
 #if NET8_0_OR_GREATER
-        // mutation is safe here because base64 is limited to the function scope anyway
-        var mutableBuffer = Utils.Unsafe.AsMutableSpan<char>(base64);
-        mutableBuffer.Replace('+', '-');
-        mutableBuffer.Replace('/', '_');
-
-        if (mutableBuffer[^1] is '=') {
-            mutableBuffer = mutableBuffer[..^1];
+        Span<char> buffer = stackalloc char[base64.Length];
+        base64.AsSpan().CopyTo(buffer);
+        MemoryExtensions.Replace(buffer, '+', '-');
+        MemoryExtensions.Replace(buffer, '/', '_');
+        if (buffer[^1] is '=') {
+            buffer = buffer[..^1];
         }
-
-        return new string(mutableBuffer);
+        return new string(buffer);
 #elif NET7_0
         var sb = new StringBuilder(base64);
         sb.Replace('+', '-')
