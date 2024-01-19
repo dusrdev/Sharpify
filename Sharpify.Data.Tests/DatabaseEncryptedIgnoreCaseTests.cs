@@ -28,6 +28,26 @@ public class DatabaseEncryptedIgnoreCaseTests {
     };
 
     [Fact]
+    public void SerializeAndDeserialize() {
+        using var database = Database.Create(new() {
+            Path = Path.GetTempFileName(),
+            EncryptionKey = "test"
+        });
+
+        database.Upsert("test", new Person("David", 27));
+        database.Serialize();
+        var length = new FileInfo(database.Config.Path).Length;
+
+        using var database2 = Database.Create(new() {
+            Path = database.Config.Path,
+            EncryptionKey = "test"
+        });
+
+        var result = database2.Get<Person>("test");
+        result.Should().Be(new Person("David", 27));
+    }
+
+    [Fact]
     public async Task AsyncSerializeDeserialize() {
         // Arrange
         using var db = await AsyncFactory("");
