@@ -9,7 +9,7 @@ using MemoryPack;
 namespace Sharpify.Data;
 
 /// <summary>
-/// A high performance database that stores string-byte[] pairs.
+/// A high performance database that stores String:ReadOnlyMemory{byte} pairs.
 /// </summary>
 public sealed class Database : IDisposable {
     private readonly Dictionary<string, ReadOnlyMemory<byte>> _data;

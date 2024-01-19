@@ -1,7 +1,7 @@
 namespace Sharpify.Data;
 
 /// <summary>
-/// Configuration for the polymorphic database
+/// Configuration for <see cref="Database"/>
 /// </summary>
 public record DatabaseConfiguration {
     /// <summary>
