@@ -27,6 +27,26 @@ public class DatabaseEncryptedTests {
     };
 
     [Fact]
+    public void SerializeAndDeserialize() {
+        using var database = Database.Create(new() {
+            Path = Path.GetTempFileName(),
+            EncryptionKey = "test"
+        });
+
+        database.Upsert("test", new Person("David", 27));
+        database.Serialize();
+        var length = new FileInfo(database.Config.Path).Length;
+
+        using var database2 = Database.Create(new() {
+            Path = database.Config.Path,
+            EncryptionKey = "test"
+        });
+
+        var result = database2.Get<Person>("test");
+        result.Should().Be(new Person("David", 27));
+    }
+
+    [Fact]
     public async Task AsyncSerializeDeserialize() {
         // Arrange
         using var db = await AsyncFactory("");
@@ -71,6 +91,7 @@ public class DatabaseEncryptedTests {
     public void UpsertBytes() {
         // Arrange
         using var db = Factory("");
+        db.Database.Clear();
 
         // Act
         ReadOnlyMemory<byte> bytes = new byte[] { 1, 2, 3, 4, 5 };

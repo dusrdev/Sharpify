@@ -1,4 +1,3 @@
-using System.Reflection.Metadata;
 using System.Security.Cryptography;
 
 using MemoryPack;
@@ -21,27 +20,17 @@ internal class EncryptedSerializer : DatabaseSerializer {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
 
-        // var bytes = File.ReadAllBytes(_path);
-        // using var buffer = new RentedBufferWriter<byte>(bytes.Length);
-        // int numWritten = Helper.Instance.Decrypt(bytes, buffer.GetSpan(), _key);
-        // buffer.Advance(numWritten);
-
-        // Dictionary<string, ReadOnlyMemory<byte>> dict =
-        //     MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer.WrittenSpan)
-        //  ?? new Dictionary<string, ReadOnlyMemory<byte>>();
-
-        // return dict;
-
-        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        using var transform = Helper.Instance.GetDecryptor(_key);
-        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        var numRead = cryptoStream.Read(buffer.Buffer, 0, estimatedSize - AesProvider.ReservedBufferSize);
-        buffer.Advance(numRead);
-        Dictionary<string, ReadOnlyMemory<byte>> dict =
-            MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(buffer.WrittenSpan)
-         ?? new Dictionary<string, ReadOnlyMemory<byte>>();
-        return dict;
+        int rawRead = file.Read(rawBuffer.GetSpan());
+        rawBuffer.Advance(rawRead);
+        var rawSpan = rawBuffer.WrittenSpan;
+        using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
+        var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        decryptedBuffer.Advance(decryptedRead);
+        var decrypted = decryptedBuffer.WrittenSpan;
+        var dict = MemoryPackSerializer.Deserialize<Dictionary<string, ReadOnlyMemory<byte>>>(decrypted);
+        return dict ?? new Dictionary<string, ReadOnlyMemory<byte>>();
     }
 
 /// <inheritdoc />
@@ -66,10 +55,6 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
         cryptoStream.Write(buffer.WrittenSpan);
-        // using var buffer = new RentedBufferWriter<byte>(estimatedSize + AesProvider.ReservedBufferSize);
-        // MemoryPackSerializer.Serialize(buffer, dict);
-        // var bytes = Helper.Instance.Encrypt(buffer.WrittenSpan, _key);
-        // file.Write(bytes);
     }
 
 /// <inheritdoc />

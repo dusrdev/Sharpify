@@ -14,13 +14,16 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         if (estimatedSize is 0) {
             return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
         }
-        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
+        using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        using var transform = Helper.Instance.GetDecryptor(_key);
-        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        var numRead = cryptoStream.Read(buffer.Buffer, 0, estimatedSize - AesProvider.ReservedBufferSize);
-        buffer.Advance(numRead);
-        var dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
+        int rawRead = file.Read(rawBuffer.GetSpan());
+        rawBuffer.Advance(rawRead);
+        var rawSpan = rawBuffer.WrittenSpan;
+        using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
+        var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        decryptedBuffer.Advance(decryptedRead);
+        var decrypted = decryptedBuffer.WrittenSpan;
+        var dict = IgnoreCaseSerializer.FromSpan(decrypted);
         return dict;
     }
 
