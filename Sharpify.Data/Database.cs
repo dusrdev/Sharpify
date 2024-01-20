@@ -18,12 +18,13 @@ public sealed class Database : IDisposable {
     private readonly DatabaseSerializer _serializer;
     private volatile int _estimatedSize;
 
-    private const int ReservedFileSize = 4096;
+    private const int BufferMultiple = 4096;
+    private const int ReservedBufferSize = 256;
 
     /// <summary>
     /// Overestimated size of the database.
     /// </summary>
-    private int OverestimatedSize => _estimatedSize + ReservedFileSize;
+    private int OverestimatedSize => (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -205,10 +206,10 @@ public sealed class Database : IDisposable {
         _lock.EnterWriteLock();
         try {
             if (!_data.Remove(key, out var val)) {
-                var estimatedSize = key.Length * sizeof(char) + val.Length;
-                Interlocked.Add(ref _estimatedSize, -estimatedSize);
                 return false;
             }
+            var estimatedSize = key.Length * sizeof(char) + val.Length;
+            Interlocked.Add(ref _estimatedSize, -estimatedSize);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }
