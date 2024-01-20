@@ -120,6 +120,19 @@ public class CollectionExtensionsTests {
     }
 
     [Fact]
+    public void Dictionary_CopyToArray() {
+        var dict = Enumerable.Range(1, 10).ToDictionary(i => i, i => i);
+        var buffer = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
+        dict.CopyTo(buffer, 0);
+        var span = buffer.AsSpan(0, dict.Count);
+        try {
+            span.SequenceEqual(dict.ToArray()).Should().BeTrue();
+        } finally {
+            buffer.ReturnBufferToSharedArrayPool();
+        }
+    }
+
+    [Fact]
     public void PureSort_GivenUnsortedIntArray_ReturnsSortedIntArray() {
         // Arrange
         var source = new int[] { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5 };

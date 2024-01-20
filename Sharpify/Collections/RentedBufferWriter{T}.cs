@@ -23,6 +23,13 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// </summary>
 	/// <param name="capacity">The actual buffer will be at least this size</param>
 	public RentedBufferWriter(int capacity) {
+#if NET8_0_OR_GREATER
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capacity);
+#elif NET7_0
+		if (capacity <= 0) {
+			throw new ArgumentOutOfRangeException(nameof(capacity));
+		}
+#endif
 		_buffer = ArrayPool<T>.Shared.Rent(capacity);
 		ActualCapacity = _buffer.Length;
 	}
@@ -61,12 +68,17 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// <summary>
 	/// Gets the portion of the buffer that has been written to, beginning at index 0
 	/// </summary>
-	public Memory<T> WrittenMemory => _buffer.AsMemory(0, _index);
+	public ArraySegment<T> WrittenSegment => new(_buffer, 0, _index);
 
 	/// <summary>
 	/// Gets the portion of the buffer that has been written to, beginning at index 0
 	/// </summary>
-	public Span<T> WrittenSpan => _buffer.AsSpan(0, _index);
+	public ReadOnlyMemory<T> WrittenMemory => _buffer.AsMemory(0, _index);
+
+	/// <summary>
+	/// Gets the portion of the buffer that has been written to, beginning at index 0
+	/// </summary>
+	public ReadOnlySpan<T> WrittenSpan => _buffer.AsSpan(0, _index);
 
 	/// <summary>
 	/// Returns the number of elements that can be written to the buffer

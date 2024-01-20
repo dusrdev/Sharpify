@@ -60,8 +60,7 @@ public static partial class Utils {
         public static double FibonacciApproximation(int n) {
             var sqrt5 = Math.Sqrt(5);
             var numerator = Math.Pow(1 + sqrt5, n) - Math.Pow(1 - sqrt5, n);
-            var two = 1L << n; // bit hack to get 2^n
-            var denominator = two * sqrt5;
+            var denominator = Math.ScaleB(sqrt5, n);
             return numerator / denominator;
         }
     }

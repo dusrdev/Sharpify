@@ -21,6 +21,13 @@ public class Routine : IDisposable {
     }
 
     /// <summary>
+    /// Finalizes an instance of the <see cref="Routine"/> class.
+    /// </summary>
+    ~Routine() {
+        Dispose();
+    }
+
+    /// <summary>
     /// Adds an action to the routine.
     /// </summary>
     /// <param name="action">The action to add.</param>

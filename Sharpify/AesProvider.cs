@@ -47,7 +47,7 @@ public sealed class AesProvider : IDisposable {
 
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
-        var buffer = ArrayPool<byte>.Shared.Rent(strKey.Length * 2);
+        var buffer = ArrayPool<byte>.Shared.Rent(strKey.Length * sizeof(char));
         int bytesWritten = Encoding.UTF8.GetBytes(strKey, buffer);
         ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
         try {
@@ -125,7 +125,7 @@ public sealed class AesProvider : IDisposable {
     /// <param name="unencrypted">original text</param>
     /// <returns>Unicode string</returns>
     public string Encrypt(ReadOnlySpan<char> unencrypted) {
-        var bytesBuffer = ArrayPool<byte>.Shared.Rent(unencrypted.Length * 2);
+        var bytesBuffer = ArrayPool<byte>.Shared.Rent(unencrypted.Length * sizeof(char));
         int bytesWritten = Encoding.UTF8.GetBytes(unencrypted, bytesBuffer);
         ReadOnlySpan<byte> bytesSpan = bytesBuffer.AsSpan(0, bytesWritten);
         var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);
@@ -220,7 +220,7 @@ public sealed class AesProvider : IDisposable {
     /// <param name="url">original url</param>
     /// <returns>Encrypted url with Base64Url encoding</returns>
     public string EncryptUrl(string url) {
-        var buffer = ArrayPool<byte>.Shared.Rent(url.Length * 2);
+        var buffer = ArrayPool<byte>.Shared.Rent(url.Length * sizeof(char));
         int bytesWritten = Encoding.UTF8.GetBytes(url, buffer);
         ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
         var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);

@@ -81,12 +81,14 @@ public class SerializableObject<T> : IDisposable {
         _segmentedPath = new(dir, fileName);
         _path = path;
         if (File.Exists(path)) {
-            var json = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(json)) {
+            var length = checked((int)new FileInfo(path).Length);
+            var textLength = length / sizeof(char);
+            if (textLength is 0) {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    _value = (T)JsonSerializer.Deserialize(json, typeof(T), _jsonSerializerContext)!;
+                    using var file = File.Open(path, FileMode.Open);
+                    _value = (T)JsonSerializer.Deserialize(file, typeof(T), _jsonSerializerContext)!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }

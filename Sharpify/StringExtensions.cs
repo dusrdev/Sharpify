@@ -60,8 +60,6 @@ public static partial class Extensions {
         }
         return true;
     }
-#pragma warning restore CS1658 // Warning is overriding an error
-#pragma warning restore CS1584 // XML comment has syntactically incorrect cref attribute
 
     /// <summary>
     /// A more convenient way to use <see cref="string.Concat(ReadOnlySpan{char}, ReadOnlySpan{char})"/>

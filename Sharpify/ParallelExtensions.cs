@@ -29,7 +29,7 @@ public static partial class Extensions {
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Task InvokeAsync<T>(
         this Concurrent<T> concurrentReference,
-        in IAsyncAction<T> action,
+        IAsyncAction<T> action,
         CancellationToken token = default) {
         var length = concurrentReference.Source.Count;
         if (length is 0) {
@@ -205,8 +205,8 @@ public static partial class Extensions {
         var totalArray = ArrayPool<ValueTask>.Shared.Rent(count);
         var totalSegment = new ArraySegment<ValueTask>(totalArray, 0, count);
         int totalIndex = 0;
-        var requireAllocation = ArrayPool<Task>.Shared.Rent(count);
-        int requireAllocationIndex = 0;
+        var needAllocation = ArrayPool<Task>.Shared.Rent(count);
+        int needAllocationIndex = 0;
 
         try {
             foreach (var item in asyncLocalReference.Value) {
@@ -216,16 +216,16 @@ public static partial class Extensions {
                 if (valueTask.IsCompletedSuccessfully) {
                     continue;
                 }
-                requireAllocation[requireAllocationIndex++] = valueTask.AsTask();
+                needAllocation[needAllocationIndex++] = valueTask.AsTask();
             }
-            var requireAllocationSegment = new ArraySegment<Task>(requireAllocation, 0, requireAllocationIndex);
-            if (requireAllocationSegment.Count is 0) {
+            var requiringAllocation = new ArraySegment<Task>(needAllocation, 0, needAllocationIndex);
+            if (requiringAllocation.Count is 0) {
                 return;
             }
-            await Task.WhenAll(requireAllocationSegment).WaitAsync(token).ConfigureAwait(false);
+            await Task.WhenAll(requiringAllocation).WaitAsync(token).ConfigureAwait(false);
         } finally {
             totalArray.ReturnBufferToSharedArrayPool();
-            requireAllocation.ReturnBufferToSharedArrayPool();
+            needAllocation.ReturnBufferToSharedArrayPool();
         }
     }
 }

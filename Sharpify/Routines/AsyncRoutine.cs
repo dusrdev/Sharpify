@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -17,8 +18,6 @@ public class AsyncRoutine : IDisposable {
     /// </summary>
     public readonly List<Func<CancellationToken, Task>> Actions = [];
 
-    private Task[] _tasks;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AsyncRoutine"/> class with the specified interval, options, and cancellation token source.
     /// </summary>
@@ -30,7 +29,13 @@ public class AsyncRoutine : IDisposable {
         _timer = new PeriodicTimer(interval);
         _isRunning = true;
         _cancellationTokenSource = cancellationTokenSource;
-        _tasks = [];
+    }
+
+    /// <summary>
+    /// Finalizes an instance of the <see cref="AsyncRoutine"/> class.
+    /// </summary>
+    ~AsyncRoutine() {
+        Dispose();
     }
 
     /// <summary>
@@ -90,12 +95,17 @@ public class AsyncRoutine : IDisposable {
                    && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token)) {
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    _tasks = new Task[Actions.Count];
-                    for (int i = 0; i < Actions.Count; i++) {
-                        _tasks[i] = Actions[i](_cancellationTokenSource.Token);
+                    var buffer = ArrayPool<Task>.Shared.Rent(Actions.Count);
+                    ArraySegment<Task> tasks = new(buffer, 0, Actions.Count);
+                    for (int i = 0; i < tasks.Count; i++) {
+                        tasks[i] = Actions[i](_cancellationTokenSource.Token);
                     }
-                    await Task.WhenAll(_tasks).WaitAsync(_cancellationTokenSource.Token);
-                // Execute sequentially
+                    try {
+                        await Task.WhenAll(tasks).WaitAsync(_cancellationTokenSource.Token);
+                    } finally {
+                        ArrayPool<Task>.Shared.Return(buffer);
+                    }
+                    // Execute sequentially
                 } else {
                     foreach (var action in Actions) {
                         await action(_cancellationTokenSource.Token);

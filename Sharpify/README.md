@@ -15,6 +15,7 @@ A collection of high performance language extensions for C#
 * `PersistentDictionary` and variants provide all simple database needs, with perfected performance and optimized concurrency.
 * `SerializableObject` and the `Monitored` variant allow persisting an object to the disk, and elegantly synchronizing modifications.
 * 💿 `StringBuffer` and `AllocatedStringBuffer` enable zero allocation, easy to use appending buffer for creation of string in hot paths.
+* `RentedBufferWriter{T}` is an allocation friendly alternative to `ArrayBufferWriter{T}` for hot paths.
 * A 🚣🏻 boat load of extension functions for all common types, bridging ease of use and performance.
 * `Utils.Env`, `Utils.Math`, `Utils.Strings` and `Utils.Unsafe` provide uncanny convenience at maximal performance.
 * 🧵 `ThreadSafe<T>` makes any variable type thread-safe
