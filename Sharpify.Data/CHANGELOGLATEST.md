@@ -6,6 +6,7 @@ The entire package has been reworked.
 
 * `Database{T}` was removed, and so was `DatabaseOptions`
 * `Database` is now the only offer, and was tremendously optimized.
+* GC pressure massively reduced due to very heavy usage of pooling.
 * The options that were previously part of `DatabaseOptions` enum are now simple `bool`s in `DatabaseConfiguration`
 * `string` value type upsert and get now uses `MemoryPack` for improved efficiency.
 * the base value type is now a `ReadOnlyMemory<byte>` instead of `byte[]` enabling internal use of better apis and more optimization, client usage shouldn't change much because of implicit converters.
