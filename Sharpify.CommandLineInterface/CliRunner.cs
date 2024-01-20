@@ -93,6 +93,10 @@ public sealed class CliRunner {
 			return OutputHelper.Return("Command name is required", 405, true);
 		}
 
+		if (commandName.Equals("help", StringComparison.OrdinalIgnoreCase)) {
+			return OutputHelper.Return(_help, 0);
+		}
+
 		Command? command = null;
 		foreach (Command c in _commands.AsSpan()) {
 			if (c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase)) {
@@ -131,7 +135,7 @@ public sealed class CliRunner {
 			buffer.AppendLine(_metaData.License);
 			buffer.AppendLine();
 		}
-		buffer.Append("Commands:");
+		buffer.AppendLine("Commands:");
 		var maxCommandLength = GetMaximumCommandLength();
 		foreach (Command command in _commands.AsSpan()) {
 			buffer.Append(command.Name.PadRight(maxCommandLength));
