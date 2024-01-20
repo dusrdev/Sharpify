@@ -52,6 +52,11 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	}
 
 	/// <summary>
+	/// Returns the underlying buffer
+	/// </summary>
+	public T[] Buffer => _buffer;
+
+	/// <summary>
 	/// Gets the portion of the free buffer that can be written to, beginning at <see cref="_index"/>
 	/// </summary>
 	/// <param name="sizeHint">Not regarded</param>
