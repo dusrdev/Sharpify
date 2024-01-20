@@ -30,6 +30,11 @@ public record CliMetadata {
  	public string License { get; set; } = "";
 
 	/// <summary>
+	/// Whether or not to include the metadata in the help text.
+	/// </summary>
+	public bool IncludeInHelpText { get; set; } = true;
+
+	/// <summary>
 	/// The default metadata for a CLI application.
 	/// </summary>
 	public static readonly CliMetadata Default = new() {
@@ -37,7 +42,8 @@ public record CliMetadata {
 		Description = "Default description.",
 		Version = "1.0.0",
 		Author = "John Doe",
-		License = "MIT"
+		License = "MIT",
+		IncludeInHelpText = true
 	};
 
 	/// <summary>

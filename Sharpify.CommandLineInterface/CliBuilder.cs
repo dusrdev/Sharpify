@@ -72,6 +72,14 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
+	/// Configures the CLI runner to not include the metadata in the help text.
+	/// </summary>
+	public CliBuilder DoNotIncludeMetadataInHelpText() {
+		_metaData.IncludeInHelpText = false;
+		return this;
+	}
+
+	/// <summary>
 	/// Builds the CLI runner.
 	/// </summary>
 	public CliRunner Build() {

@@ -29,34 +29,29 @@ public abstract class Command {
 	/// </summary>
 	public virtual string GetHelp() {
 		var length = Name.Length + Description.Length + Usage.Length + 40;
-		var newline = Environment.NewLine.AsSpan();
 		if (length <= 1024) { // Small size is allocated on the stack
 			var buffer = StringBuffer.Create(stackalloc char[length]);
-			buffer.Append(newline);
+			buffer.AppendLine();
 			buffer.Append("Command: ");
-			buffer.Append(Name);
-			buffer.Append(newline);
-			buffer.Append(newline);
+			buffer.AppendLine(Name);
+			buffer.AppendLine();
 			buffer.Append("Description: ");
-			buffer.Append(Description);
-			buffer.Append(newline);
-			buffer.Append(newline);
+			buffer.AppendLine(Description);
+			buffer.AppendLine();
 			buffer.Append("Usage: ");
-			buffer.Append(Usage);
+			buffer.AppendLine(Usage);
 			return buffer.Allocate(true);
 		} else { // Large size is rented from shared array pool
 			using var buffer = StringBuffer.Rent(length);
-			buffer.Append(newline);
+			buffer.AppendLine();
 			buffer.Append("Command: ");
-			buffer.Append(Name);
-			buffer.Append(newline);
-			buffer.Append(newline);
+			buffer.AppendLine(Name);
+			buffer.AppendLine();
 			buffer.Append("Description: ");
-			buffer.Append(Description);
-			buffer.Append(newline);
-			buffer.Append(newline);
+			buffer.AppendLine(Description);
+			buffer.AppendLine();
 			buffer.Append("Usage: ");
-			buffer.Append(Usage);
+			buffer.AppendLine(Usage);
 			return buffer.Allocate(true);
 		}
 	}

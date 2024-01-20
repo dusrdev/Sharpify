@@ -112,34 +112,31 @@ public sealed class CliRunner {
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelp() {
-		var length = _metaData.TotalLength + _commands.Count * 128 + 256;
-		var newline = Environment.NewLine.AsSpan();
+		var length = _metaData.IncludeInHelpText ?
+			_metaData.TotalLength + _commands.Count * 128 + 256
+			: _commands.Count * 128 + 256;
 		// here the likely help text is larger than per command, so we use a rented buffer
 		var buffer = StringBuffer.Rent(length);
-		buffer.Append(newline);
-		buffer.Append(_metaData.Name);
-		buffer.Append(newline);
-		buffer.Append(newline);
-		buffer.Append(_metaData.Description);
-		buffer.Append(newline);
-		buffer.Append(newline);
-		buffer.Append("Author: ");
-		buffer.Append(_metaData.Author);
-		buffer.Append(newline);
-		buffer.Append("Version: ");
-		buffer.Append(_metaData.Version);
-		buffer.Append(newline);
-		buffer.Append("License: ");
-		buffer.Append(_metaData.License);
-		buffer.Append(newline);
-		buffer.Append(newline);
+		buffer.AppendLine();
+		if (_metaData.IncludeInHelpText) {
+			buffer.AppendLine(_metaData.Name);
+			buffer.AppendLine();
+			buffer.AppendLine(_metaData.Description);
+			buffer.AppendLine();
+			buffer.Append("Author: ");
+			buffer.AppendLine(_metaData.Author);
+			buffer.Append("Version: ");
+			buffer.AppendLine(_metaData.Version);
+			buffer.Append("License: ");
+			buffer.AppendLine(_metaData.License);
+			buffer.AppendLine();
+		}
 		buffer.Append("Commands:");
 		var maxCommandLength = GetMaximumCommandLength();
 		foreach (Command command in _commands.AsSpan()) {
 			buffer.Append(command.Name.PadRight(maxCommandLength));
 			buffer.Append(" - ");
-			buffer.Append(command.Description);
-			buffer.Append(newline);
+			buffer.AppendLine(command.Description);
 		}
 		buffer.Append(
 			"""
