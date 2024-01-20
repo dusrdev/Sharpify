@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 
 using MemoryPack;
 
+using Sharpify.Collections;
+
 namespace Sharpify.Data;
 
 /// <summary>

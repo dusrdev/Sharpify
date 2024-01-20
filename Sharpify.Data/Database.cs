@@ -259,15 +259,12 @@ public sealed class Database : IDisposable {
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
     public void Upsert(string key, ReadOnlyMemory<byte> value, string encryptionKey = "") {
-        ReadOnlyMemory<byte> val;
-
         if (encryptionKey.Length is 0) {
-            val = value;
+            _queue.Enqueue(new(key, value));
         } else {
-            val = Helper.Instance.Encrypt(value.Span, encryptionKey);
+            var encrypted = Helper.Instance.Encrypt(value.Span, encryptionKey);
+            _queue.Enqueue(new(key, encrypted));
         }
-
-        _queue.Enqueue(new(key, val));
 
         if (Config.TriggerUpdateEvents) {
             InvokeDataEvent(new DataChangedEventArgs {
