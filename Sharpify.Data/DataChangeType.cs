@@ -3,7 +3,6 @@ namespace Sharpify.Data;
 /// <summary>
 /// The type of changed that occurred on a key
 /// </summary>
-[Flags]
 public enum DataChangeType : byte {
     /// <summary>
     /// A key was inserted or updated

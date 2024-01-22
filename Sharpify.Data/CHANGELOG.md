@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v2.0.1
+
+* Added `ContainsKey` and `Remove` functions to `DatabaseFilter{T}` to give it essentially the same functionality scope as the `Database` itself.
+* Removed `Flags` attribute from `DataChangeType` as it wasn't really a flag type, it can only be one thing.
+
 ## v2.0.0 - BREAKING CHANGE
 
 The entire package has been reworked.

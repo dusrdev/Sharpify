@@ -24,6 +24,11 @@ public readonly struct DatabaseFilter<T> where T : IMemoryPackable<T> {
 	}
 
 	/// <summary>
+	/// Checks if the filtered database contains the specified key.
+	/// </summary>
+	public bool ContainsKey(string key) => _database.ContainsKey(CreateKey(key));
+
+	/// <summary>
     /// Gets the specified value from the database.
     /// </summary>
     /// <param name="key"></param>
@@ -59,4 +64,9 @@ public readonly struct DatabaseFilter<T> where T : IMemoryPackable<T> {
 	public void Upsert(string key, T value, string encryptionKey = "") {
 		_database.Upsert(CreateKey(key), value, encryptionKey);
 	}
+
+	/// <summary>
+	/// Removes the item with specified key from the filtered database.
+	/// </summary>
+	public bool Remove(string key) => _database.Remove(CreateKey(key));
 }

@@ -175,6 +175,36 @@ public class DatabaseEncryptedTests {
     }
 
     [Fact]
+    public void Contains() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.UpsertAsString("test", "test");
+
+        // Assert
+        db.Database.ContainsKey("test").Should().BeTrue();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void ContainsFiltered() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
+
+        // Assert
+        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeTrue();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
     public void Remove() {
         // Arrange
         using var db = Factory("");
@@ -185,6 +215,22 @@ public class DatabaseEncryptedTests {
 
         // Assert
         db.Database.ContainsKey("test").Should().BeFalse();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void RemoveFiltered() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
+        db.Database.FilterByType<Person>().Remove("test");
+
+        // Assert
+        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
         File.Delete(db.Path);
