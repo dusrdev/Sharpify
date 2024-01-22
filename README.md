@@ -11,13 +11,13 @@ A collection of high performance language extensions for C#
 * 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
 * `Routine` and `AsyncRoutine` bring the user easily usable and configurable interval based background job execution.
 * `PersistentDictionary` and derived types are super lightweight and efficient serializable dictionaries that are thread-safe and work amazingly for things like configuration files.
-* `SortedList<T>` bridges the performance of `List` and order assurance of `SortedSet`
-* `PersistentDictionary` and variants provide all simple database needs, with perfected performance and optimized concurrency.
+* `SortedList{T}` bridges the performance of `List` and order assurance of `SortedSet`
 * `SerializableObject` and the `Monitored` variant allow persisting an object to the disk, and elegantly synchronizing modifications.
 * 💿 `StringBuffer` and `AllocatedStringBuffer` enable zero allocation, easy to use appending buffer for creation of string in hot paths.
+* `RentedBufferWriter{T}` is an alternative to `ArrayBufferWriter{T}` that requires upfront estimation of the capacity, to use an array rented from the shared array pool, reducing memory allocations and garbage collection.
 * A 🚣🏻 boat load of extension functions for all common types, bridging ease of use and performance.
 * `Utils.Env`, `Utils.Math`, `Utils.Strings` and `Utils.Unsafe` provide uncanny convenience at maximal performance.
-* 🧵 `ThreadSafe<T>` makes any variable type thread-safe
+* 🧵 `ThreadSafe{T}` makes any variable type thread-safe
 * 🔐 `AesProvider` provides access to industry leading AES-128 encryption with virtually no setup
 * 🏋️ High performance optimized alternatives to core language extensions
 * 🎁 More added features that are not present in the core language
