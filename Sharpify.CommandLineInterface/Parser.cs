@@ -112,6 +112,9 @@ public static class Parser {
             return null;
         }
 
+        Memory<string> argsCopy = new string[args.Length];
+        args.CopyTo(argsCopy.Span);
+
         var results = new Dictionary<string, string>(args.Length, comparer);
         int i = 0;
 
@@ -143,7 +146,7 @@ public static class Parser {
             i += 2;
         }
 
-        return results.Count is 0 ? null : new Arguments(results);
+        return results.Count is 0 ? null : new Arguments(argsCopy, results);
     }
 
     // Checks whether a string starts with "-"
