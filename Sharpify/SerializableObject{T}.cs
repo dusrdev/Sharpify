@@ -22,8 +22,8 @@ public class SerializableObject<T> : IDisposable {
     /// </summary>
     public T Value {
         get {
-            _lock.EnterReadLock();
             try {
+                _lock.EnterReadLock();
                 return _value;
             } finally {
                 _lock.ExitReadLock();
@@ -80,7 +80,7 @@ public class SerializableObject<T> : IDisposable {
         }
         _segmentedPath = new(dir, fileName);
         _path = path;
-        if (File.Exists(path)) {
+        if (Path.Exists(path)) {
             var length = checked((int)new FileInfo(path).Length);
             var textLength = length / sizeof(char);
             if (textLength is 0) {
@@ -97,11 +97,6 @@ public class SerializableObject<T> : IDisposable {
             SetValueAndSerialize(defaultValue);
         }
     }
-
-    /// <summary>
-    /// Represents a serializable object.
-    /// </summary>
-    ~SerializableObject() => Dispose();
 
     private void SetValueAndSerialize(T value) {
         try {
@@ -150,15 +145,12 @@ public class SerializableObject<T> : IDisposable {
             _lock.ExitWriteLock();
         }
     }
+
     /// <inheritdoc/>
-
-
     public virtual void Dispose() {
         _lock.Dispose();
         GC.SuppressFinalize(this);
     }
-
-
 
     /// <summary>
     /// Represents a segmented path consisting of a directory and a file name.

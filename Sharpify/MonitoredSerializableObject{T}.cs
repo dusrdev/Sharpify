@@ -39,15 +39,11 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         _watcher.Changed += OnFileChanged;
     }
 
-    /// <summary>
-    /// Represents a monitored serializable object.
-    /// </summary>
-    ~MonitoredSerializableObject() {
-        Dispose();
-    }
-
     private void OnFileChanged(object sender, FileSystemEventArgs e) {
         if (Interlocked.Exchange(ref _isInternalModification, 0) is 1) {
+            return;
+        }
+        if (!File.Exists(_path)) {
             return;
         }
         try {
@@ -84,8 +80,6 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
 
     /// <inheritdoc/>
     public override void Dispose() {
-        _watcher.Changed -= OnFileChanged;
-        _watcher.EnableRaisingEvents = false;
         _watcher.Dispose();
         _lock.Dispose();
         GC.SuppressFinalize(this);
