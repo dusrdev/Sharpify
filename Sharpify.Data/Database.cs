@@ -93,13 +93,6 @@ public sealed class Database : IDisposable {
     }
 
     /// <summary>
-    /// Finalizes the database (releases all resources)
-    /// </summary>
-    ~Database() {
-        Dispose();
-    }
-
-    /// <summary>
     /// Returns the amount of entries in the database.
     /// </summary>
     public int Count => _data.Count;
