@@ -32,10 +32,8 @@ internal class Serializer : DatabaseSerializer {
             return new Dictionary<string, ReadOnlyMemory<byte>>();
         }
         using var file = new FileStream(_path, FileMode.Open);
-        Dictionary<string, ReadOnlyMemory<byte>> dict =
-            await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(file, cancellationToken: cancellationToken)
-             ?? new Dictionary<string, ReadOnlyMemory<byte>>();
-        return dict;
+        var dict = await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(file, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return dict ?? new Dictionary<string, ReadOnlyMemory<byte>>();
     }
 
 /// <inheritdoc />
@@ -49,6 +47,6 @@ internal class Serializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override async ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
-        await MemoryPackSerializer.SerializeAsync(file, dict, cancellationToken: cancellationToken);
+        await MemoryPackSerializer.SerializeAsync(file, dict, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }

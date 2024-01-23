@@ -43,10 +43,8 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         using var transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        Dictionary<string, ReadOnlyMemory<byte>> dict =
-            await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(cryptoStream, cancellationToken: cancellationToken)
-         ?? new Dictionary<string, ReadOnlyMemory<byte>>();
-        return dict;
+        var dict = await MemoryPackSerializer.DeserializeAsync<Dictionary<string, ReadOnlyMemory<byte>>>(cryptoStream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return dict ?? new Dictionary<string, ReadOnlyMemory<byte>>();
     }
 
 /// <inheritdoc />
@@ -64,6 +62,6 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var file = new FileStream(_path, FileMode.Create);
         using var transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
-        await MemoryPackSerializer.SerializeAsync(cryptoStream, dict, cancellationToken: cancellationToken);
+        await MemoryPackSerializer.SerializeAsync(cryptoStream, dict, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }

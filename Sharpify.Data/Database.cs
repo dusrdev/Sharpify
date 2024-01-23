@@ -128,8 +128,8 @@ public sealed class Database : IDisposable {
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
     public ReadOnlyMemory<byte> Get(string key, string encryptionKey = "") {
-        _lock.EnterReadLock();
         try {
+            _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
                 return ReadOnlyMemory<byte>.Empty;
@@ -151,8 +151,8 @@ public sealed class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
     public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
-        _lock.EnterReadLock();
         try {
+            _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
                 return default;
@@ -177,8 +177,8 @@ public sealed class Database : IDisposable {
     /// <param name="key"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     public string GetAsString(string key, string encryptionKey = "") {
-        _lock.EnterReadLock();
         try {
+            _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
                 return "";
@@ -203,8 +203,8 @@ public sealed class Database : IDisposable {
     /// <param name="key"></param>
     /// <returns>True if the key was removed, false if it didn't exist or couldn't be removed.</returns>
     public bool Remove(string key) {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
@@ -230,8 +230,8 @@ public sealed class Database : IDisposable {
     /// Clears all keys and values from the database.
     /// </summary>
     public void Clear() {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             _data.Clear();
             Interlocked.Exchange(ref _estimatedSize, 0);
             if (Config.SerializeOnUpdate) {
@@ -297,8 +297,8 @@ public sealed class Database : IDisposable {
     // Essentially synchronizing concurrent writes.
     // While the inner sequential addition to the dictionary makes it thread safe.
     private void EmptyQueue() {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             nint itemsAdded = 0;
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
@@ -352,8 +352,8 @@ public sealed class Database : IDisposable {
     /// Returns an immutable copy of the keys in the inner dictionary
     /// </summary>
     public IReadOnlyCollection<string> GetKeys() {
-        _lock.EnterReadLock();
         try {
+            _lock.EnterReadLock();
             return _data.Keys;
         } finally {
             _lock.ExitReadLock();

@@ -38,7 +38,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         using var transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        var numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken);
+        var numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
         var dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
         return dict;

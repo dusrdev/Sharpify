@@ -46,7 +46,7 @@ internal class IgnoreCaseSerializer : Serializer {
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        var numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken);
+        var numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
         var dict = FromSpan(buffer.WrittenSpan);
         return dict;
