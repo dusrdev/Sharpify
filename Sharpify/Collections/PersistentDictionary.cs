@@ -56,7 +56,7 @@ public abstract class PersistentDictionary {
             return value;
         }
 
-        await UpsertAsync(key, @default).ConfigureAwait(false);
+        await UpsertAsync(key, @default);
         return @default;
     }
 
@@ -68,7 +68,7 @@ public abstract class PersistentDictionary {
     /// <param name="default">The default value to create if the key does not exist.</param>
     /// <returns>The value associated with the key, or the created default value.</returns>
     public async ValueTask<T> GetOrCreateAsync<T>(string key, T @default) where T : struct, IParsable<T> {
-        var value = await GetOrCreateAsync(key, @default.ToString() ?? "").ConfigureAwait(false);
+        var value = await GetOrCreateAsync(key, @default.ToString() ?? "");
         return T.Parse(value, CultureInfo.InvariantCulture);
     }
 
@@ -104,7 +104,7 @@ public abstract class PersistentDictionary {
         // We check after the release if anything left is in the queue and repeat the process.
         // In perfect conditions with truly concurrent writes, it will cause the serialization to happen only once.
         // Improving performance and reducing resource usage for writes.
-        await _semaphore.WaitAsync().ConfigureAwait(false);
+        await _semaphore.WaitAsync();
 
         if (_queue.IsEmpty) {
             _semaphore.Release();
@@ -114,7 +114,7 @@ public abstract class PersistentDictionary {
         while (_queue.TryDequeue(out var item)) {
             SetKeyAndValue(item.Key, item.Value);
         }
-        await SerializeDictionaryAsync().ConfigureAwait(false);
+        await SerializeDictionaryAsync();
 
         _semaphore.Release();
 
@@ -152,7 +152,7 @@ public abstract class PersistentDictionary {
             return;
         }
         _dict.Clear();
-        await SerializeDictionaryAsync().ConfigureAwait(false);
+        await SerializeDictionaryAsync();
     }
 
     /// <summary>
