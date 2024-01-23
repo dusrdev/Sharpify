@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.7.2
+
+* Moved `_lock` acquiring statements into the `try-finally` blocks to handle `out-of-band` exceptions. Thanks [TheGenbox](https://www.reddit.com/user/TheGenbox/).
+* Modified most of the internal `await` statements to use `ConfigureAwait(false)` wherever it was possible, also thanks to [TheGenbox](https://www.reddit.com/user/TheGenbox/).
+
 ## v1.7.0
 
 * Added `AppendLine` overloads to all `Append` methods of the `StringBuffer` variants that append the platform specific new line sequence at after the `Append`, there is also an empty overload which just appends the new line sequence. This was made to reduce code when using newlines, and to make the api even more similar to `StringBuilder`.

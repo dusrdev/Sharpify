@@ -104,8 +104,8 @@ public class SerializableObject<T> : IDisposable {
     ~SerializableObject() => Dispose();
 
     private void SetValueAndSerialize(T value) {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             _value = value;
             using var file = File.Open(_path, FileMode.Create);
             JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
@@ -140,8 +140,8 @@ public class SerializableObject<T> : IDisposable {
     /// <param name="modifier">The action that modifies the value of the object.</param>
     /// <remarks>A lock is used to prevent concurrent modifications</remarks>
     public virtual void Modify(Func<T, T> modifier) {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             _value = modifier(_value);
             using var file = File.Open(_path, FileMode.Create);
             JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);

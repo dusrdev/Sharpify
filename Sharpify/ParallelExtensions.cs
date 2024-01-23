@@ -73,7 +73,7 @@ public static partial class Extensions {
             foreach (var item in asyncLocalReference.Value) {
                 tasks[i++] = action.InvokeAsync(item);
             }
-            await Task.WhenAll(tasks).WaitAsync(token);
+            await Task.WhenAll(tasks).WaitAsync(token).ConfigureAwait(false);
         } finally {
             array.ReturnBufferToSharedArrayPool();
         }
@@ -178,7 +178,7 @@ public static partial class Extensions {
             foreach (var partition in parallelPartitions) {
                 partitions[i++] = enumeratedPartition.AwaitPartitionAsync(partition);
             }
-            await Task.WhenAll(partitions).WaitAsync(token);
+            await Task.WhenAll(partitions).WaitAsync(token).ConfigureAwait(false);
         } finally {
             array.ReturnBufferToSharedArrayPool();
         }

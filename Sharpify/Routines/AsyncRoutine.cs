@@ -92,7 +92,7 @@ public class AsyncRoutine : IDisposable {
         try {
             while (_isRunning
                    && Actions.Count > 0
-                   && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token)) {
+                   && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
                     var buffer = ArrayPool<Task>.Shared.Rent(Actions.Count);
@@ -101,14 +101,14 @@ public class AsyncRoutine : IDisposable {
                         tasks[i] = Actions[i](_cancellationTokenSource.Token);
                     }
                     try {
-                        await Task.WhenAll(tasks).WaitAsync(_cancellationTokenSource.Token);
+                        await Task.WhenAll(tasks).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
                     } finally {
                         ArrayPool<Task>.Shared.Return(buffer);
                     }
                     // Execute sequentially
                 } else {
                     foreach (var action in Actions) {
-                        await action(_cancellationTokenSource.Token);
+                        await action(_cancellationTokenSource.Token).ConfigureAwait(false);
                     }
                 }
             }

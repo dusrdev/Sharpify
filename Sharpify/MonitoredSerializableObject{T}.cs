@@ -50,8 +50,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         if (Interlocked.Exchange(ref _isInternalModification, 0) is 1) {
             return;
         }
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             using var file = File.Open(_path, FileMode.Open);
             var deserialized = JsonSerializer.Deserialize(file, typeof(T), _jsonSerializerContext);
             if (deserialized is null) {
@@ -70,8 +70,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
     /// <param name="modifier">The action that modifies the value of the object.</param>
     /// <remarks>A lock is used to prevent concurrent modifications</remarks>
     public override void Modify(Func<T, T> modifier) {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             _value = modifier(_value);
             Interlocked.Exchange(ref _isInternalModification, 1);
             using var file = File.Open(_path, FileMode.Create);

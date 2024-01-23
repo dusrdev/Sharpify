@@ -42,6 +42,6 @@ public class LocalPersistentDictionary : PersistentDictionary {
     /// <inheritdoc/>
     protected override async Task SerializeAsync() {
         await using var file = File.Open(_path, FileMode.Create);
-        await JsonSerializer.SerializeAsync(file, _dict, JsonContext.Default.DictionaryStringString);
+        await JsonSerializer.SerializeAsync(file, _dict, JsonContext.Default.DictionaryStringString).ConfigureAwait(false);
     }
 }
