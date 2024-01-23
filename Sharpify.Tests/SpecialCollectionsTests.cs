@@ -2,9 +2,17 @@ using System.Text.Json;
 
 using Sharpify.Collections;
 
+using Xunit.Abstractions;
+
 namespace Sharpify.Tests;
 
 public class SpecialCollectionsTests {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public SpecialCollectionsTests(ITestOutputHelper testOutputHelper) {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
         // Arrange
@@ -92,7 +100,7 @@ public class SpecialCollectionsTests {
 
         // Assert
         // dict.SerializedCount.Should().BeLessThanOrEqualTo(upsertTasks.Length);
-        Console.WriteLine($"PersistentDictionary serialized count: {dict.SerializedCount}");
+        _testOutputHelper.WriteLine($"PersistentDictionary serialized count: {dict.SerializedCount}");
         // This is checking that the dictionary was serialized less than the number of upserts.
         // Ideally with perfectly concurrent updates, the dictionary would only be serialized once.
         // The reason not to check for 1 is that the tasks may not be executed perfectly in parallel.
