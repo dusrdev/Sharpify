@@ -33,17 +33,24 @@ public sealed class CliRunner {
 		OutputWriter = writer;
 	}
 
+	private readonly CliRunnerOptions _options;
 	private readonly CliMetadata _metaData;
+	private readonly string _customerHeader;
 	private readonly string _help;
 
 	/// <summary>
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
-	internal CliRunner(List<Command> commands, CliMetadata metaData) {
+	internal CliRunner(List<Command> commands, CliRunnerOptions options, CliMetadata metaData, string customHeader) {
+		_options = options;
 		_commands = commands;
+		if (_options.HasFlag(CliRunnerOptions.SortCommandsAlphabetically)) {
+			_commands.Sort(Command.ByNameComparer);
+		}
 		_metaData = metaData;
-		_help = GenerateHelp();
+		_customerHeader = customHeader;
+		_help = GenerateHelp(); // Keep this last to make sure changes are reflected in the help text
 	}
 
 	/// <summary>
@@ -116,13 +123,11 @@ public sealed class CliRunner {
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelp() {
-		var length = _metaData.IncludeInHelpText ?
-			_metaData.TotalLength + _commands.Count * 128 + 256
-			: _commands.Count * 128 + 256;
+		int length = GetRequiredBufferLength();
 		// here the likely help text is larger than per command, so we use a rented buffer
 		var buffer = StringBuffer.Rent(length);
 		buffer.AppendLine();
-		if (_metaData.IncludeInHelpText) {
+		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
 			buffer.AppendLine(_metaData.Name);
 			buffer.AppendLine();
 			buffer.AppendLine(_metaData.Description);
@@ -133,6 +138,9 @@ public sealed class CliRunner {
 			buffer.AppendLine(_metaData.Version);
 			buffer.Append("License: ");
 			buffer.AppendLine(_metaData.License);
+			buffer.AppendLine();
+		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
+			buffer.AppendLine(_customerHeader);
 			buffer.AppendLine();
 		}
 		buffer.AppendLine("Commands:");
@@ -165,5 +173,15 @@ public sealed class CliRunner {
 			}
 		}
 		return max;
+	}
+
+	private int GetRequiredBufferLength() {
+		int length = _commands.Count * 128 + 256; // default buffer for commands and possible extra text
+		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
+			length += _metaData.TotalLength;
+		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
+			length += _customerHeader.Length;
+		}
+		return length;
 	}
 }

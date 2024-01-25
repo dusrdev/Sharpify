@@ -51,11 +51,12 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("--help");
 
-		writer.ToString().Should().Contain("John Doe");
+		writer.ToString().Should().Contain("Echo");
+		writer.ToString().Should().Contain("Add");
 	}
 
 	[Fact]
-	public async Task Runner_WithCustomWriterAndModifiedMetadata_OutputsGeneralHelpToWriter() {
+	public async Task Runner_WithCustomWriterAndMetadata_OutputsGeneralHelpToWriter() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
 		var writer = new StringWriter();
@@ -64,10 +65,44 @@ public class CliBuilderTests {
                            .AddCommand(echo)
 						   .AddCommand(add)
 						   .SetOutputWriter(writer)
-						   .ModifyMetadata(data => data.Author = "Dave")
+						   .WithMetadata(data => data.Author = "Dave")
                            .Build();
 		await cliRunner.RunAsync("--help");
 
 		writer.ToString().Should().Contain("Dave");
+	}
+
+	[Fact]
+	public async Task Runner_WithCustomWriterAndCustomHeader_OutputsGeneralHelpToWriter() {
+		var echo = new EchoCommand();
+		var add = new AddCommand();
+		var writer = new StringWriter();
+
+		var cliRunner = CliRunner.CreateBuilder()
+                           .AddCommand(echo)
+						   .AddCommand(add)
+						   .SetOutputWriter(writer)
+						   .WithCustomHeader("Dave")
+                           .Build();
+		await cliRunner.RunAsync("--help");
+
+		writer.ToString().Should().Contain("Dave");
+	}
+
+	[Fact]
+	public void Runner_WithOrderedCommands_IsOrdered() {
+		var echo = new EchoCommand();
+		var add = new AddCommand();
+		var writer = new StringWriter();
+
+		var cliRunner = CliRunner.CreateBuilder()
+						   .AddCommand(echo)
+						   .AddCommand(add)
+						   .SortCommandsAlphabetically()
+						   .SetOutputWriter(writer)
+						   .Build();
+		var copy = cliRunner.Commands;
+		copy[0].Should().Be(add);
+		copy[1].Should().Be(echo);
 	}
 }

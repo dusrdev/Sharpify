@@ -8,8 +8,11 @@ public sealed class CliBuilder {
 
 	private readonly CliMetadata _metaData;
 
+	private CliRunnerOptions _options;
+	private string _header = "";
+
 	internal CliBuilder() {
-		_commands = new();
+		_commands = new List<Command>();
 		_metaData = CliMetadata.Default;
 	}
 
@@ -63,19 +66,40 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
-	/// Modifies the metadata for the CLI runner, this is used in the general help text
+	/// Sorts the commands alphabetically.
 	/// </summary>
+	/// <remarks>
+	/// This change only affects the functionality of the help text.
+	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder ModifyMetadata(Action<CliMetadata> action) {
-		action(_metaData);
+	public CliBuilder SortCommandsAlphabetically() {
+		_options |= CliRunnerOptions.SortCommandsAlphabetically;
 		return this;
 	}
 
 	/// <summary>
-	/// Configures the CLI runner to not include the metadata in the help text.
+	/// Use metadata in the help text of the CLI runner.
 	/// </summary>
-	public CliBuilder DoNotIncludeMetadataInHelpText() {
-		_metaData.IncludeInHelpText = false;
+	/// <remarks>
+	/// Has priority over the custom header, and only one is used, so including a custom header as well will not do anything.
+	/// </remarks>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder WithMetadata(Action<CliMetadata> action) {
+		action(_metaData);
+		_options |= CliRunnerOptions.IncludeMetadata;
+		return this;
+	}
+
+	/// <summary>
+	/// Use a custom header instead of Metadata in the header of the help text
+	/// </summary>
+	/// <remarks>
+	/// <see cref="CliMetadata"/> as priority over the custom header, and only one is used, so make sure not to include it if you want the custom header to show.
+	/// </remarks>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder WithCustomHeader(string header) {
+		_header = header;
+		_options |= CliRunnerOptions.UseCustomHeader;
 		return this;
 	}
 
@@ -86,6 +110,6 @@ public sealed class CliBuilder {
 		if (_commands.Count is 0) {
 			throw new InvalidOperationException("No commands were added.");
 		}
-		return new CliRunner(_commands, _metaData);
+		return new CliRunner(_commands, _options, _metaData, _header);
 	}
 }

@@ -55,4 +55,18 @@ public abstract class Command {
 			return buffer.Allocate(true);
 		}
 	}
+
+	/// <summary>
+	/// Compares two commands by their name.
+	/// </summary>
+	/// <param name="x">The first command to compare.</param>
+	/// <param name="y">The second command to compare.</param>
+	/// <returns>
+	/// A value indicating the relative order of the commands.
+	/// The return value is less than 0 if x.Name is less than y.Name,
+	/// 0 if x.Name is equal to y.Name, and greater than 0 if x.Name is greater than y.Name.
+	/// </returns>
+	public static int ByNameComparer(Command x, Command y) {
+		return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
+	}
 }
