@@ -29,7 +29,7 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
     /// Creates a new database filter.
     /// </summary>
     /// <param name="database"></param>
-	protected DatabaseFilter(Database database) {
+	public DatabaseFilter(Database database) {
 		_database = database;
 	}
 
