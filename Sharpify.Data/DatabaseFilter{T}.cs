@@ -25,7 +25,11 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
 
 	private readonly Database _database;
 
-	internal DatabaseFilter(Database database) {
+    /// <summary>
+    /// Creates a new database filter.
+    /// </summary>
+    /// <param name="database"></param>
+	protected DatabaseFilter(Database database) {
 		_database = database;
 	}
 
