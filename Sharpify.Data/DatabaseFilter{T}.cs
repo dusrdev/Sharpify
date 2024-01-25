@@ -23,7 +23,10 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	protected virtual string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, ":", key);
 
-	private readonly Database _database;
+    /// <summary>
+    /// The database.
+    /// </summary>
+	protected readonly Database _database;
 
     /// <summary>
     /// Creates a new database filter.
