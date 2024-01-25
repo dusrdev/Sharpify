@@ -108,7 +108,146 @@ public sealed class Database : IDisposable {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public DatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new(this);
+    public IDatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <returns>True if the value was found, false if not.</returns>
+    public bool TryGetValue(string key, out ReadOnlyMemory<byte> value) => TryGetValue(key, "", out value);
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    /// <param name="value"></param>
+    /// <returns>True if the value was found, false if not.</returns>
+    public bool TryGetValue(string key, string encryptionKey, out ReadOnlyMemory<byte> value) {
+        try {
+            _lock.EnterReadLock();
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                value = ReadOnlyMemory<byte>.Empty;
+                return false;
+            }
+            if (encryptionKey.Length is 0) {
+                value = val;
+                return true;
+            }
+            value = Helper.Instance.Decrypt(val.Span, encryptionKey);
+            return true;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of object to retrieve.</typeparam>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> => TryGetValue(key, "", out value);
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of object to retrieve.</typeparam>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue<T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
+        try {
+            _lock.EnterReadLock();
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                value = default!;
+                return false;
+            }
+            if (encryptionKey.Length is 0) {
+                value = MemoryPackSerializer.Deserialize<T>(val.Span)!;
+                return true;
+            }
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes)!;
+            buffer.ReturnBufferToSharedArrayPool();
+            return true;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue(string key, out string value) => TryGetValue(key, "", out value);
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue(string key, string encryptionKey, out string value) {
+        try {
+            _lock.EnterReadLock();
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                value = "";
+                return false;
+            }
+            if (encryptionKey.Length is 0) {
+                value = MemoryPackSerializer.Deserialize<string>(val.Span)!;
+                return true;
+            }
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+            value = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
+            buffer.ReturnBufferToSharedArrayPool();
+            return true;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="jsonSerializerContext"></param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue<T>(string key, JsonSerializerContext jsonSerializerContext, out T value) => TryGetValue(key, "", jsonSerializerContext, out value);
+
+    /// <summary>
+    /// Tries to get the value for the <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
+    /// <param name="jsonSerializerContext"></param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValue<T>(string key, string encryptionKey, JsonSerializerContext jsonSerializerContext, out T value) {
+        if (!TryGetValue(key, encryptionKey, out string asString)) {
+            value = default!;
+            return false;
+        }
+        value = (T)JsonSerializer.Deserialize(asString, typeof(T), jsonSerializerContext)!;
+        return true;
+    }
 
     /// <summary>
     /// Returns the value for the <paramref name="key"/> as a byte[].
@@ -120,6 +259,7 @@ public sealed class Database : IDisposable {
     /// </para>
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
+    [Obsolete("Use TryGetValue instead.")]
     public ReadOnlyMemory<byte> Get(string key, string encryptionKey = "") {
         try {
             _lock.EnterReadLock();
@@ -143,6 +283,7 @@ public sealed class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
+    [Obsolete("Use TryGetValue instead.")]
     public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
@@ -169,6 +310,7 @@ public sealed class Database : IDisposable {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    [Obsolete("Use TryGetValue instead.")]
     public string GetAsString(string key, string encryptionKey = "") {
         try {
             _lock.EnterReadLock();
@@ -285,6 +427,38 @@ public sealed class Database : IDisposable {
         Upsert(key, MemoryPackSerializer.Serialize(value), encryptionKey);
     }
 
+    /// <summary>
+    /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    /// <remarks>
+    /// This is much less efficient time and memory wise than <see cref="Upsert(string, ReadOnlyMemory{byte}, string?)"/>.
+    /// </remarks>
+    public void Upsert(string key, string value, string encryptionKey = "") {
+        ReadOnlyMemory<byte> bytes = value.Length is 0 ?
+                    ReadOnlyMemory<byte>.Empty
+                    : MemoryPackSerializer.Serialize(value);
+
+        Upsert(key, bytes, encryptionKey);
+    }
+
+    /// <summary>
+    /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="jsonSerializerContext">That can be used to serialize T</param>
+    /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    /// <remarks>
+    /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
+    /// </remarks>
+    public void Upsert<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") where T : notnull {
+        var asString = JsonSerializer.Serialize(value, typeof(T), jsonSerializerContext);
+        Upsert(key, asString, encryptionKey);
+    }
+
     // Adds items to the dictionary and serializes if needed at the end.
     // This enables us to add multiple items at once without serializing multiple times.
     // Essentially synchronizing concurrent writes.
@@ -305,40 +479,6 @@ public sealed class Database : IDisposable {
         } finally {
             _lock.ExitWriteLock();
         }
-    }
-
-    /// <summary>
-    /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <param name="encryptionKey">individual encryption key for this specific value</param>
-    /// <remarks>
-    /// This is much less efficient time and memory wise than <see cref="Upsert(string, ReadOnlyMemory{byte}, string?)"/>.
-    /// </remarks>
-    public void UpsertAsString(string key, string value, string encryptionKey = "") {
-        ReadOnlyMemory<byte> bytes = value.Length is 0 ?
-                    ReadOnlyMemory<byte>.Empty
-                    : MemoryPackSerializer.Serialize(value);
-
-        Upsert(key, bytes, encryptionKey);
-    }
-
-    /// <summary>
-    /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <param name="jsonSerializerContext">That can be used to serialize T</param>
-    /// <param name="encryptionKey">individual encryption key for this specific value</param>
-    /// <remarks>
-    /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
-    /// </remarks>
-    public void UpsertAsT<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") where T : notnull {
-        var asString = JsonSerializer.Serialize(value, typeof(T), jsonSerializerContext);
-        ReadOnlyMemory<byte> bytes = MemoryPackSerializer.Serialize(asString);
-
-        Upsert(key, bytes, encryptionKey);
     }
 
     /// <summary>

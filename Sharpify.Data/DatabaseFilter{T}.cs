@@ -11,11 +11,17 @@ namespace Sharpify.Data;
 /// Items that are upserted into the database using the filter, should not be retrieved without the filter as the key is modified.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public readonly struct DatabaseFilter<T> where T : IMemoryPackable<T> {
-	private static readonly string TName = typeof(T).Name;
+public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
+    /// <summary>
+    /// The name of the type.
+    /// </summary>
+	protected static readonly string TName = typeof(T).Name;
 
+    /// <summary>
+    /// Creates a combined key (filter) for the specified key.
+    /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private static string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, key);
+	protected virtual string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, ":", key);
 
 	private readonly Database _database;
 
@@ -23,50 +29,19 @@ public readonly struct DatabaseFilter<T> where T : IMemoryPackable<T> {
 		_database = database;
 	}
 
-	/// <summary>
-	/// Checks if the filtered database contains the specified key.
-	/// </summary>
+/// <inheritdoc />
 	public bool ContainsKey(string key) => _database.ContainsKey(CreateKey(key));
 
-	/// <summary>
-    /// Gets the specified value from the database.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <returns>false if the value doesn't exist, true if it does</returns>
-	/// <remarks>This method assumes no encryption was used on the value, for encrypted values use <see cref="TryGetValue(string,string,out T)"/> </remarks>
+/// <inheritdoc />
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
 
-    /// <summary>
-    /// Gets the specified value from the database.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="encryptionKey"></param>
-    /// <param name="value"></param>
-    /// <returns>false if the value doesn't exist, true if it does</returns>
-    public bool TryGetValue(string key, string encryptionKey, out T value) {
-		var val = _database.Get<T>(CreateKey(key), encryptionKey);
-		if (val is null) {
-			value = default!;
-			return false;
-		}
-		value = val;
-		return true;
-	}
+/// <inheritdoc />
+    public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(CreateKey(key), encryptionKey, out value);
 
-	/// <summary>
-	/// Upserts the value into the database.
-	/// </summary>
-	/// <param name="key"></param>
-	/// <param name="value"></param>
-	/// <param name="encryptionKey"></param>
-	public void Upsert(string key, T value, string encryptionKey = "") {
-		_database.Upsert(CreateKey(key), value, encryptionKey);
-	}
+/// <inheritdoc />
+    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(CreateKey(key), value, encryptionKey);
 
-	/// <summary>
-	/// Removes the item with specified key from the filtered database.
-	/// </summary>
-	public bool Remove(string key) => _database.Remove(CreateKey(key));
+/// <inheritdoc />
+    public bool Remove(string key) => _database.Remove(CreateKey(key));
 }

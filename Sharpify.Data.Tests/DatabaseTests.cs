@@ -41,7 +41,7 @@ public class DatabaseTests {
             EncryptionKey = "test"
         });
 
-        var result = database2.Get<Person>("test");
+        database2.TryGetValue("test", out Person result);
         result.Should().Be(new Person("David", 27));
     }
 
@@ -59,7 +59,7 @@ public class DatabaseTests {
         using var db2 = await AsyncFactory(db.Path);
 
         // Assert
-        var result = db2.Database.Get<Person>("test");
+        db2.Database.TryGetValue("test", out Person result);
         result.Should().Be(new Person("David", 27));
 
         // Cleanup
@@ -72,14 +72,34 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.UpsertAsString("test", "test");
+        db.Database.Upsert("test", "test");
         db.Database.Serialize();
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        var result = db2.Database.GetAsString("test");
+        db2.Database.TryGetValue("test", out string result);
+        result.Should().Be("test");
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void UpsertEncrypted() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.Upsert("test", "test", "enc");
+        db.Database.Serialize();
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValue("test", "enc", out string result);
         result.Should().Be("test");
 
         // Cleanup
@@ -99,7 +119,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        var result = db2.Database.Get("test");
+        db2.Database.TryGetValue("test", out ReadOnlyMemory<byte> result);
         result.Span.SequenceEqual(bytes.Span).Should().BeTrue();
 
         // Cleanup
@@ -119,7 +139,32 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        var p2 = db2.Database.Get<Person>("1");
+        db2.Database.TryGetValue<Person>("1", out var p2);
+        p2.Should().Be(p1);
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void UpsertJson() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        var p1 = new Color {
+            Name = "Red",
+            Red = 255,
+            Green = 0,
+            Blue = 0
+        };
+        db.Database.Upsert("1", p1, JsonContext.Default);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValue<Color>("1", JsonContext.Default, out var p2);
         p2.Should().Be(p1);
 
         // Cleanup
@@ -178,7 +223,7 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.UpsertAsString("test", "test");
+        db.Database.Upsert("test", "test");
 
         // Assert
         db.Database.ContainsKey("test").Should().BeTrue();
@@ -208,7 +253,7 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.UpsertAsString("test", "test");
+        db.Database.Upsert("test", "test");
         db.Database.Remove("test");
 
         // Assert
@@ -240,7 +285,7 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.UpsertAsString("test", "test");
+        db.Database.Upsert("test", "test");
         db.Database.Clear();
 
         // Assert
@@ -259,7 +304,7 @@ public class DatabaseTests {
 
         public Task InvokeAsync(int item) {
             var rnd = Random.Shared.Next(10_000, 200_000);
-            _database.UpsertAsString(item.ToString(), rnd.ToString());
+            _database.Upsert(item.ToString(), rnd.ToString());
             return Task.CompletedTask;
         }
     }

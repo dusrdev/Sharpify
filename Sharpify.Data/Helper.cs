@@ -6,7 +6,7 @@ namespace Sharpify.Data;
 internal sealed class Helper {
     internal static readonly Helper Instance = new();
 
-    private readonly ConcurrentDictionary<string, AesProvider> _cachedProviders = new();
+    private readonly ConcurrentDictionary<string, AesProvider> _cachedProviders = new(Environment.ProcessorCount, 1);
 
     internal byte[] Encrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
