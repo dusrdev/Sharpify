@@ -12,6 +12,7 @@ namespace Sharpify.Collections;
 public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	private readonly T[] _buffer;
 	private int _index;
+	private volatile bool _disposed;
 
 	/// <summary>
 	/// The actual capacity of the rented buffer
@@ -129,8 +130,14 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 		return _buffer.AsSpan(start, length);
 	}
 
-	/// <summary>
-	/// Returns the rented buffer to the shared array pool
-	/// </summary>
-	public void Dispose() => ArrayPool<T>.Shared.Return(_buffer);
+    /// <summary>
+    /// Returns the rented buffer to the shared array pool
+    /// </summary>
+    public void Dispose() {
+		if (_disposed) {
+			return;
+		}
+        ArrayPool<T>.Shared.Return(_buffer);
+		_disposed = true;
+    }
 }

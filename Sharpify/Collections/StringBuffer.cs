@@ -12,6 +12,7 @@ public ref partial struct StringBuffer {
     private readonly Span<char> _buffer;
     private readonly int _length;
     private int _position;
+    private volatile bool _disposed;
 
     /// <summary>
     /// Creates a mutable string buffer with the specified capacity.
@@ -188,7 +189,11 @@ public ref partial struct StringBuffer {
     /// <summary>
     /// Releases the resources used by the StringBuffer.
     /// </summary>
-    public readonly void Dispose() {
+    public void Dispose() {
+        if (_disposed) {
+            return;
+        }
         ArrayPool<char>.Shared.Return(_source, false);
+        _disposed = true;
     }
 }

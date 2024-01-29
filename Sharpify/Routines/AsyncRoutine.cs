@@ -12,6 +12,7 @@ public class AsyncRoutine : IDisposable {
     private volatile bool _isRunning;
     private RoutineOptions _options;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private volatile bool _disposed;
 
     /// <summary>
     /// List of asynchronous actions to be executed.
@@ -29,13 +30,6 @@ public class AsyncRoutine : IDisposable {
         _timer = new PeriodicTimer(interval);
         _isRunning = true;
         _cancellationTokenSource = cancellationTokenSource;
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="AsyncRoutine"/> class.
-    /// </summary>
-    ~AsyncRoutine() {
-        Dispose();
     }
 
     /// <summary>
@@ -145,11 +139,14 @@ public class AsyncRoutine : IDisposable {
     /// </para>
     /// </remarks>
     public void Dispose() {
+        if (_disposed) {
+            return;
+        }
         if (_cancellationTokenSource is not null && !_cancellationTokenSource.IsCancellationRequested) {
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
         }
-        _timer.Dispose();
-        GC.SuppressFinalize(this);
+        _timer?.Dispose();
+        _disposed = true;
     }
 }

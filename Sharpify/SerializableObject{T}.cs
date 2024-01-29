@@ -31,6 +31,8 @@ public class SerializableObject<T> : IDisposable {
         }
     }
 
+    private volatile bool _disposed;
+
     /// <summary>
     /// The path of the serialized object.
     /// </summary>
@@ -66,8 +68,6 @@ public class SerializableObject<T> : IDisposable {
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
     /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-
-
     public SerializableObject(string path, T defaultValue, JsonSerializerContext jsonSerializerContext) {
         _jsonSerializerContext = jsonSerializerContext;
         var dir = Path.GetDirectoryName(path);
@@ -148,8 +148,12 @@ public class SerializableObject<T> : IDisposable {
 
     /// <inheritdoc/>
     public virtual void Dispose() {
-        _lock.Dispose();
+        if (_disposed) {
+            return;
+        }
+        _lock?.Dispose();
         GC.SuppressFinalize(this);
+        _disposed = true;
     }
 
     /// <summary>

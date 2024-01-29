@@ -4,8 +4,7 @@
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Version>1.7.2</Version>
-        <PackageVersion>1.7.2</PackageVersion>
+        <Version>1.7.3</Version>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>

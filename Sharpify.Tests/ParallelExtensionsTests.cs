@@ -120,6 +120,24 @@ public class ParallelExtensionsTests {
 		});
     }
 
+    [Fact]
+    public async Task ForeachValueTask_GiveValidCollection_ReturnsValidResult() {
+        // Arrange
+        List<int> collection = new() { 1, 2, 3 };
+        var results = new ConcurrentDictionary<int, int>();
+        var action = new MultiplyAction(results);
+
+        // Act
+        await collection.AsAsyncLocal().ForEach(action);
+
+        // Assert
+        results.Should().Equal(new Dictionary<int, int> {
+			{ 1, 2 },
+			{ 2, 4 },
+			{ 3, 6 }
+		});
+    }
+
 	[Fact]
     public async Task ForeachAsync_GivenEmptyCollection_DoesNothing() {
         // Arrange

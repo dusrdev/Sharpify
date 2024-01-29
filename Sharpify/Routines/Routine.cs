@@ -5,6 +5,7 @@ namespace Sharpify.Routines;
 /// </summary>
 public class Routine : IDisposable {
     private readonly System.Timers.Timer _timer;
+    private volatile bool _disposed;
 
     /// <summary>
     /// List of actions to be executed by the routine.
@@ -18,13 +19,6 @@ public class Routine : IDisposable {
     public Routine(double intervalInMilliseconds) {
         _timer = new System.Timers.Timer(intervalInMilliseconds);
         _timer.Elapsed += OnTimerElapsed;
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="Routine"/> class.
-    /// </summary>
-    ~Routine() {
-        Dispose();
     }
 
     /// <summary>
@@ -73,7 +67,10 @@ public class Routine : IDisposable {
     /// Disposes the timer and suppresses finalization of the object.
     /// </summary>
     public void Dispose() {
-        _timer.Close();
-        GC.SuppressFinalize(this);
+        if (_disposed) {
+            return;
+        }
+        _timer?.Close();
+        _disposed = true;
     }
 }

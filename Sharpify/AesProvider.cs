@@ -38,13 +38,6 @@ public sealed class AesProvider : IDisposable {
         _aes.Mode = CipherMode.CBC;
     }
 
-    /// <summary>
-    /// Finalizer
-    /// </summary>
-    ~AesProvider() {
-        Dispose();
-    }
-
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
         var buffer = ArrayPool<byte>.Shared.Rent(strKey.Length * sizeof(char));
@@ -104,7 +97,7 @@ public sealed class AesProvider : IDisposable {
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
         hpSpan[parts[1]].TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
-#elif NET7_0_OR_GREATER
+#elif NET7_0
         var origHashedParts = hashedPassword.Split('|', 3, StringSplitOptions.RemoveEmptyEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(origHashedParts[0]);
         origHashedParts[1].AsSpan().TryConvertToInt32(out var origIterations);
@@ -309,8 +302,5 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Disposes the AES object
     /// </summary>
-    public void Dispose() {
-        _aes?.Dispose();
-        GC.SuppressFinalize(this);
-    }
+    public void Dispose() => _aes?.Dispose();
 }
