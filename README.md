@@ -42,7 +42,7 @@ For more information check [inner directory](Sharpify.CommandLineInterface/READM
 
 ## Contribution
 
-This packages was made public so that the entire community could benefit from it. If you experience issue, want to suggest new features or improve the existing ones, please use the [issues](https://github.com/dusrdev/Sharpify/issues) section.
+This packages was made public so that the entire community could benefit from it. If you experience issues, want to suggest new features or improve existing ones, please use the [issues](https://github.com/dusrdev/Sharpify/issues) section.
 
 ## Contact
 
