@@ -30,7 +30,7 @@ A collection of high performance language extensions for C#
 
 ## Sharpify.Data
 
-`Sharpify.Data` is an extension package, that should be installed on-top of `Sharpify` and adds 2 types of extreme performance persistent key-value-pair databases, utilizing [MemoryPack](https://github.com/Cysharp/MemoryPack).
+`Sharpify.Data` is an extension package, that should be installed on-top of `Sharpify` and adds a high performance persistent key-value-pair databases, utilizing [MemoryPack](https://github.com/Cysharp/MemoryPack). The database support multiple types in the same file, 2 stage AES encryption (for whole file and per-key).
 
 For more information check [inner directory](Sharpify.Data/README.md).
 
