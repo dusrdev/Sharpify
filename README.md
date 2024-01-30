@@ -40,6 +40,10 @@ For more information check [inner directory](Sharpify.Data/README.md).
 
 For more information check [inner directory](Sharpify.CommandLineInterface/README.md)
 
+## Contribution
+
+This packages was made public so that the entire community could benefit from it. If you experience issue, want to suggest new features or improve the existing ones, please use the [issues](https://github.com/dusrdev/Sharpify/issues) section.
+
 ## Contact
 
 For bug reports, feature requests or offers of support/sponsorship contact <dusrdev@gmail.com>
