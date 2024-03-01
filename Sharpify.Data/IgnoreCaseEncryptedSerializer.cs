@@ -12,9 +12,9 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize) {
+    internal override Dictionary<string, byte[]> Deserialize(int estimatedSize) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         }
         using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
@@ -30,9 +30,9 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask<Dictionary<string, byte[]>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, ReadOnlyMemory<byte>>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);

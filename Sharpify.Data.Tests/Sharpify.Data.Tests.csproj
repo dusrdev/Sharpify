@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
+        <langversion>latest</langversion>
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>

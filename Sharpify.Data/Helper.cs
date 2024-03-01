@@ -3,8 +3,10 @@ using System.Security.Cryptography;
 
 namespace Sharpify.Data;
 
-internal sealed class Helper {
+internal sealed class Helper : IDisposable {
     internal static readonly Helper Instance = new();
+
+    private bool _disposed;
 
     private readonly ConcurrentDictionary<string, AesProvider> _cachedProviders = new(Environment.ProcessorCount, 1);
 
@@ -53,9 +55,13 @@ internal sealed class Helper {
         return newProvider.CreateDecryptor();
     }
 
-    ~Helper() {
+    public void Dispose() {
+        if (_disposed) {
+            return;
+        }
         foreach (var provider in _cachedProviders.Values) {
             provider.Dispose();
         }
+        _disposed = true;
     }
 }

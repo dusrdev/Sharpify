@@ -46,8 +46,18 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
 /// <inheritdoc />
     public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(CreateKey(key), encryptionKey, out value);
 
+    /// <inheritdoc />
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
+
+/// <inheritdoc />
+    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(CreateKey(key), encryptionKey, out values);
+
 /// <inheritdoc />
     public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(CreateKey(key), value, encryptionKey);
+
+/// <inheritdoc />
+    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(CreateKey(key), values, encryptionKey);
 
 /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(CreateKey(key));

@@ -8,4 +8,10 @@ internal static class Extensions {
 		var info = new FileInfo(path);
 		return unchecked((int)info.Length);
 	}
+
+	internal static byte[] FastCopy(this byte[] source) {
+		var dest = GC.AllocateUninitializedArray<byte>(source.Length);
+		source.AsSpan().CopyTo(dest);
+		return dest;
+	}
 }

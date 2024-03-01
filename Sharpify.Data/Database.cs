@@ -9,11 +9,14 @@ using MemoryPack;
 namespace Sharpify.Data;
 
 /// <summary>
-/// A high performance database that stores String:ReadOnlyMemory{byte} pairs.
+/// A high performance database that stores String:byte[] pairs.
 /// </summary>
 public sealed class Database : IDisposable {
-    private readonly Dictionary<string, ReadOnlyMemory<byte>> _data;
-    private readonly ConcurrentQueue<KeyValuePair<string, ReadOnlyMemory<byte>>> _queue = new();
+    private readonly Dictionary<string, byte[]> _data;
+    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
+
+    private bool _disposed;
+
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly DatabaseSerializer _serializer;
     private volatile int _estimatedSize;
@@ -56,12 +59,12 @@ public sealed class Database : IDisposable {
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
                 ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer, 0);
+                : new Database(new Dictionary<string, byte[]>(), config, serializer, 0);
         }
 
         var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = serializer.Deserialize(estimatedSize);
+        Dictionary<string, byte[]> dict = serializer.Deserialize(estimatedSize);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
@@ -75,17 +78,17 @@ public sealed class Database : IDisposable {
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
                 ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, ReadOnlyMemory<byte>>(), config, serializer, 0);
+                : new Database(new Dictionary<string, byte[]>(), config, serializer, 0);
         }
 
         var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        Dictionary<string, ReadOnlyMemory<byte>> dict = await serializer.DeserializeAsync(estimatedSize, token);
+        Dictionary<string, byte[]> dict = await serializer.DeserializeAsync(estimatedSize, token);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, ReadOnlyMemory<byte>> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
+    private Database(Dictionary<string, byte[]> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
@@ -117,7 +120,7 @@ public sealed class Database : IDisposable {
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, out ReadOnlyMemory<byte> value) => TryGetValue(key, "", out value);
+    public bool TryGetValue(string key, out byte[] value) => TryGetValue(key, "", out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -126,19 +129,19 @@ public sealed class Database : IDisposable {
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, string encryptionKey, out ReadOnlyMemory<byte> value) {
+    public bool TryGetValue(string key, string encryptionKey, out byte[] value) {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
-                value = ReadOnlyMemory<byte>.Empty;
+                value = Array.Empty<byte>();
                 return false;
             }
             if (encryptionKey.Length is 0) {
-                value = val;
+                value = val.FastCopy();
                 return true;
             }
-            value = Helper.Instance.Decrypt(val.Span, encryptionKey);
+            value = Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
             return true;
         } finally {
             _lock.ExitReadLock();
@@ -171,13 +174,53 @@ public sealed class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) {
-                value = MemoryPackSerializer.Deserialize<T>(val.Span)!;
+                value = MemoryPackSerializer.Deserialize<T>(val.AsSpan())!;
                 return true;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes)!;
+            buffer.ReturnBufferToSharedArrayPool();
+            return true;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the value array stored in <paramref name="key"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of object to retrieve.</typeparam>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> => TryGetValues(key, "", out value);
+
+    /// <summary>
+    /// Tries to get the value array stored in <paramref name="key"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of object to retrieve.</typeparam>
+    /// <param name="key">The key used to identify the object in the database.</param>
+    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
+    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <returns>True if the value was found, otherwise false.</returns>
+    public bool TryGetValues<T>(string key, string encryptionKey, out T[] value) where T : IMemoryPackable<T> {
+        try {
+            _lock.EnterReadLock();
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) {
+                value = default!;
+                return false;
+            }
+            if (encryptionKey.Length is 0) {
+                value = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan())!;
+                return true;
+            }
+            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
+            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
+            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -191,7 +234,7 @@ public sealed class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue(string key, out string value) => TryGetValue(key, "", out value);
+    public bool TryGetString(string key, out string value) => TryGetString(key, "", out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -200,7 +243,7 @@ public sealed class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue(string key, string encryptionKey, out string value) {
+    public bool TryGetString(string key, string encryptionKey, out string value) {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
@@ -209,11 +252,11 @@ public sealed class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) {
-                value = MemoryPackSerializer.Deserialize<string>(val.Span)!;
+                value = MemoryPackSerializer.Deserialize<string>(val.AsSpan())!;
                 return true;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             value = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
             buffer.ReturnBufferToSharedArrayPool();
@@ -241,7 +284,7 @@ public sealed class Database : IDisposable {
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
     public bool TryGetValue<T>(string key, string encryptionKey, JsonSerializerContext jsonSerializerContext, out T value) {
-        if (!TryGetValue(key, encryptionKey, out string asString)) {
+        if (!TryGetString(key, encryptionKey, out string asString)) {
             value = default!;
             return false;
         }
@@ -260,17 +303,17 @@ public sealed class Database : IDisposable {
     /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
     /// </remarks>
     [Obsolete("Use TryGetValue instead.")]
-    public ReadOnlyMemory<byte> Get(string key, string encryptionKey = "") {
+    public byte[] Get(string key, string encryptionKey = "") {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
-                return ReadOnlyMemory<byte>.Empty;
+                return Array.Empty<byte>();
             }
             if (encryptionKey.Length is 0) {
-                return val;
+                return val.FastCopy();
             }
-            return Helper.Instance.Decrypt(val.Span, encryptionKey);
+            return Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
         } finally {
             _lock.ExitReadLock();
         }
@@ -292,10 +335,10 @@ public sealed class Database : IDisposable {
                 return default;
             }
             if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<T>(val.Span);
+                return MemoryPackSerializer.Deserialize<T>(val.AsSpan());
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes)!;
             buffer.ReturnBufferToSharedArrayPool();
@@ -319,10 +362,10 @@ public sealed class Database : IDisposable {
                 return "";
             }
             if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<string>(val.Span)!;
+                return MemoryPackSerializer.Deserialize<string>(val.AsSpan())!;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.Span, buffer, encryptionKey);
+            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
             buffer.ReturnBufferToSharedArrayPool();
@@ -393,11 +436,11 @@ public sealed class Database : IDisposable {
     /// <remarks>
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
-    public void Upsert(string key, ReadOnlyMemory<byte> value, string encryptionKey = "") {
+    public void Upsert(string key, byte[] value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new(key, value));
+            _queue.Enqueue(new(key, value.FastCopy()));
         } else {
-            var encrypted = Helper.Instance.Encrypt(value.Span, encryptionKey);
+            var encrypted = Helper.Instance.Encrypt(value.AsSpan(), encryptionKey);
             _queue.Enqueue(new(key, encrypted));
         }
 
@@ -428,17 +471,32 @@ public sealed class Database : IDisposable {
     }
 
     /// <summary>
+    /// Upserts a value into the database using the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of the value being upserted.</typeparam>
+    /// <param name="key">The key used to identify the value.</param>
+    /// <param name="values">The value to be upserted.</param>
+    /// <param name="encryptionKey">The encryption key used to encrypt the value.</param>
+    /// <remarks>
+    /// The upsert operation will either insert a new value if the key does not exist,
+    /// or update the existing value if the key already exists.
+    /// </remarks>
+    public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
+        Upsert(key, MemoryPackSerializer.Serialize(values), encryptionKey);
+    }
+
+    /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
-    /// This is much less efficient time and memory wise than <see cref="Upsert(string, ReadOnlyMemory{byte}, string?)"/>.
+    /// This is much less efficient time and memory wise than <see cref="Upsert(string, byte[], string?)"/>.
     /// </remarks>
     public void Upsert(string key, string value, string encryptionKey = "") {
-        ReadOnlyMemory<byte> bytes = value.Length is 0 ?
-                    ReadOnlyMemory<byte>.Empty
+        byte[] bytes = value.Length is 0 ?
+                    Array.Empty<byte>()
                     : MemoryPackSerializer.Serialize(value);
 
         Upsert(key, bytes, encryptionKey);
@@ -525,7 +583,10 @@ public sealed class Database : IDisposable {
     /// Frees the resources used by the database.
     /// </summary>
     public void Dispose() {
+        if (_disposed) {
+            return;
+        }
         _lock.Dispose();
-        GC.SuppressFinalize(this);
+        _disposed = true;
     }
 }

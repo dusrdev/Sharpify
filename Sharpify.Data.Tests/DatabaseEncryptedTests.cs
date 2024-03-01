@@ -80,7 +80,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out string result);
+        db2.Database.TryGetString("test", out string result);
         result.Should().Be("test");
 
         // Cleanup
@@ -100,7 +100,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", "enc", out string result);
+        db2.Database.TryGetString("test", "enc", out string result);
         result.Should().Be("test");
 
         // Cleanup
@@ -113,15 +113,15 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        ReadOnlyMemory<byte> bytes = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
         db.Database.Upsert("test", bytes);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out ReadOnlyMemory<byte> result);
-        result.Span.SequenceEqual(bytes.Span).Should().BeTrue();
+        db2.Database.TryGetValue("test", out byte[] result);
+        result.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -142,6 +142,27 @@ public class DatabaseEncryptedTests {
         // Assert
         db2.Database.TryGetValue<Person>("1", out var p2);
         p2.Should().Be(p1);
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void UpsertMany() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        var p1 = new Person("David", 27);
+        var p2 = new Person("John", 30);
+        db.Database.UpsertMany("1", new []{ p1, p2 });
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValues<Person>("1", out var arr);
+        arr.Should().ContainInOrder(p1, p2);
 
         // Cleanup
         File.Delete(db.Path);

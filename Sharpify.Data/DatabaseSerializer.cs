@@ -15,7 +15,7 @@ internal abstract class DatabaseSerializer {
     /// </summary>
     /// <param name="dict"></param>
     /// <param name="estimatedSize"></param>
-    internal abstract void Serialize(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize);
+    internal abstract void Serialize(Dictionary<string, byte[]> dict, int estimatedSize);
 
     /// <summary>
     /// Serializes the given dictionary asynchronously
@@ -24,20 +24,20 @@ internal abstract class DatabaseSerializer {
     /// <param name="estimatedSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    internal abstract ValueTask SerializeAsync(Dictionary<string, ReadOnlyMemory<byte>> dict, int estimatedSize, CancellationToken cancellationToken = default);
+    internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]> dict, int estimatedSize, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Deserializes the path to a dictionary
 	/// </summary>
 	/// <param name="estimatedSize"></param>
-	internal abstract Dictionary<string, ReadOnlyMemory<byte>> Deserialize(int estimatedSize);
+	internal abstract Dictionary<string, byte[]> Deserialize(int estimatedSize);
 
     /// <summary>
     /// Deserializes the path to a dictionary asynchronously
     /// </summary>
     /// <param name="estimatedSize"></param>
     /// <param name="cancellationToken"></param>
-    internal abstract ValueTask<Dictionary<string, ReadOnlyMemory<byte>>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default);
+    internal abstract ValueTask<Dictionary<string, byte[]>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Creates a serializer based on the given configuration
