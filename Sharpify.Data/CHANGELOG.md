@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v2.2.0 - Unreleased
+
+**Possibly BREAKING** This version changes the base types of `Database` from `ReadOnlyMemory<byte>` to `byte[]`, apparently the change using `ReadOnlyMemory<byte>` produced invalid results as if the underlying array disappeared, which left users of a empty memory which has phantom meta-data.
+To ensure this doesn't happen now `byte[]` is used to make sure all of the data remains, to prevent ownership issues, methods which return the actual `byte[]` values, now instead return a copy (albeit an efficient one), to make sure the data integrity in the database is safe. Same goes for inserts, where previously the source was placed in the database, this might have caused it to be prematurely garbage collected, thus leaving the database with a phantom metadata, now those actions create a copy and store it instead.
+
+* As per the issues described above and their respective solutions, memory allocations should rise in some cases, however, it is a good trade-off for ensuring absolute integrity.
+* Some users mentioned that as other databases, have options to query collections, ie, returning more than 1 to 1 item per key. It could greatly improve the usability of `Database` to have such a feature. In this version the feature is introduced.
+`TryGetValue<T>` where `T : IMemoryPackable<T>`, now have `TryGetValues` overload, which returns a `T[]`, all under the same key. Respectively, an overload `UpsertMany<T>` was added with the same type restrictions. This also works from `IDatabaseFilter<T>`, these options should greatly improve useability when it comes to storing collections.
+* Another possibly breaking change but one required for quality of life was to rename the `string value` overloads to `TryGetString` instead of `TryGetValue`, since they caused ambiguity which hindered the compilers ability to the infer the data type when using `var` which we all love.
+
 ## v2.1.0
 
 * `DatabaseFilter{T}` type was changed from `readonly struct` to `class`, and it now implements the `IDatabaseFilter{T}` interface. the internal `CreateKey` that in the default implementation uses the type name and `:` to create a "filtered" key, is now marked as virtual. So that it is possible to inherit from `DatabaseFilter{T}` and override `CreateKey` to either use a different template, or even add to it, for example if you have nested generics, such as `TMemoryPackable<TOther>`, in which case the default `DatabaseFilter{T}` would not be able do distinguish between the inner generic, possibly causing issues with serialization and deserialization. The change to `class` also should be costly, as the database filter can be stored as a field as well, and used similarly to `dbContext` of other databases. In case overriding `CreateKey` is not enough, you can of course implement the whole `IDatabaseFilter{T}` interface if you so choose.
