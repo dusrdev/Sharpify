@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v2.2.0 - Unreleased
+## v2.2.0
 
 **Possibly BREAKING** This version changes the base types of `Database` from `ReadOnlyMemory<byte>` to `byte[]`, apparently the change using `ReadOnlyMemory<byte>` produced invalid results as if the underlying array disappeared, which left users of a empty memory which has phantom meta-data.
 To ensure this doesn't happen now `byte[]` is used to make sure all of the data remains, to prevent ownership issues, methods which return the actual `byte[]` values, now instead return a copy (albeit an efficient one), to make sure the data integrity in the database is safe. Same goes for inserts, where previously the source was placed in the database, this might have caused it to be prematurely garbage collected, thus leaving the database with a phantom metadata, now those actions create a copy and store it instead.
