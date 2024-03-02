@@ -14,4 +14,9 @@ internal static class Extensions {
 		source.AsSpan().CopyTo(dest);
 		return dest;
 	}
+
+	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+	internal static int GetEstimatedSize(this KeyValuePair<string, byte[]> kvp) {
+		return kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+	}
 }

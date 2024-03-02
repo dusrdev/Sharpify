@@ -11,6 +11,9 @@ namespace Sharpify.Data;
 /// <summary>
 /// A high performance database that stores String:byte[] pairs.
 /// </summary>
+/// <remarks>
+/// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
+/// </remarks>
 public sealed class Database : IDisposable {
     private readonly Dictionary<string, byte[]> _data;
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
@@ -27,7 +30,11 @@ public sealed class Database : IDisposable {
     /// <summary>
     /// Overestimated size of the database.
     /// </summary>
-    private int OverestimatedSize => (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private int GetOverestimatedSize() {
+        return (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
+    }
+
 
     /// <summary>
     /// Holds the configuration for this database.
@@ -203,24 +210,24 @@ public sealed class Database : IDisposable {
     /// <typeparam name="T">The type of object to retrieve.</typeparam>
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
-    /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
+    /// <param name="values">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, string encryptionKey, out T[] value) where T : IMemoryPackable<T> {
+    public bool TryGetValues<T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) {
-                value = default!;
+                values = default!;
                 return false;
             }
             if (encryptionKey.Length is 0) {
-                value = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan())!;
+                values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan())!;
                 return true;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes)!;
+            values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -386,7 +393,7 @@ public sealed class Database : IDisposable {
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
-            var estimatedSize = key.Length * sizeof(char) + val.Length;
+            var estimatedSize = new KeyValuePair<string, byte[]>(key, val).GetEstimatedSize();
             Interlocked.Add(ref _estimatedSize, -estimatedSize);
             if (Config.SerializeOnUpdate) {
                 Serialize();
@@ -528,7 +535,7 @@ public sealed class Database : IDisposable {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
-                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                var estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
             if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
@@ -558,11 +565,11 @@ public sealed class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
-                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                var estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
         }
-        _serializer.Serialize(_data, OverestimatedSize);
+        _serializer.Serialize(_data, GetOverestimatedSize());
     }
 
     /// <summary>
@@ -572,11 +579,11 @@ public sealed class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
-                var estimatedSize = kvp.Key.Length * sizeof(char) + kvp.Value.Length;
+                var estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
         }
-        return _serializer.SerializeAsync(_data, OverestimatedSize, cancellationToken);
+        return _serializer.SerializeAsync(_data, GetOverestimatedSize(), cancellationToken);
     }
 
     /// <summary>
