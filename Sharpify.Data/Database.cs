@@ -16,7 +16,10 @@ namespace Sharpify.Data;
 /// </remarks>
 public sealed class Database : IDisposable {
     private readonly Dictionary<string, byte[]> _data;
+
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
+
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
 
     private bool _disposed;
 
@@ -139,15 +142,21 @@ public sealed class Database : IDisposable {
     public bool TryGetValue(string key, string encryptionKey, out byte[] value) {
         try {
             _lock.EnterReadLock();
+            // Block specific keys during atomic AddOrUpdate
+            if (_semaphores.TryGetValue(key, out var keySemaphore)) {
+                keySemaphore.Wait();
+            }
+            // Get val reference
             ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
+            if (Unsafe.IsNullRef(ref val)) { // Not found
                 value = Array.Empty<byte>();
                 return false;
             }
-            if (encryptionKey.Length is 0) {
+            if (encryptionKey.Length is 0) { // Not encrypted
                 value = val.FastCopy();
                 return true;
             }
+            // Encrypted -> Decrypt
             value = Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
             return true;
         } finally {
@@ -175,15 +184,21 @@ public sealed class Database : IDisposable {
     public bool TryGetValue<T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
+            // Block specific keys during atomic AddOrUpdate
+            if (_semaphores.TryGetValue(key, out var keySemaphore)) {
+                keySemaphore.Wait();
+            }
+            // Get val reference
             ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
+            if (Unsafe.IsNullRef(ref val)) { // Not found
                 value = default!;
                 return false;
             }
-            if (encryptionKey.Length is 0) {
+            if (encryptionKey.Length is 0) { // Not encrypted
                 value = MemoryPackSerializer.Deserialize<T>(val.AsSpan())!;
                 return true;
             }
+            // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
@@ -215,15 +230,21 @@ public sealed class Database : IDisposable {
     public bool TryGetValues<T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
+            // Block specific keys during atomic AddOrUpdate
+            if (_semaphores.TryGetValue(key, out var keySemaphore)) {
+                keySemaphore.Wait();
+            }
+            // Get val reference
             ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
+            if (Unsafe.IsNullRef(ref val)) { // Not found
                 values = default!;
                 return false;
             }
-            if (encryptionKey.Length is 0) {
+            if (encryptionKey.Length is 0) { // Not encrypted
                 values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan())!;
                 return true;
             }
+            // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
@@ -253,15 +274,21 @@ public sealed class Database : IDisposable {
     public bool TryGetString(string key, string encryptionKey, out string value) {
         try {
             _lock.EnterReadLock();
+            // Block specific keys during atomic AddOrUpdate
+            if (_semaphores.TryGetValue(key, out var keySemaphore)) {
+                keySemaphore.Wait();
+            }
+            // Get val reference
             ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
+            if (Unsafe.IsNullRef(ref val)) { // Not found
                 value = "";
                 return false;
             }
-            if (encryptionKey.Length is 0) {
+            if (encryptionKey.Length is 0) { // Not encrypted
                 value = MemoryPackSerializer.Deserialize<string>(val.AsSpan())!;
                 return true;
             }
+            // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
@@ -360,7 +387,7 @@ public sealed class Database : IDisposable {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
-    [Obsolete("Use TryGetValue instead.")]
+    [Obsolete("Use TryGetString instead.")]
     public string GetAsString(string key, string encryptionKey = "") {
         try {
             _lock.EnterReadLock();
@@ -431,6 +458,93 @@ public sealed class Database : IDisposable {
             }
         } finally {
             _lock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="transform"></param>
+    /// <param name="encryptionKey"></param>
+    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
+    /// <remarks>
+    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
+    /// </remarks>
+    public Result<byte[]> AtomicUpsert(string key, Func<byte[], Result<byte[]>> transform, string encryptionKey = "") {
+        // Create semaphore and grant access to one
+        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
+        // semaphore.Wait();
+        try {
+            TryGetValue(key, encryptionKey, out byte[] val); // semaphore waited inside using the dictionary
+            val ??= Array.Empty<byte>();
+            var result = transform(val);
+            if (result.IsOk) {
+                ArgumentNullException.ThrowIfNull(result.Value);
+                Upsert(key, result.Value, encryptionKey);
+            }
+            return result;
+        } finally {
+            semaphore.Release(); // release the semaphore after the transformation
+            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
+        }
+    }
+
+    /// <summary>
+    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="transform"></param>
+    /// <param name="encryptionKey"></param>
+    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
+    /// <remarks>
+    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
+    /// </remarks>
+    public Result<T> AtomicUpsert<T>(string key, Func<T, Result<T>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
+        // Create semaphore and grant access to one
+        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
+        // semaphore.Wait();
+        try {
+            TryGetValue(key, encryptionKey, out T val); // semaphore waited inside using the dictionary
+            val ??= default!;
+            var result = transform(val);
+            if (result.IsOk) {
+                ArgumentNullException.ThrowIfNull(result.Value);
+                Upsert(key, result.Value, encryptionKey);
+            }
+            return result;
+        } finally {
+            semaphore.Release(); // release the semaphore after the transformation
+            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
+        }
+    }
+
+    /// <summary>
+    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="transform"></param>
+    /// <param name="encryptionKey"></param>
+    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
+    /// <remarks>
+    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
+    /// </remarks>
+    public Result<T[]> AtomicUpsertMany<T>(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
+        // Create semaphore and grant access to one
+        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
+        // semaphore.Wait();
+        try {
+            TryGetValues(key, encryptionKey, out T[] val); // semaphore waited inside using the dictionary
+            val ??= default!;
+            var result = transform(val);
+            if (result.IsOk) {
+                ArgumentNullException.ThrowIfNull(result.Value);
+                UpsertMany(key, result.Value, encryptionKey);
+            }
+            return result;
+        } finally {
+            semaphore.Release(); // release the semaphore after the transformation
+            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
         }
     }
 

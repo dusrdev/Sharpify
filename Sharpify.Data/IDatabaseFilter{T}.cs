@@ -65,6 +65,31 @@ public interface IDatabaseFilter<T> where T : IMemoryPackable<T> {
 	void UpsertMany(string key, T[] values, string encryptionKey = "");
 
 	/// <summary>
+	/// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <param name="transform"></param>
+	/// <param name="encryptionKey"></param>
+	/// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
+	/// <remarks>
+	/// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
+	/// </remarks>
+	Result<T> AtomicUpsert(string key, Func<T, Result<T>> transform, string encryptionKey = "");
+
+	/// <summary>
+	/// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <param name="transform"></param>
+	/// <param name="encryptionKey"></param>
+	/// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
+	/// <remarks>
+	/// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
+	/// </remarks>
+	Result<T[]> AtomicUpsertMany(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "");
+
+
+	/// <summary>
 	/// Removes the item with the specified key from the filtered database.
 	/// </summary>
 	/// <param name="key">The key of the item to remove.</param>

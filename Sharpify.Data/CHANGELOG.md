@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v2.3.0 - Unreleased (Pending Tests)
+
+* Added `AtomicUpsert` overloads, for specific cases in which a user might want to get the value of some key, perform some operation on it, and then possibly update it. Doing this is the regular fashion as in reading the value, then checking before upserting (possibly) can introduce unwanted behavior as the value for said key may be changed by other threads while you try to process it, thereby meaning you process out-dated data. `AtomicUpsert` solves this, by blocking other threads from accessing the value for this specific key, while this operation is ongoing. Therefore ensuring no one can change it while you are processing it. All the main ways of reading data from `Database` have been restructured to ensure this with minimal overhead. **Important**: `Obsolete` reading methods (that don't begin with a "try") don't take these safety measures into account. If you still use these methods, I highly encourage you to use the other ones, as I remind you, In version 3.0.0, they will be flat out deleted.
+
 ## v2.2.0
 
 **Possibly BREAKING** This version changes the base types of `Database` from `ReadOnlyMemory<byte>` to `byte[]`, apparently the change using `ReadOnlyMemory<byte>` produced invalid results as if the underlying array disappeared, which left users of a empty memory which has phantom meta-data.

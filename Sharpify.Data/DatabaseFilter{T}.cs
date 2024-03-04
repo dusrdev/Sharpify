@@ -21,7 +21,7 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
     /// Creates a combined key (filter) for the specified key.
     /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	protected virtual string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, ":", key);
+    protected virtual string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, ":", key);
 
     /// <summary>
     /// The database.
@@ -33,32 +33,40 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
     /// </summary>
     /// <param name="database"></param>
 	public DatabaseFilter(Database database) {
-		_database = database;
-	}
+        _database = database;
+    }
 
-/// <inheritdoc />
-	public bool ContainsKey(string key) => _database.ContainsKey(CreateKey(key));
+    /// <inheritdoc />
+    public bool ContainsKey(string key) => _database.ContainsKey(CreateKey(key));
 
-/// <inheritdoc />
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <inheritdoc />
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
 
-/// <inheritdoc />
+    /// <inheritdoc />
     public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(CreateKey(key), encryptionKey, out value);
 
     /// <inheritdoc />
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
 
-/// <inheritdoc />
+    /// <inheritdoc />
     public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(CreateKey(key), encryptionKey, out values);
 
-/// <inheritdoc />
+    /// <inheritdoc />
     public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(CreateKey(key), value, encryptionKey);
 
-/// <inheritdoc />
+    /// <inheritdoc />
     public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(CreateKey(key), values, encryptionKey);
 
-/// <inheritdoc />
+    /// <inheritdoc />
+    public Result<T> AtomicUpsert(string key, Func<T, Result<T>> transform, string encryptionKey = "")
+    => _database.AtomicUpsert(CreateKey(key), transform, encryptionKey);
+
+    /// <inheritdoc />
+    public Result<T[]> AtomicUpsertMany(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "")
+    => _database.AtomicUpsertMany(CreateKey(key), transform, encryptionKey);
+
+    /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(CreateKey(key));
 }
