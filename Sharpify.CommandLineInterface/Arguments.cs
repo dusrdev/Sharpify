@@ -7,7 +7,7 @@ namespace Sharpify.CommandLineInterface;
 /// A wrapper class over a dictionary of string : string with additional features
 /// </summary>
 public sealed class Arguments {
-    private readonly ReadOnlyMemory<string> _args;
+    private readonly string[] _args;
     private readonly Dictionary<string, string> _arguments;
 
     /// <summary>
@@ -15,7 +15,7 @@ public sealed class Arguments {
     /// </summary>
     /// <param name="args">Copy or reference of the arguments before processing</param>
     /// <param name="arguments">Ensure not null or empty</param>
-    internal Arguments(ReadOnlyMemory<string> args, Dictionary<string, string> arguments) {
+    internal Arguments(string[] args, Dictionary<string, string> arguments) {
         _args = args;
         _arguments = arguments;
     }

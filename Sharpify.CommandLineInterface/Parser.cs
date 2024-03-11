@@ -112,11 +112,13 @@ public static class Parser {
             return null;
         }
 
-        Memory<string> argsCopy = new string[args.Length];
-        args.CopyTo(argsCopy.Span);
+        var argsCopy = GC.AllocateUninitializedArray<string>(args.Length);
+        args.CopyTo(argsCopy.AsSpan());
 
         var results = new Dictionary<string, string>(args.Length, comparer);
         int i = 0;
+
+        //TODO: named arguments aren't recognized? add tests and fix
 
         while (i < args.Length && !IsParameterName(args[i])) {
             results[i.ToString()] = args[i];
