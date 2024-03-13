@@ -36,7 +36,20 @@ public sealed class Arguments {
     /// In normal use case you shouldn't need this, but in case you want to manufacture some sort of a nested command structure, you can use this to filter once more for <see cref="Arguments"/> after selectively parsing some of the arguments, in which case it is very powerful.
     /// </para>
     /// </remarks>
-    public ReadOnlyMemory<string> PureArguments => _args;
+    public ReadOnlyMemory<string> ArgsAsMemory() => _args;
+
+    /// <summary>
+    /// Returns a <see cref="ReadOnlySpan{String}"/> of the arguments as they were before processing, but after splitting (if it was required)
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// If you passed a collection of strings to be used for <see cref="Arguments"/> it will contain a copy of that array, if a <see cref="string"/> was passed, it will contain a copy of the result of <see cref="Parser.ParseArguments(ReadOnlySpan{char})"/>
+    /// </para>
+    /// <para>
+    /// In normal use case you shouldn't need this, but in case you want to manufacture some sort of a nested command structure, you can use this to filter once more for <see cref="Arguments"/> after selectively parsing some of the arguments, in which case it is very powerful.
+    /// </para>
+    /// </remarks>
+    public ReadOnlySpan<string> ArgsAsSpan() => _args;
 
     /// <summary>
     /// Checks if the specified key exists in the arguments.
@@ -198,7 +211,7 @@ public sealed class Arguments {
     }
 
     /// <summary>
-    /// Returns Arguments with positional arguments forwarded by 1, so that argument that was 1 is now 0, 2 is now 1 and so on
+    /// Returns new Arguments with positional arguments forwarded by 1, so that argument that was 1 is now 0, 2 is now 1 and so on. This is non-destructive, the original arguments are not modified.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -217,6 +230,8 @@ public sealed class Arguments {
         for (int i = 1; _arguments.TryGetValue(i.ToString(), out string? value); i++) {
             dict[(i - 1).ToString()] = value;
         }
+        // Because this is a new dictionary, if pos 1, isn't found, 0 still won't be present
+        // So essentially 0 was forwarded to no longer exist
         return new(_args, dict);
     }
 
