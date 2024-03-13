@@ -16,6 +16,33 @@ public class ParserArgumentsTests {
 	}
 
 	[Fact]
+	public void MapArguments_Valid() {
+		var argss = new string[][] {
+			["command", "--message", "hello world", "--code", "404", "--force"], // combined
+			["command", "--m", "hello world", "--c", "404", "--force"], // named + switch
+			["command", "-m", "hello world", "-c", "404", "--force"], // short + switch
+			["command", "--attribute", "hidden", "--file", "file.txt"], // combined
+			["command", "--a", "hidden", "--f", "file.txt"], // named
+			["do-this", "--n", "name", "--f", "file1.txt file2.txt"], // named
+			["test", "one", "--param", "value", "two"], // positional after named
+		};
+		var expecteds = new Dictionary<string, string>[] {
+			Helper.GetMapped(("0", "command"), ("message", "hello world"), ("code", "404"), ("force", "")),
+			Helper.GetMapped(("0", "command"), ("m", "hello world"), ("c", "404"), ("force", "")),
+			Helper.GetMapped(("0", "command"), ("m", "hello world"), ("c", "404"), ("force", "")),
+			Helper.GetMapped(("0", "command"), ("attribute", "hidden"), ("file", "file.txt")),
+			Helper.GetMapped(("0", "command"), ("a", "hidden"), ("f", "file.txt")),
+			Helper.GetMapped(("0", "do-this"), ("n", "name"), ("f", "file1.txt file2.txt")),
+			Helper.GetMapped(("0", "test"), ("1", "one"), ("param", "value"), ("2", "two")),
+		};
+		for (var i = 0; i < argss.Length; i++) {
+			var args = argss[i];
+			var arguments = Parser.MapArguments(args, StringComparer.CurrentCultureIgnoreCase);
+			arguments.Should().BeEquivalentTo(expecteds[i]);
+		}
+	}
+
+	[Fact]
 	public void Parse_WhenEmpty_ReturnsNull() {
 		Parser.ParseArguments("").Should().BeNull();
 	}

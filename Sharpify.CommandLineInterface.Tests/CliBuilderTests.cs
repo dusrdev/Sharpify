@@ -93,16 +93,19 @@ public class CliBuilderTests {
 	public void Runner_WithOrderedCommands_IsOrdered() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
+		var sAdd = new SynchronousAddCommand();
 		var writer = new StringWriter();
 
 		var cliRunner = CliRunner.CreateBuilder()
 						   .AddCommand(echo)
 						   .AddCommand(add)
+						   .AddCommand(sAdd)
 						   .SortCommandsAlphabetically()
 						   .SetOutputWriter(writer)
 						   .Build();
 		var copy = cliRunner.Commands;
 		copy[0].Should().Be(add);
 		copy[1].Should().Be(echo);
+		copy[2].Should().Be(sAdd);
 	}
 }
