@@ -31,9 +31,32 @@ public sealed class EchoCommand : Command {
 }
 ```
 
+or `SynchronousCommand`
+
+```csharp
+public sealed class EchoCommand : SynchronousCommand {
+  public override string Name => "echo";
+
+  public override string Description => "Echoes the specified message.";
+
+  public override string Usage => "echo <message>";
+
+  public override int Execute(Arguments args) {
+    if (!args.TryGetValue("message", out string message)) { // Validation
+      // This example returns error code 400 (http bad request code) to signal client error
+      // Any code you want can obviously be used
+      Console.WriteLine("No message specified");
+      return 404;
+    }
+    Console.WriteLine(message);
+    return 0;
+  }
+}
+```
+
 As you can see the properties set the metadata for the command at compile time, and when it comes time to resolve it, no `reflection` is needed.
 
-`ExecuteAsync` is returning a `ValueTask<int>` allowing both synchronous and asynchronous code, we use the high performance `Arguments` which is an object that manages arguments parsed from the input, to retrieving and validating data.
+`ExecuteAsync` is returning a `ValueTask<int>` allowing both synchronous and asynchronous code, we use the high performance `Arguments` which is an object that manages arguments parsed from the input, to retrieving and validating data. `Execute` is a sync alternative that just reduces the need of wrapping `ValueTask.FromResult(int)` verbosity when `async` is not needed.
 
 `OutputHelper.Return` is a helper method which outputs the message to customizable `TextWriter` in `CliRunner`, and returns the code that is specified.
 
