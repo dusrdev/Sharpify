@@ -4,8 +4,7 @@
     <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2.2.0</Version>
-    <PackageVersion>2.2.0</PackageVersion>
+    <Version>2.3.0</Version>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>David Shnayder</Authors>
@@ -27,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MemoryPack" Version="[1.10.0,)" />
+    <PackageReference Include="MemoryPack" Version="[1.20.0,)" />
     <PackageReference Include="Sharpify" Version="[1.7.3,)" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
