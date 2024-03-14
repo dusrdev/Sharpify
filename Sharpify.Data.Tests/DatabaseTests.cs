@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Sharpify.Data.Tests;
 
 public class DatabaseTests {
@@ -145,6 +147,38 @@ public class DatabaseTests {
         // Cleanup
         File.Delete(db.Path);
     }
+
+    // [Fact]
+    // public async Task AtomicUpsert() {
+    //     // Arrange
+    //     using var db = Factory("");
+
+    //     // Act
+    //     var p1 = new Person("David", 27);
+    //     db.Database.Upsert("1", p1);
+
+    //     Task actor = new Task(() => {
+    //         var res = db.Database.AtomicUpsert<Person>("1", old => {
+    //             SpinWait.SpinUntil(() => false, 500);
+    //             return Result.Ok(old);
+    //         });
+    //     });
+    //     Task<TimeSpan> waiter = new Task<TimeSpan>(() => {
+    //         var start = Stopwatch.GetTimestamp();
+    //         _ = db.Database.TryGetValue("1", out Person tempP2);
+    //         return Stopwatch.GetElapsedTime(start);
+    //     });
+
+    //     actor.Start();
+    //     waiter.Start();
+    //     await actor;
+    //     var res = await waiter;
+
+    //     res.Should().BeGreaterThan(TimeSpan.FromMilliseconds(500));
+
+    //     // Cleanup
+    //     File.Delete(db.Path);
+    // }
 
     [Fact]
     public void UpsertMany() {

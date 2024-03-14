@@ -1,16 +1,5 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-using MemoryPack;
-
 namespace Sharpify.Data;
 
-/// <summary>
-/// A high performance database that stores String:byte[] pairs.
-/// </summary>
-/// <remarks>
-/// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
-/// </remarks>
 public sealed partial class Database : IDisposable {
     /// <summary>
     /// Removes the <paramref name="key"/> and its value from the inner dictionary.

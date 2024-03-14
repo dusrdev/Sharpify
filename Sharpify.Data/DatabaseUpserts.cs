@@ -5,13 +5,8 @@ using MemoryPack;
 
 namespace Sharpify.Data;
 
-/// <summary>
-/// A high performance database that stores String:byte[] pairs.
-/// </summary>
-/// <remarks>
-/// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
-/// </remarks>
 public sealed partial class Database : IDisposable {
+#if ATOMIC_UPSERTS
     /// <summary>
     /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
     /// </summary>
@@ -23,11 +18,8 @@ public sealed partial class Database : IDisposable {
     /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
     /// </remarks>
     public Result<byte[]> AtomicUpsert(string key, Func<byte[], Result<byte[]>> transform, string encryptionKey = "") {
-        // Create semaphore and grant access to one
-        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
-        // semaphore.Wait();
         try {
-            TryGetValue(key, encryptionKey, out byte[] val); // semaphore waited inside using the dictionary
+            TryGetValue(key, encryptionKey, true, out byte[] val); // semaphore waited inside using the dictionary
             val ??= Array.Empty<byte>();
             var result = transform(val);
             if (result.IsOk) {
@@ -36,8 +28,7 @@ public sealed partial class Database : IDisposable {
             }
             return result;
         } finally {
-            semaphore.Release(); // release the semaphore after the transformation
-            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
+            ReleaseAtomicLock(key);
         }
     }
 
@@ -52,11 +43,8 @@ public sealed partial class Database : IDisposable {
     /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
     /// </remarks>
     public Result<T> AtomicUpsert<T>(string key, Func<T, Result<T>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
-        // Create semaphore and grant access to one
-        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
-        // semaphore.Wait();
         try {
-            TryGetValue(key, encryptionKey, out T val); // semaphore waited inside using the dictionary
+            TryGetValue(key, encryptionKey, true, out T val); // semaphore waited inside using the dictionary
             val ??= default!;
             var result = transform(val);
             if (result.IsOk) {
@@ -65,8 +53,7 @@ public sealed partial class Database : IDisposable {
             }
             return result;
         } finally {
-            semaphore.Release(); // release the semaphore after the transformation
-            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
+            ReleaseAtomicLock(key);
         }
     }
 
@@ -81,11 +68,8 @@ public sealed partial class Database : IDisposable {
     /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
     /// </remarks>
     public Result<T[]> AtomicUpsertMany<T>(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
-        // Create semaphore and grant access to one
-        var semaphore = _semaphores.GetOrAdd(key, new SemaphoreSlim(1, 1));
-        // semaphore.Wait();
         try {
-            TryGetValues(key, encryptionKey, out T[] val); // semaphore waited inside using the dictionary
+            TryGetValues(key, encryptionKey, true, out T[] val); // semaphore waited inside using the dictionary
             val ??= default!;
             var result = transform(val);
             if (result.IsOk) {
@@ -94,10 +78,10 @@ public sealed partial class Database : IDisposable {
             }
             return result;
         } finally {
-            semaphore.Release(); // release the semaphore after the transformation
-            _semaphores.TryRemove(key, out _); // remove the semaphore from the dictionary
+            ReleaseAtomicLock(key);
         }
     }
+#endif
 
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.

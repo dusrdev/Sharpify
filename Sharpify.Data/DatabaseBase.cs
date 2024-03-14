@@ -16,8 +16,6 @@ public sealed partial class Database : IDisposable {
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _semaphores = new();
-
     private bool _disposed;
 
     private readonly ReaderWriterLockSlim _lock = new();
