@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
 
@@ -226,25 +227,25 @@ public sealed partial class Database : IDisposable {
     /// Tries to get the value for the <paramref name="key"/>.
     /// </summary>
     /// <param name="key">The key used to identify the object in the database.</param>
-    /// <param name="jsonSerializerContext"></param>
+    /// <param name="jsonTypeInfo"></param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, JsonSerializerContext jsonSerializerContext, out T value) => TryGetValue(key, "", jsonSerializerContext, out value);
+    public bool TryGetValue<T>(string key, JsonTypeInfo<T> jsonTypeInfo, out T value) => TryGetValue(key, "", jsonTypeInfo, out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
     /// </summary>
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
-    /// <param name="jsonSerializerContext"></param>
+    /// <param name="jsonTypeInfo"></param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, string encryptionKey, JsonSerializerContext jsonSerializerContext, out T value) {
+    public bool TryGetValue<T>(string key, string encryptionKey, JsonTypeInfo<T> jsonTypeInfo, out T value) {
         if (!TryGetString(key, encryptionKey, out string asString)) {
             value = default!;
             return false;
         }
-        value = (T)JsonSerializer.Deserialize(asString, typeof(T), jsonSerializerContext)!;
+        value = JsonSerializer.Deserialize(asString, jsonTypeInfo)!;
         return true;
     }
 

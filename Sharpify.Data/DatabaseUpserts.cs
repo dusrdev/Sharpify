@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
 
@@ -163,13 +164,13 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    /// <param name="jsonSerializerContext">That can be used to serialize T</param>
+    /// <param name="jsonTypeInfo">That can be used to serialize T</param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
     /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
     /// </remarks>
-    public void Upsert<T>(string key, T value, JsonSerializerContext jsonSerializerContext, string encryptionKey = "") where T : notnull {
-        var asString = JsonSerializer.Serialize(value, typeof(T), jsonSerializerContext);
+    public void Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "") where T : notnull {
+        var asString = JsonSerializer.Serialize(value, jsonTypeInfo);
         Upsert(key, asString, encryptionKey);
     }
 
