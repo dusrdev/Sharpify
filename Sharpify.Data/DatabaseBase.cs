@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using MemoryPack;
@@ -110,7 +111,7 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public IDatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+    public IDatabaseFilter<T> FilterByType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
 
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary

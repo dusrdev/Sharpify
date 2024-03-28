@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using MemoryPack;
@@ -11,7 +12,7 @@ namespace Sharpify.Data;
 /// Items that are upserted into the database using the filter, should not be retrieved without the filter as the key is modified.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
+public class DatabaseFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
     /// <summary>
     /// The name of the type.
     /// </summary>

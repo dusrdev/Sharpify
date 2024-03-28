@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using MemoryPack;
 
 namespace Sharpify.Data;
@@ -6,7 +8,7 @@ namespace Sharpify.Data;
 /// Represents a filter for a database that provides operations for querying, retrieving, and modifying data.
 /// </summary>
 /// <typeparam name="T">The type of data stored in the database.</typeparam>
-public interface IDatabaseFilter<T> where T : IMemoryPackable<T> {
+public interface IDatabaseFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> where T : IMemoryPackable<T> {
 	/// <summary>
 	/// Checks if the filtered database contains the specified key.
 	/// </summary>

@@ -1,5 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
@@ -43,7 +43,7 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
     /// </remarks>
-    public Result<T> AtomicUpsert<T>(string key, Func<T, Result<T>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public Result<T> AtomicUpsert<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, Func<T, Result<T>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
         try {
             TryGetValue(key, encryptionKey, true, out T val); // semaphore waited inside using the dictionary
             val ??= default!;
@@ -68,7 +68,7 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
     /// </remarks>
-    public Result<T[]> AtomicUpsertMany<T>(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public Result<T[]> AtomicUpsertMany<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
         try {
             TryGetValues(key, encryptionKey, true, out T[] val); // semaphore waited inside using the dictionary
             val ??= default!;

@@ -23,6 +23,7 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -30,7 +31,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MemoryPack" Version="[1.20.0,)" />
+    <PackageReference Include="MemoryPack" Version="[1.21.0,)" />
     <PackageReference Include="Sharpify" Version="[1.7.3,)" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>

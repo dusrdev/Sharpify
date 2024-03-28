@@ -1,7 +1,7 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
@@ -30,7 +30,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, string encryptionKey, out byte[] value)  => TryGetValue(key, encryptionKey, false, out value);
+    public bool TryGetValue(string key, string encryptionKey, out byte[] value) => TryGetValue(key, encryptionKey, false, out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -69,7 +69,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> => TryGetValue(key, "", false, out value);
+    public bool TryGetValue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, out T value) where T : IMemoryPackable<T> => TryGetValue(key, "", false, out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -79,7 +79,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
+    public bool TryGetValue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
         return TryGetValue(key, encryptionKey, false, out value);
     }
 
@@ -92,7 +92,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="lockValue">lock this value as an atomic upsert is using it</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    internal bool TryGetValue<T>(string key, string encryptionKey, bool lockValue, out T value) where T : IMemoryPackable<T> {
+    internal bool TryGetValue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string encryptionKey, bool lockValue, out T value) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             AcquireAtomicLock(key, lockValue);
@@ -125,7 +125,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> => TryGetValues(key, "", false, out value);
+    public bool TryGetValues<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, out T[] value) where T : IMemoryPackable<T> => TryGetValues(key, "", false, out value);
 
     /// <summary>
     /// Tries to get the value array stored in <paramref name="key"/>.
@@ -135,7 +135,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="values">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> => TryGetValues(key, encryptionKey, false, out values);
+    public bool TryGetValues<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> => TryGetValues(key, encryptionKey, false, out values);
 
     /// <summary>
     /// Tries to get the value array stored in <paramref name="key"/>.
@@ -146,7 +146,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="lockValue">lock this value as an atomic upsert is using it</param>
     /// <param name="values">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    internal bool TryGetValues<T>(string key, string encryptionKey, bool lockValue, out T[] values) where T : IMemoryPackable<T> {
+    internal bool TryGetValues<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string encryptionKey, bool lockValue, out T[] values) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             AcquireAtomicLock(key, lockValue);
@@ -284,7 +284,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
     [Obsolete("Use TryGetValue instead.")]
-    public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public T? Get<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
