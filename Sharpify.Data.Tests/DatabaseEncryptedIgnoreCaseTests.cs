@@ -181,13 +181,13 @@ public class DatabaseEncryptedIgnoreCaseTests {
             Green = 0,
             Blue = 0
         };
-        db.Database.Upsert("1", p1, JsonContext.Default);
+        db.Database.Upsert("1", p1, JsonContext.Default.Color);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue<Color>("1", JsonContext.Default, out var p2);
+        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2);
         p2.Should().Be(p1);
 
         // Cleanup
