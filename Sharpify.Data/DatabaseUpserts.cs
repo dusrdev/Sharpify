@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -7,83 +6,6 @@ using MemoryPack;
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
-#if ATOMIC_UPSERTS
-    /// <summary>
-    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="transform"></param>
-    /// <param name="encryptionKey"></param>
-    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
-    /// <remarks>
-    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
-    /// </remarks>
-    public Result<byte[]> AtomicUpsert(string key, Func<byte[], Result<byte[]>> transform, string encryptionKey = "") {
-        try {
-            TryGetValue(key, encryptionKey, true, out byte[] val); // semaphore waited inside using the dictionary
-            val ??= Array.Empty<byte>();
-            var result = transform(val);
-            if (result.IsOk) {
-                ArgumentNullException.ThrowIfNull(result.Value);
-                Upsert(key, result.Value, encryptionKey);
-            }
-            return result;
-        } finally {
-            ReleaseAtomicLock(key);
-        }
-    }
-
-    /// <summary>
-    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="transform"></param>
-    /// <param name="encryptionKey"></param>
-    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
-    /// <remarks>
-    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
-    /// </remarks>
-    public Result<T> AtomicUpsert<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, Func<T, Result<T>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
-        try {
-            TryGetValue(key, encryptionKey, true, out T val); // semaphore waited inside using the dictionary
-            val ??= default!;
-            var result = transform(val);
-            if (result.IsOk) {
-                ArgumentNullException.ThrowIfNull(result.Value);
-                Upsert(key, result.Value, encryptionKey);
-            }
-            return result;
-        } finally {
-            ReleaseAtomicLock(key);
-        }
-    }
-
-    /// <summary>
-    /// Performs an atomic upsert operation on the database. While this key is in use, other threads cannot access its value.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="transform"></param>
-    /// <param name="encryptionKey"></param>
-    /// <returns>The result of the processor, which if successful, contains the new value for this key</returns>
-    /// <remarks>
-    /// This method should only be used in specific scenarios where you need to ensure that the processing always happens on the latest value. If <see cref="Result{T}"/> is misused, such as the value is null for success, an exception will be thrown.
-    /// </remarks>
-    public Result<T[]> AtomicUpsertMany<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "") where T : IMemoryPackable<T> {
-        try {
-            TryGetValues(key, encryptionKey, true, out T[] val); // semaphore waited inside using the dictionary
-            val ??= default!;
-            var result = transform(val);
-            if (result.IsOk) {
-                ArgumentNullException.ThrowIfNull(result.Value);
-                UpsertMany(key, result.Value, encryptionKey);
-            }
-            return result;
-        } finally {
-            ReleaseAtomicLock(key);
-        }
-    }
-#endif
-
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
     /// </summary>

@@ -5,7 +5,7 @@ public class DatabaseEncryptedIgnoreCaseTests {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = Database.Create(new() {
+        var database = Database.CreateOrLoad(new() {
             Path = path,
             EncryptionKey = "test",
             IgnoreCase = true,
@@ -19,7 +19,7 @@ public class DatabaseEncryptedIgnoreCaseTests {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = await Database.CreateAsync(new() {
+        var database = await Database.CreateOrLoadAsync(new() {
             Path = path,
             SerializeOnUpdate = false,
             TriggerUpdateEvents = false,
@@ -29,7 +29,7 @@ public class DatabaseEncryptedIgnoreCaseTests {
 
     [Fact]
     public void SerializeAndDeserialize() {
-        using var database = Database.Create(new() {
+        using var database = Database.CreateOrLoad(new() {
             Path = Path.GetTempFileName(),
             EncryptionKey = "test"
         });
@@ -38,7 +38,7 @@ public class DatabaseEncryptedIgnoreCaseTests {
         database.Serialize();
         var length = new FileInfo(database.Config.Path).Length;
 
-        using var database2 = Database.Create(new() {
+        using var database2 = Database.CreateOrLoad(new() {
             Path = database.Config.Path,
             EncryptionKey = "test"
         });

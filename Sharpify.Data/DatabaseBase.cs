@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using MemoryPack;
@@ -17,7 +16,7 @@ public sealed partial class Database : IDisposable {
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
-    private bool _disposed;
+    private volatile bool _disposed;
 
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly DatabaseSerializer _serializer;
@@ -59,7 +58,7 @@ public sealed partial class Database : IDisposable {
     /// <summary>
     /// Creates a high performance database that stores string-byte[] pairs.
     /// </summary>
-    public static Database Create(DatabaseConfiguration config) {
+    public static Database CreateOrLoad(DatabaseConfiguration config) {
         DatabaseSerializer serializer = DatabaseSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
@@ -78,7 +77,7 @@ public sealed partial class Database : IDisposable {
     /// <summary>
     /// Creates asynchronously a high performance database that stores string-byte[] pairs.
     /// </summary>
-    public static async ValueTask<Database> CreateAsync(DatabaseConfiguration config, CancellationToken token = default) {
+    public static async ValueTask<Database> CreateOrLoadAsync(DatabaseConfiguration config, CancellationToken token = default) {
         DatabaseSerializer serializer = DatabaseSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
@@ -111,7 +110,7 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public IDatabaseFilter<T> FilterByType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+    public IDatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
 
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary

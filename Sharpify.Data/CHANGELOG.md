@@ -2,7 +2,9 @@
 
 ## v2.3.0 - Unreleased (Pending Tests)
 
-* Added `AtomicUpsert` overloads, for specific cases in which a user might want to get the value of some key, perform some operation on it, and then possibly update it. Doing this is the regular fashion as in reading the value, then checking before upserting (possibly) can introduce unwanted behavior as the value for said key may be changed by other threads while you try to process it, thereby meaning you process out-dated data. `AtomicUpsert` solves this, by blocking other threads from accessing the value for this specific key, while this operation is ongoing. Therefore ensuring no one can change it while you are processing it. All the main ways of reading data from `Database` have been restructured to ensure this with minimal overhead. **Important**: `Obsolete` reading methods (that don't begin with a "try") don't take these safety measures into account. If you still use these methods, I highly encourage you to use the other ones, as I remind you, In version 3.0.0, they will be flat out deleted.
+* The factory methods named `Create` and `CreateAsync` were renamed to `CreateOrLoad` and `CreateOrLoadAsync` respectively, which better explains exactly what they do at a glance. This should make more sense to code reviewers who are not familiar with the package.
+* Locked to use older version of `MemoryPack` to ensure serialization doesn't break in NativeAot.
+* `DatabaseFilter{T}` now uses string interning with the generated keys to reduce allocations even further.
 * All JSON based `T` overloads now require a `JsonTypeInfo<T>` instead of the `JsonSerializerContext`, this change increases safety in cases where a `JsonSerializerContext` which didn't implement `T` would still be accepted and an exception would've been thrown at runtime, All the changes necessary at the client side are to add `.T` at the end of `JsonSerializerContext.Default` parameter.
 
 ## v2.2.0

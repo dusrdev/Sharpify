@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using MemoryPack;
@@ -12,7 +11,7 @@ namespace Sharpify.Data;
 /// Items that are upserted into the database using the filter, should not be retrieved without the filter as the key is modified.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public class DatabaseFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
+public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
     /// <summary>
     /// The name of the type.
     /// </summary>
@@ -22,7 +21,7 @@ public class DatabaseFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMembe
     /// Creates a combined key (filter) for the specified key.
     /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual string CreateKey(ReadOnlySpan<char> key) => string.Concat(TName, ":", key);
+    protected virtual string AcquireKey(ReadOnlySpan<char> key) => string.Intern($"{TName}:{key}");
 
     /// <summary>
     /// The database.
@@ -38,36 +37,28 @@ public class DatabaseFilter<[DynamicallyAccessedMembers(DynamicallyAccessedMembe
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(string key) => _database.ContainsKey(CreateKey(key));
+    public bool ContainsKey(string key) => _database.ContainsKey(AcquireKey(key));
 
     /// <inheritdoc />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
 
     /// <inheritdoc />
-    public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(CreateKey(key), encryptionKey, out value);
+    public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
 
     /// <inheritdoc />
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(CreateKey(key), encryptionKey, out values);
+    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
 
     /// <inheritdoc />
-    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(CreateKey(key), value, encryptionKey);
+    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), value, encryptionKey);
 
     /// <inheritdoc />
-    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(CreateKey(key), values, encryptionKey);
+    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
 
     /// <inheritdoc />
-    public Result<T> AtomicUpsert(string key, Func<T, Result<T>> transform, string encryptionKey = "")
-    => _database.AtomicUpsert(CreateKey(key), transform, encryptionKey);
-
-    /// <inheritdoc />
-    public Result<T[]> AtomicUpsertMany(string key, Func<T[], Result<T[]>> transform, string encryptionKey = "")
-    => _database.AtomicUpsertMany(CreateKey(key), transform, encryptionKey);
-
-    /// <inheritdoc />
-    public bool Remove(string key) => _database.Remove(CreateKey(key));
+    public bool Remove(string key) => _database.Remove(AcquireKey(key));
 }
