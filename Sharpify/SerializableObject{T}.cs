@@ -1,5 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Sharpify;
 
@@ -44,9 +44,9 @@ public class SerializableObject<T> : IDisposable {
     protected readonly SegmentedPath _segmentedPath;
 
     /// <summary>
-    /// The JSON serializer context used for serializing and deserializing objects.
+    /// The JSON type info used for serializing and deserializing objects.
     /// </summary>
-    protected readonly JsonSerializerContext _jsonSerializerContext;
+    protected readonly JsonTypeInfo<T> _jsonTypeInfo;
 
     /// <summary>
     /// The lock object used for thread synchronization.
@@ -57,19 +57,19 @@ public class SerializableObject<T> : IDisposable {
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
-    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
+    /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public SerializableObject(string path, JsonSerializerContext jsonSerializerContext) : this(path, default!, jsonSerializerContext) { }
+    public SerializableObject(string path, JsonTypeInfo<T> jsonTypeInfo) : this(path, default!, jsonTypeInfo) { }
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
-    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
+    /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public SerializableObject(string path, T defaultValue, JsonSerializerContext jsonSerializerContext) {
-        _jsonSerializerContext = jsonSerializerContext;
+    public SerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo) {
+        _jsonTypeInfo = jsonTypeInfo;
         var dir = Path.GetDirectoryName(path);
         var fileName = Path.GetFileName(path);
         if (string.IsNullOrWhiteSpace(dir)) {
@@ -88,7 +88,7 @@ public class SerializableObject<T> : IDisposable {
             } else {
                 try {
                     using var file = File.Open(path, FileMode.Open);
-                    _value = (T)JsonSerializer.Deserialize(file, typeof(T), _jsonSerializerContext)!;
+                    _value = JsonSerializer.Deserialize(file, _jsonTypeInfo)!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }
@@ -103,7 +103,7 @@ public class SerializableObject<T> : IDisposable {
             _lock.EnterWriteLock();
             _value = value;
             using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
+            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
         } finally {
             _lock.ExitWriteLock();
         }
@@ -131,6 +131,7 @@ public class SerializableObject<T> : IDisposable {
 
     /// <summary>
     /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
+    /// Use this method when T is a struct
     /// </summary>
     /// <param name="modifier">The action that modifies the value of the object.</param>
     /// <remarks>A lock is used to prevent concurrent modifications</remarks>
@@ -139,7 +140,25 @@ public class SerializableObject<T> : IDisposable {
             _lock.EnterWriteLock();
             _value = modifier(_value);
             using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
+            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
+            InvokeOnChangedEvent(_value);
+        } finally {
+            _lock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
+    /// Use this method when T : class to avoid reallocation
+    /// </summary>
+    /// <param name="modification">The action that modifies the value of the object.</param>
+    /// <remarks>A lock is used to prevent concurrent modifications</remarks>
+    public virtual void Modify(Action<T> modification) {
+        try {
+            _lock.EnterWriteLock();
+            modification(_value);
+            using var file = File.Open(_path, FileMode.Create);
+            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();
