@@ -15,26 +15,9 @@ An extension of `Sharpify` focused on data.
 * The heart of the performance of these databases which use [MemoryPack](https://github.com/Cysharp/MemoryPack) for extreme performance binary serialization.
 * `Database` has upsert overloads which support any `IMemoryPackable` from [MemoryPack](https://github.com/Cysharp/MemoryPack).
 * Both `Database` implements `IDisposable` and should be disposed after usage to make sure all resources are released, this should also prevent possible issues if the object is removed from memory while an operation is ongoing (i.e the user closes the application when a write isn't finished)
-
-## Sample Benchmarks
-
-The benchmarks are of `Person` record, which is implement as such:
-
-```csharp
-[MemoryPackable]
-public partial record Person {
-  public string Name { get; set; } = "";
-  public string Email { get; set; } = "";
-  public string Username { get; set; } = "";
-  public string Password { get; set; } = "";
-  public string Phone { get; set; } = "";
-  public string Website { get; set; } = "";
-}
-```
-
-The database is very fast and efficient, while serialization scales rather linearly (No way around it), `Upserts`, and `Retrievals` are constant time operations.
-
-To ensure integrity data copies are kept to a minimum, and allocations are designed to happen only if it is to ensure data integrity (i.e to ensure the database stores real data, and to ensure the actual data is not exposed to the outside), the database uses pooling for any disposable memory operations to ensure minimal GC overhead and memory allocation.
+* The database is key-value-pair based, and operation on each key have O(1) complexity, serialization scales rather linearly (No way around it).
+* For very large datasets, there might be more suitable databases, but if you still want to use this, you could enable `[gcAllowVeryLargeObjects](https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/file-schema/runtime/gcallowverylargeobjects-element), as per the Microsoft docs, on 64 bit system it should allow the object to be larger than 2GB, which is normally the limit.
+* To ensure integrity data copies are kept to a minimum, and allocations are designed to happen only when required to ensure data integrity (i.e to ensure the database stores real data, and to ensure the actual data is not exposed to the outside), the database uses pooling for any disposable memory operations to ensure minimal GC overhead.
 
 ## Contact
 
