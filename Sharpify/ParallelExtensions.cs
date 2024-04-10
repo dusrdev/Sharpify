@@ -257,10 +257,10 @@ public static partial class Extensions {
                 }
                 needAllocation[needAllocationIndex++] = valueTask.AsTask();
             }
-            var requiringAllocation = new ArraySegment<Task>(needAllocation, 0, needAllocationIndex);
-            if (requiringAllocation.Count is 0) {
+            if (needAllocationIndex is 0) {
                 return;
             }
+            var requiringAllocation = new ArraySegment<Task>(needAllocation, 0, needAllocationIndex);
             await Task.WhenAll(requiringAllocation).WaitAsync(token).ConfigureAwait(false);
         } finally {
             totalArray.ReturnBufferToSharedArrayPool();
