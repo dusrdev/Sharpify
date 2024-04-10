@@ -286,7 +286,7 @@ public static partial class Extensions {
     /// <param name="hashSet">The HashSet to convert.</param>
     /// <returns>An array containing the elements of the HashSet.</returns>
     public static T[] ToArrayFast<T>(this HashSet<T> hashSet) {
-        var arr = new T[hashSet.Count];
+        var arr = GC.AllocateUninitializedArray<T>(hashSet.Count);
         hashSet.CopyTo(arr);
         return arr;
     }
