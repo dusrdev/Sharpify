@@ -2,9 +2,12 @@
 
 ## v2.3.0 - Unreleased (Pending Tests)
 
+**NOTE** NativeAot functionality may be broken in some cases due to `MemoryPack`'s use of reflection in retrieving certain formatters, this issue is was reported [on GitHub](https://github.com/Cysharp/MemoryPack/issues/272), and an update will be released when it is hopefully fixed.
+
+* Added `StringEncoding` choice to `DatabaseConfiguration`, it defaults to `UTF8`, but can also be `UTF16`, `UTF8` requires less memory in default cases, but `UTF16` can be more efficient if most of the strings are `Unicode`.
 * The factory methods named `Create` and `CreateAsync` were renamed to `CreateOrLoad` and `CreateOrLoadAsync` respectively, which better explains exactly what they do at a glance. This should make more sense to code reviewers who are not familiar with the package.
-* Locked to use older version of `MemoryPack` to ensure serialization doesn't break in NativeAot.
 * `DatabaseFilter{T}` now uses string interning with the generated keys to reduce allocations even further.
+* `DatabaseFilter{T}` now also has proxies for `Serialize` and `SerializeAsync` which previously couldn't be accessed via this layer, but may be required if `SerializeOnUpdate=false`.
 * All JSON based `T` overloads now require a `JsonTypeInfo<T>` instead of the `JsonSerializerContext`, this change increases safety in cases where a `JsonSerializerContext` which didn't implement `T` would still be accepted and an exception would've been thrown at runtime, All the changes necessary at the client side are to add `.T` at the end of `JsonSerializerContext.Default` parameter.
 
 ## v2.2.0
