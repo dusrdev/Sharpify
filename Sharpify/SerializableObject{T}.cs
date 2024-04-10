@@ -131,32 +131,20 @@ public class SerializableObject<T> : IDisposable {
 
     /// <summary>
     /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
-    /// Use this method when T is a struct
     /// </summary>
     /// <param name="modifier">The action that modifies the value of the object.</param>
-    /// <remarks>A lock is used to prevent concurrent modifications</remarks>
+    /// <remarks>
+    /// <para>
+    /// a lock is used to prevent concurrent modifications
+    /// </para>
+    /// <para>
+    /// When a record (non-struct) is used, do not use the "with" keyword to return a modification, this will allocate a new object, instead modify the existing and return the object, this will circularly exchange the reference.
+    /// </para>
+    /// </remarks>
     public virtual void Modify(Func<T, T> modifier) {
         try {
             _lock.EnterWriteLock();
             _value = modifier(_value);
-            using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-        }
-    }
-
-    /// <summary>
-    /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
-    /// Use this method when T : class to avoid reallocation
-    /// </summary>
-    /// <param name="modification">The action that modifies the value of the object.</param>
-    /// <remarks>A lock is used to prevent concurrent modifications</remarks>
-    public virtual void Modify(Action<T> modification) {
-        try {
-            _lock.EnterWriteLock();
-            modification(_value);
             using var file = File.Open(_path, FileMode.Create);
             JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
             InvokeOnChangedEvent(_value);

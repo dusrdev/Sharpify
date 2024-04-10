@@ -76,20 +76,6 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
     }
 
     /// <inheritdoc/>
-    public override void Modify(Action<T> modification) {
-        try {
-            _lock.EnterWriteLock();
-            modification(_value);
-            Interlocked.Exchange(ref _isInternalModification, 1);
-            using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-        }
-    }
-
-    /// <inheritdoc/>
     public override void Dispose() {
         if (_disposed) {
             return;
