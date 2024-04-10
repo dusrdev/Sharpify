@@ -4,7 +4,7 @@ namespace Sharpify.Data;
 /// Provides an abstraction for creating a readonly serializer
 /// </summary>
 internal abstract class DatabaseSerializer {
-	protected readonly string _path;
+    protected readonly string _path;
 
     protected DatabaseSerializer(string path) {
         _path = path;
@@ -26,11 +26,11 @@ internal abstract class DatabaseSerializer {
     /// <returns></returns>
     internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]> dict, int estimatedSize, CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Deserializes the path to a dictionary
-	/// </summary>
-	/// <param name="estimatedSize"></param>
-	internal abstract Dictionary<string, byte[]> Deserialize(int estimatedSize);
+    /// <summary>
+    /// Deserializes the path to a dictionary
+    /// </summary>
+    /// <param name="estimatedSize"></param>
+    internal abstract Dictionary<string, byte[]> Deserialize(int estimatedSize);
 
     /// <summary>
     /// Deserializes the path to a dictionary asynchronously
@@ -39,19 +39,19 @@ internal abstract class DatabaseSerializer {
     /// <param name="cancellationToken"></param>
     internal abstract ValueTask<Dictionary<string, byte[]>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default);
 
-	/// <summary>
-	/// Creates a serializer based on the given configuration
-	/// </summary>
-	/// <param name="configuration"></param>
-	/// <returns></returns>
-	/// <exception cref="ArgumentException"></exception>
-	internal static DatabaseSerializer Create(DatabaseConfiguration configuration) {
-		return configuration switch {
-			{HasEncryption: true, IgnoreCase: true} => new IgnoreCaseEncryptedSerializer(configuration.Path, configuration.EncryptionKey),
-			{HasEncryption: true, IgnoreCase: false} => new EncryptedSerializer(configuration.Path, configuration.EncryptionKey),
-			{HasEncryption: false, IgnoreCase: true} => new IgnoreCaseSerializer(configuration.Path),
-			{HasEncryption: false, IgnoreCase: false} => new Serializer(configuration.Path),
-			_ => throw new ArgumentException("Invalid configuration")
-		};
-	}
+    /// <summary>
+    /// Creates a serializer based on the given configuration
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    internal static DatabaseSerializer Create(DatabaseConfiguration configuration) {
+        return configuration switch {
+            { HasEncryption: true, IgnoreCase: true } => new IgnoreCaseEncryptedSerializer(configuration.Path, configuration.EncryptionKey),
+            { HasEncryption: true, IgnoreCase: false } => new EncryptedSerializer(configuration.Path, configuration.EncryptionKey),
+            { HasEncryption: false, IgnoreCase: true } => new IgnoreCaseSerializer(configuration.Path),
+            { HasEncryption: false, IgnoreCase: false } => new Serializer(configuration.Path),
+            _ => throw new ArgumentException("Invalid configuration")
+        };
+    }
 }
