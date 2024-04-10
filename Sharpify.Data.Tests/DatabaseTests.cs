@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Sharpify.Data.Tests;
 
 public class DatabaseTests {
@@ -43,7 +41,7 @@ public class DatabaseTests {
             EncryptionKey = "test"
         });
 
-        database2.TryGetValue("test", out Person result);
+        database2.TryGetValue("test", out Person result).Should().BeTrue();
         result.Should().Be(new Person("David", 27));
     }
 
@@ -61,7 +59,7 @@ public class DatabaseTests {
         using var db2 = await AsyncFactory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out Person result);
+        db2.Database.TryGetValue("test", out Person result).Should().BeTrue();
         result.Should().Be(new Person("David", 27));
 
         // Cleanup
@@ -81,7 +79,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", out string result);
+        db2.Database.TryGetString("test", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
@@ -101,7 +99,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", "enc", out string result);
+        db2.Database.TryGetString("test", "enc", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
@@ -121,7 +119,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result);
+        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
         result.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
@@ -141,44 +139,12 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue<Person>("1", out var p2);
+        db2.Database.TryGetValue<Person>("1", out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
         File.Delete(db.Path);
     }
-
-    // [Fact]
-    // public async Task AtomicUpsert() {
-    //     // Arrange
-    //     using var db = Factory("");
-
-    //     // Act
-    //     var p1 = new Person("David", 27);
-    //     db.Database.Upsert("1", p1);
-
-    //     Task actor = new Task(() => {
-    //         var res = db.Database.AtomicUpsert<Person>("1", old => {
-    //             SpinWait.SpinUntil(() => false, 500);
-    //             return Result.Ok(old);
-    //         });
-    //     });
-    //     Task<TimeSpan> waiter = new Task<TimeSpan>(() => {
-    //         var start = Stopwatch.GetTimestamp();
-    //         _ = db.Database.TryGetValue("1", out Person tempP2);
-    //         return Stopwatch.GetElapsedTime(start);
-    //     });
-
-    //     actor.Start();
-    //     waiter.Start();
-    //     await actor;
-    //     var res = await waiter;
-
-    //     res.Should().BeGreaterThan(TimeSpan.FromMilliseconds(500));
-
-    //     // Cleanup
-    //     File.Delete(db.Path);
-    // }
 
     [Fact]
     public void UpsertMany() {
@@ -194,7 +160,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValues<Person>("1", out var arr);
+        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
         arr.Should().ContainInOrder(p1, p2);
 
         // Cleanup
@@ -219,7 +185,7 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2);
+        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
