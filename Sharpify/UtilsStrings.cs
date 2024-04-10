@@ -11,7 +11,6 @@ public static partial class Utils {
     public static class Strings {
         private static ReadOnlySpan<string> FileSizeSuffix => new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
 
-        [ThreadStatic]
         private static readonly char[] FormatBytesBuffer = GC.AllocateUninitializedArray<char>(10);
 
         /// <summary>
@@ -46,25 +45,27 @@ public static partial class Utils {
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.NoInlining)]
         public static ReadOnlySpan<char> FormatBytesNonAllocated(double bytes) {
-            const double kb = 1024d;
-            const double divisor = 1 / kb;
+            lock (FormatBytesBuffer) {
+                const double kb = 1024d;
+                const double divisor = 1 / kb;
 
-            var buffer = StringBuffer.Create(FormatBytesBuffer);
-            if (bytes < kb) {
+                var buffer = StringBuffer.Create(FormatBytesBuffer);
+                if (bytes < kb) {
+                    buffer.Append(Math.Round(bytes, 2));
+                    buffer.Append(' ');
+                    buffer.Append(FileSizeSuffix[0]);
+                    return FormatBytesBuffer.AsSpan()[buffer.WrittenRange];
+                }
+                var suffix = 0;
+                while (bytes >= kb && suffix < FileSizeSuffix.Length) {
+                    bytes *= divisor;
+                    suffix++;
+                }
                 buffer.Append(Math.Round(bytes, 2));
                 buffer.Append(' ');
-                buffer.Append(FileSizeSuffix[0]);
+                buffer.Append(FileSizeSuffix[suffix]);
                 return FormatBytesBuffer.AsSpan()[buffer.WrittenRange];
             }
-            var suffix = 0;
-            while (bytes >= kb && suffix < FileSizeSuffix.Length) {
-                bytes *= divisor;
-                suffix++;
-            }
-            buffer.Append(Math.Round(bytes, 2));
-            buffer.Append(' ');
-            buffer.Append(FileSizeSuffix[suffix]);
-            return FormatBytesBuffer.AsSpan()[buffer.WrittenRange];
         }
     }
 }
