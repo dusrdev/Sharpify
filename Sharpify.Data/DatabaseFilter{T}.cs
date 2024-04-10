@@ -61,4 +61,10 @@ public class DatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T>
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));
+
+    /// <inheritdoc />
+    public void Serialize() => _database.Serialize();
+
+    /// <inheritdoc />
+    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) => _database.SerializeAsync(cancellationToken);
 }

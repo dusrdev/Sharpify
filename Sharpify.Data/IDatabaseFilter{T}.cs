@@ -70,4 +70,14 @@ public interface IDatabaseFilter<T> where T : IMemoryPackable<T> {
 	/// <param name="key">The key of the item to remove.</param>
 	/// <returns><c>true</c> if the item was successfully removed; otherwise, <c>false</c>.</returns>
 	bool Remove(string key);
+
+	/// <summary>
+	/// Serializes the database.
+	/// </summary>
+	public void Serialize();
+
+	/// <summary>
+	/// Serializes the database asynchronously.
+	/// </summary>
+	public ValueTask SerializeAsync(CancellationToken cancellationToken = default);
 }
