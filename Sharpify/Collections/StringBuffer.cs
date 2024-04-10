@@ -144,6 +144,10 @@ public ref partial struct StringBuffer {
         return new string(span);
     }
 
+    /// <summary>
+    /// Returns the range of the written characters in the buffer.
+    /// </summary>
+    public readonly Range WrittenRange => 0.._position;
 
     /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
