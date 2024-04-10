@@ -46,7 +46,7 @@ public sealed partial class Database : IDisposable {
     /// or update the existing value if the key already exists.
     /// </remarks>
     public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
-        Upsert(key, MemoryPackSerializer.Serialize(value), encryptionKey);
+        Upsert(key, MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions), encryptionKey);
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ public sealed partial class Database : IDisposable {
     /// or update the existing value if the key already exists.
     /// </remarks>
     public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
-        Upsert(key, MemoryPackSerializer.Serialize(values), encryptionKey);
+        Upsert(key, MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions), encryptionKey);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public sealed partial class Database : IDisposable {
     public void Upsert(string key, string value, string encryptionKey = "") {
         byte[] bytes = value.Length is 0 ?
                     Array.Empty<byte>()
-                    : MemoryPackSerializer.Serialize(value);
+                    : MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
 
         Upsert(key, bytes, encryptionKey);
     }

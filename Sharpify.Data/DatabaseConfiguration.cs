@@ -1,3 +1,5 @@
+using MemoryPack;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -16,6 +18,11 @@ public record DatabaseConfiguration {
     /// This impacts performance during deserialization.
     /// </remarks>
     public bool IgnoreCase { get; init; } = false;
+
+    /// <summary>
+    /// The encoding to use when serializing and deserializing strings in the database.
+    /// </summary>
+    public StringEncoding Encoding { get; init; } = StringEncoding.Utf8;
 
     /// <summary>
     /// Whether to serialize the database automatically when it is updated.

@@ -1,3 +1,5 @@
+using MemoryPack;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -5,9 +7,15 @@ namespace Sharpify.Data;
 /// </summary>
 internal abstract class DatabaseSerializer {
     protected readonly string _path;
+    internal readonly MemoryPackSerializerOptions SerializerOptions;
 
-    protected DatabaseSerializer(string path) {
+    protected DatabaseSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) {
         _path = path;
+        SerializerOptions = encoding switch {
+            StringEncoding.Utf8 => MemoryPackSerializerOptions.Utf8,
+            StringEncoding.Utf16 => MemoryPackSerializerOptions.Utf16,
+            _ => MemoryPackSerializerOptions.Default
+        };
     }
 
     /// <summary>

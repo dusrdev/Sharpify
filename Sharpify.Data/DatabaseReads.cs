@@ -77,14 +77,14 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = MemoryPackSerializer.Deserialize<T>(val.AsSpan())!;
+                value = MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions)!;
                 return true;
             }
             // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes)!;
+            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -119,14 +119,14 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan())!;
+                values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan(), _serializer.SerializerOptions)!;
                 return true;
             }
             // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes)!;
+            values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -159,14 +159,14 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = MemoryPackSerializer.Deserialize<string>(val.AsSpan())!;
+                value = MemoryPackSerializer.Deserialize<string>(val.AsSpan(), _serializer.SerializerOptions)!;
                 return true;
             }
             // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            value = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
+            value = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -243,12 +243,12 @@ public sealed partial class Database : IDisposable {
                 return default;
             }
             if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<T>(val.AsSpan());
+                return MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions);
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes)!;
+            var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return result;
         } finally {
@@ -270,12 +270,12 @@ public sealed partial class Database : IDisposable {
                 return "";
             }
             if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<string>(val.AsSpan())!;
+                return MemoryPackSerializer.Deserialize<string>(val.AsSpan(), _serializer.SerializerOptions)!;
             }
             var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes)!;
+            var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return result;
         } finally {

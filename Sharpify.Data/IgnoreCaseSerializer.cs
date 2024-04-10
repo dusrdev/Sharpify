@@ -10,7 +10,7 @@ namespace Sharpify.Data;
 /// A serializer for a database without encryption and case sensitive keys
 /// </summary>
 internal class IgnoreCaseSerializer : Serializer {
-    internal IgnoreCaseSerializer(string path) : base(path) {
+    internal IgnoreCaseSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

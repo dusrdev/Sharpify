@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 
+using MemoryPack;
+
 using Sharpify.Collections;
 
 namespace Sharpify.Data;
@@ -8,7 +10,7 @@ namespace Sharpify.Data;
 /// A serializer for a database encryption and case sensitive keys
 /// </summary>
 internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
-    internal IgnoreCaseEncryptedSerializer(string path, string key) : base(path, key) {
+    internal IgnoreCaseEncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, key, encoding) {
     }
 
 /// <inheritdoc />
