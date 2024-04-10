@@ -255,6 +255,31 @@ public static partial class Extensions {
     }
 
     /// <summary>
+    /// Efficiently copies the elements of an array to a new list.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
+    public static List<T> ToListFast<T>(this T[] arr) {
+        List<T> lst = new();
+        CollectionsMarshal.SetCount(lst, arr.Length);
+        arr.AsSpan().CopyTo(lst.AsSpan());
+        return lst;
+    }
+
+    /// <summary>
+    /// Efficiently copies the elements of a list to a new array.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="lst"></param>
+    /// <returns></returns>
+    public static T[] ToArrayFast<T>(this List<T> lst) {
+        var arr = GC.AllocateUninitializedArray<T>(lst.Count);
+        lst.AsSpan().CopyTo(arr);
+        return arr;
+    }
+
+    /// <summary>
     /// Converts a HashSet to an array in a fast manner.
     /// </summary>
     /// <typeparam name="T">The type of elements in the HashSet.</typeparam>
