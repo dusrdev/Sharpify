@@ -15,7 +15,7 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
     /// </remarks>
-    public void Upsert(string key, byte[] value, string encryptionKey = "") {
+    public void Upsert(string key, byte[]? value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
             _queue.Enqueue(new(key, value.FastCopy()));
         } else {

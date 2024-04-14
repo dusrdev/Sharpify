@@ -12,9 +12,9 @@ namespace Sharpify.Data;
 /// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
 /// </remarks>
 public sealed partial class Database : IDisposable {
-    private readonly Dictionary<string, byte[]> _data;
+    private readonly Dictionary<string, byte[]?> _data;
 
-    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, byte[]?>> _queue = new();
 
     private volatile bool _disposed;
 
@@ -64,12 +64,12 @@ public sealed partial class Database : IDisposable {
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
                 ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, byte[]>(), config, serializer, 0);
+                : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
         var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        Dictionary<string, byte[]> dict = serializer.Deserialize(estimatedSize);
+        Dictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
@@ -83,21 +83,25 @@ public sealed partial class Database : IDisposable {
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
                 ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, byte[]>(), config, serializer, 0);
+                : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
         var estimatedSize = Extensions.GetFileSize(config.Path);
 
-        Dictionary<string, byte[]> dict = await serializer.DeserializeAsync(estimatedSize, token);
+        Dictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, byte[]> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
+    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
         Interlocked.Exchange(ref _estimatedSize, estimatedSize);
+    }
+
+    static Database() {
+        MemoryPackFormatterProvider.RegisterDictionary<Dictionary<string, byte[]?>, string, byte[]>();
     }
 
     /// <summary>

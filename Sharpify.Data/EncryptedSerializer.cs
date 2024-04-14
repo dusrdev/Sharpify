@@ -17,9 +17,9 @@ internal class EncryptedSerializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, byte[]> Deserialize(int estimatedSize) {
+    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]>();
+            return new Dictionary<string, byte[]?>();
         }
 
         using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
@@ -31,24 +31,24 @@ internal class EncryptedSerializer : DatabaseSerializer {
         var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
         var decrypted = decryptedBuffer.WrittenSpan;
-        var dict = MemoryPackSerializer.Deserialize<Dictionary<string, byte[]>>(decrypted, SerializerOptions);
-        return dict ?? new Dictionary<string, byte[]>();
+        var dict = MemoryPackSerializer.Deserialize<Dictionary<string, byte[]?>>(decrypted, SerializerOptions);
+        return dict ?? new Dictionary<string, byte[]?>();
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, byte[]>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]>();
+            return new Dictionary<string, byte[]?>();
         }
         using var file = new FileStream(_path, FileMode.Open);
         using var transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        var dict = await MemoryPackSerializer.DeserializeAsync<Dictionary<string, byte[]>>(cryptoStream, SerializerOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return dict ?? new Dictionary<string, byte[]>();
+        var dict = await MemoryPackSerializer.DeserializeAsync<Dictionary<string, byte[]?>>(cryptoStream, SerializerOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return dict ?? new Dictionary<string, byte[]?>();
     }
 
 /// <inheritdoc />
-    internal override void Serialize(Dictionary<string, byte[]> dict, int estimatedSize) {
+    internal override void Serialize(Dictionary<string, byte[]?> dict, int estimatedSize) {
         using var buffer = new RentedBufferWriter<byte>(estimatedSize + AesProvider.ReservedBufferSize);
         MemoryPackSerializer.Serialize(buffer, dict, SerializerOptions);
         using var file = new FileStream(_path, FileMode.Create);
@@ -58,7 +58,7 @@ internal class EncryptedSerializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]> dict, int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         using var transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);

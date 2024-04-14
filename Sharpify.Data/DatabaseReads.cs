@@ -39,7 +39,7 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = val.FastCopy();
+                value = val!.FastCopy();
                 return true;
             }
             // Encrypted -> Decrypt
@@ -81,7 +81,7 @@ public sealed partial class Database : IDisposable {
                 return true;
             }
             // Encrypted -> Decrypt
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions)!;
@@ -123,7 +123,7 @@ public sealed partial class Database : IDisposable {
                 return true;
             }
             // Encrypted -> Decrypt
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes, _serializer.SerializerOptions)!;
@@ -163,7 +163,7 @@ public sealed partial class Database : IDisposable {
                 return true;
             }
             // Encrypted -> Decrypt
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             value = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes, _serializer.SerializerOptions)!;
@@ -219,7 +219,7 @@ public sealed partial class Database : IDisposable {
                 return Array.Empty<byte>();
             }
             if (encryptionKey.Length is 0) {
-                return val.FastCopy();
+                return val!.FastCopy();
             }
             return Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
         } finally {
@@ -245,7 +245,7 @@ public sealed partial class Database : IDisposable {
             if (encryptionKey.Length is 0) {
                 return MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions);
             }
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions)!;
@@ -272,7 +272,7 @@ public sealed partial class Database : IDisposable {
             if (encryptionKey.Length is 0) {
                 return MemoryPackSerializer.Deserialize<string>(val.AsSpan(), _serializer.SerializerOptions)!;
             }
-            var buffer = ArrayPool<byte>.Shared.Rent(val.Length + AesProvider.ReservedBufferSize);
+            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
             var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes, _serializer.SerializerOptions)!;
