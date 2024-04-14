@@ -12,6 +12,11 @@ namespace Sharpify.Data;
 /// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
 /// </remarks>
 public sealed partial class Database : IDisposable {
+    /// <summary>
+    /// The unique identifier of the database.
+    /// </summary>
+    public readonly Guid Guid = Guid.NewGuid();
+
     private readonly Dictionary<string, byte[]?> _data;
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]?>> _queue = new();
@@ -114,7 +119,14 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public IDatabaseFilter<T> FilterByType<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+    public IDatabaseFilter<T> FilterByMemoryPackable<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+
+    /// <summary>
+    /// Returns a <see cref="DatabaseFilter{T}"/> that can be used to filter the database by type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public IDatabaseFilter<T> FilterByFilterableType<T>() where T : IFilterableType<T> => new SharpifyDatabaseFilter<T>(this);
 
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary

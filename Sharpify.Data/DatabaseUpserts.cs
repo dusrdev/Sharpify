@@ -45,7 +45,7 @@ public sealed partial class Database : IDisposable {
     /// The upsert operation will either insert a new value if the key does not exist,
     /// or update the existing value if the key already exists.
     /// </remarks>
-    public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public void Upsert<T>(string key, T? value, string encryptionKey = "") where T : IMemoryPackable<T> {
         Upsert(key, MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions), encryptionKey);
     }
 
@@ -60,7 +60,7 @@ public sealed partial class Database : IDisposable {
     /// The upsert operation will either insert a new value if the key does not exist,
     /// or update the existing value if the key already exists.
     /// </remarks>
-    public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public void UpsertMany<T>(string key, T[]? values, string encryptionKey = "") where T : IMemoryPackable<T> {
         Upsert(key, MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions), encryptionKey);
     }
 

@@ -200,8 +200,8 @@ public class DatabaseTests {
         var p1 = new Person("David", 27);
         var d1 = new Dog("Buddy", 5);
 
-        db.Database.FilterByType<Person>().Upsert("David", p1);
-        db.Database.FilterByType<Dog>().Upsert("Buddy", d1);
+        db.Database.FilterByMemoryPackable<Person>().Upsert("David", p1);
+        db.Database.FilterByMemoryPackable<Dog>().Upsert("Buddy", d1);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -209,8 +209,8 @@ public class DatabaseTests {
         // Assert
         db2.Database.ContainsKey("David").Should().BeFalse();
         db2.Database.ContainsKey("Buddy").Should().BeFalse();
-        db.Database.FilterByType<Person>().TryGetValue("David", out var p2).Should().BeTrue();
-        db.Database.FilterByType<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
+        db.Database.FilterByMemoryPackable<Person>().TryGetValue("David", out var p2).Should().BeTrue();
+        db.Database.FilterByMemoryPackable<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
         p2.Should().Be(p1);
         d2.Should().Be(d1);
 
@@ -259,10 +259,10 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
+        db.Database.FilterByMemoryPackable<Person>().Upsert("test", new Person("David", 27));
 
         // Assert
-        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeTrue();
+        db.Database.FilterByMemoryPackable<Person>().ContainsKey("test").Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -290,11 +290,11 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
-        db.Database.FilterByType<Person>().Remove("test");
+        db.Database.FilterByMemoryPackable<Person>().Upsert("test", new Person("David", 27));
+        db.Database.FilterByMemoryPackable<Person>().Remove("test");
 
         // Assert
-        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeFalse();
+        db.Database.FilterByMemoryPackable<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
         File.Delete(db.Path);

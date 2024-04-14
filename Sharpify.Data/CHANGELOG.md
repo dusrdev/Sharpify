@@ -2,13 +2,33 @@
 
 ## v2.3.0 - Unreleased (Pending Tests)
 
-**NOTE** NativeAot functionality may be broken in some cases due to `MemoryPack`'s use of reflection in retrieving certain formatters, this issue is was reported [on GitHub](https://github.com/Cysharp/MemoryPack/issues/272), and an update will be released when it is hopefully fixed.
-
 * Added `StringEncoding` choice to `DatabaseConfiguration`, it defaults to `UTF8`, but can also be `UTF16`, `UTF8` requires less memory in default cases, but `UTF16` can be more efficient if most of the strings are `Unicode`.
 * The factory methods named `Create` and `CreateAsync` were renamed to `CreateOrLoad` and `CreateOrLoadAsync` respectively, which better explains exactly what they do at a glance. This should make more sense to code reviewers who are not familiar with the package.
+* Added `IFilterableType{T}` interface as an alternative to `IMemoryPackable{T}`, the type would need to inherit the interface and implement its 4 static methods, which would enable the also new `SharpifyDatabaseFilter{T}` to be used as a `Database` filter.
+  * This can enable using filters on types that don't implement `IMemoryPackable{T}`, a simple example would be `MemoryPackable Collections`.
+* `IDatabaseFilter{T}` now doesn't have the `IMemoryPackable<T>` generic constraint, which should add flexibility when creating new implementations.
 * `DatabaseFilter{T}` now uses string interning with the generated keys to reduce allocations even further.
 * `DatabaseFilter{T}` now also has proxies for `Serialize` and `SerializeAsync` which previously couldn't be accessed via this layer, but may be required if `SerializeOnUpdate=false`.
 * All JSON based `T` overloads now require a `JsonTypeInfo<T>` instead of the `JsonSerializerContext`, this change increases safety in cases where a `JsonSerializerContext` which didn't implement `T` would still be accepted and an exception would've been thrown at runtime, All the changes necessary at the client side are to add `.T` at the end of `JsonSerializerContext.Default` parameter.
+
+### Workaround for broken NativeAot support from MemoryPack
+
+As of writing this, MemoryPack's NativeAot support is broken, for any type that isn't already in their cached types, the `MemoryPackFormatterProvider` uses reflection to get the formatter, which fails in NativeAot.
+As a workaround, we need to add the formatters ourselves, to do this, take any 1 static entry point, that activates before the database is loaded, and add this:
+
+```csharp
+// for every T type that you use the database with, and their inheritance hierarchy
+MemoryPackFormatterProvider.Register<T>();
+// This includes types that implement IMemoryPackable (i.e types that are decorated with MemoryPackable)
+// If the type is a collection or dictionary use the other corresponding overloads:
+MemoryPackFormatterProvider.RegisterCollection<T>();
+// or
+MemoryPackFormatterProvider.RegisterDictionary<T>();
+```
+
+With this the serializer should be able to bypass the part using reflection, and thus work even on NativeAot.
+
+P.S. The base type of the Database is already registered the same way on its own static constructor.
 
 ## v2.2.0
 
