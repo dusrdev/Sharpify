@@ -35,7 +35,7 @@ public sealed partial class Database : IDisposable {
             // Get val reference
             ref var val = ref _data.GetValueRefOrNullRef(key);
             if (Unsafe.IsNullRef(ref val)) { // Not found
-                value = Array.Empty<byte>();
+                value = default!;
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
@@ -67,7 +67,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, string encryptionKey, out T? value) where T : IMemoryPackable<T> {
+    public bool TryGetValue<T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             // Get val reference
@@ -77,14 +77,14 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions);
+                value = MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions)!;
                 return true;
             }
             // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions);
+            value = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -99,7 +99,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, out T[]? value) where T : IMemoryPackable<T> => TryGetValues(key, "", out value);
+    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> => TryGetValues(key, "", out value);
 
     /// <summary>
     /// Tries to get the value array stored in <paramref name="key"/>.
@@ -109,7 +109,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="values">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, string encryptionKey, out T[]? values) where T : IMemoryPackable<T> {
+    public bool TryGetValues<T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> {
         try {
             _lock.EnterReadLock();
             // Get val reference
@@ -119,14 +119,14 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan(), _serializer.SerializerOptions);
+                values = MemoryPackSerializer.Deserialize<T[]>(val.AsSpan(), _serializer.SerializerOptions)!;
                 return true;
             }
             // Encrypted -> Decrypt
             var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
             int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
             var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes, _serializer.SerializerOptions);
+            values = bytes.Length is 0 ? default! : MemoryPackSerializer.Deserialize<T[]>(bytes, _serializer.SerializerOptions)!;
             buffer.ReturnBufferToSharedArrayPool();
             return true;
         } finally {
@@ -208,10 +208,10 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// <para>This pure method which returns the value as byte[] allows you to use more complex but also more efficient serializers
     /// </para>
-    /// <para>If the value doesn't exist null is returned. You can use this to check if a value exists.</para>
+    /// <para>If the value doesn't exist an empty array is returned. You can use this to check if a value exists.</para>
     /// </remarks>
     [Obsolete("Use TryGetValue instead.")]
-    public byte[]? Get(string key, string encryptionKey = "") {
+    public byte[] Get(string key, string encryptionKey = "") {
         try {
             _lock.EnterReadLock();
             ref var val = ref _data.GetValueRefOrNullRef(key);
@@ -219,7 +219,7 @@ public sealed partial class Database : IDisposable {
                 return Array.Empty<byte>();
             }
             if (encryptionKey.Length is 0) {
-                return val.FastCopy();
+                return val!.FastCopy();
             }
             return Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
         } finally {

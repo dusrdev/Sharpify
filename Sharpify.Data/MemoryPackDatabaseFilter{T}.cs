@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using MemoryPack;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -9,7 +11,7 @@ namespace Sharpify.Data;
 /// Items that are upserted into the database using the filter, should not be retrieved without the filter as the key is modified.
 /// </remarks>
 /// <typeparam name="T"></typeparam>
-public class SharpifyDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterableType<T> {
+public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
     /// <summary>
     /// The name of the type.
     /// </summary>
@@ -30,7 +32,7 @@ public class SharpifyDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     /// Creates a new database filter.
     /// </summary>
     /// <param name="database"></param>
-	public SharpifyDatabaseFilter(Database database) {
+	public MemoryPackDatabaseFilter(Database database) {
         _database = database;
     }
 
@@ -39,38 +41,23 @@ public class SharpifyDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
 
     /// <inheritdoc />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValue(string key, out T? value) => TryGetValue(key, "", out value);
+    public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
 
     /// <inheritdoc />
-    public bool TryGetValue(string key, string encryptionKey, out T? value) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
-            value = default;
-            return false;
-        }
-        value = T.Deserialize(data);
-        return true;
-    }
+    public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValues(string key, out T[]? values) => TryGetValues(key, "", out values);
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[]? values) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
-            values = default;
-            return false;
-        }
-        values = T.DeserializeMany(data);
-        return true;
-    }
+    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
 
     /// <inheritdoc />
-    public void Upsert(string key, T? value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), T.Serialize(value), encryptionKey);
-
+    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), value, encryptionKey);
 
     /// <inheritdoc />
-    public void UpsertMany(string key, T[]? values, string encryptionKey = "") => _database.Upsert(AcquireKey(key), T.SerializeMany(values), encryptionKey);
+    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));

@@ -15,7 +15,7 @@ public record DatabaseConfiguration {
     /// Whether the database keys case should be ignored.
     /// </summary>
     /// <remarks>
-    /// This impacts performance during deserialization.
+    /// This impacts performance on reads and deserialization.
     /// </remarks>
     public bool IgnoreCase { get; init; } = false;
 

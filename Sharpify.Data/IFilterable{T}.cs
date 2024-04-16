@@ -4,7 +4,7 @@
 /// Represents a filterable type.
 /// </summary>
 /// <typeparam name="T">The type of the filterable object.</typeparam>
-public interface IFilterableType<T> {
+public interface IFilterable<T> {
 	/// <summary>
 	/// Serializes the specified value into a byte array.
 	/// </summary>

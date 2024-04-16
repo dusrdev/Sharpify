@@ -12,7 +12,7 @@ public sealed partial class Database : IDisposable {
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
-            var estimatedSize = new KeyValuePair<string, byte[]?>(key, val!).GetEstimatedSize();
+            var estimatedSize = Extensions.GetEstimatedSize(key, val);
             Interlocked.Add(ref _estimatedSize, -estimatedSize);
             if (Config.SerializeOnUpdate) {
                 Serialize();

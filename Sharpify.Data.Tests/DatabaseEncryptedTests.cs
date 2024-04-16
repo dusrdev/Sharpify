@@ -201,8 +201,8 @@ public class DatabaseEncryptedTests {
         var p1 = new Person("David", 27);
         var d1 = new Dog("Buddy", 5);
 
-        db.Database.FilterByMemoryPackable<Person>().Upsert("David", p1);
-        db.Database.FilterByMemoryPackable<Dog>().Upsert("Buddy", d1);
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("David", p1);
+        db.Database.CreateMemoryPackFilter<Dog>().Upsert("Buddy", d1);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -210,8 +210,8 @@ public class DatabaseEncryptedTests {
         // Assert
         db2.Database.ContainsKey("David").Should().BeFalse();
         db2.Database.ContainsKey("Buddy").Should().BeFalse();
-        db.Database.FilterByMemoryPackable<Person>().TryGetValue("David", out var p2).Should().BeTrue();
-        db.Database.FilterByMemoryPackable<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Person>().TryGetValue("David", out var p2).Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
         p2.Should().Be(p1);
         d2.Should().Be(d1);
 
@@ -260,10 +260,10 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByMemoryPackable<Person>().Upsert("test", new Person("David", 27));
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
 
         // Assert
-        db.Database.FilterByMemoryPackable<Person>().ContainsKey("test").Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -291,11 +291,11 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByMemoryPackable<Person>().Upsert("test", new Person("David", 27));
-        db.Database.FilterByMemoryPackable<Person>().Remove("test");
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.Database.CreateMemoryPackFilter<Person>().Remove("test");
 
         // Assert
-        db.Database.FilterByMemoryPackable<Person>().ContainsKey("test").Should().BeFalse();
+        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
         File.Delete(db.Path);

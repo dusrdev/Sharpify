@@ -19,7 +19,7 @@ public sealed partial class Database : IDisposable {
 
     private readonly Dictionary<string, byte[]?> _data;
 
-    private readonly ConcurrentQueue<KeyValuePair<string, byte[]?>> _queue = new();
+    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
     private volatile bool _disposed;
 
@@ -115,18 +115,18 @@ public sealed partial class Database : IDisposable {
     public int Count => _data.Count;
 
     /// <summary>
-    /// Returns a <see cref="DatabaseFilter{T}"/> that can be used to filter the database by type.
+    /// Returns a <see cref="MemoryPackDatabaseFilter{T}"/> that can be used to filter the database by type.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public IDatabaseFilter<T> FilterByMemoryPackable<T>() where T : IMemoryPackable<T> => new DatabaseFilter<T>(this);
+    public IDatabaseFilter<T> CreateMemoryPackFilter<T>() where T : IMemoryPackable<T> => new MemoryPackDatabaseFilter<T>(this);
 
     /// <summary>
-    /// Returns a <see cref="DatabaseFilter{T}"/> that can be used to filter the database by type.
+    /// Returns a <see cref="MemoryPackDatabaseFilter{T}"/> that can be used to filter the database by type.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public IDatabaseFilter<T> FilterByFilterableType<T>() where T : IFilterableType<T> => new SharpifyDatabaseFilter<T>(this);
+    public IDatabaseFilter<T> CreateFlexibleFilter<T>() where T : IFilterable<T> => new FlexibleDatabaseFilter<T>(this);
 
     /// <summary>
     /// Returns an immutable copy of the keys in the inner dictionary

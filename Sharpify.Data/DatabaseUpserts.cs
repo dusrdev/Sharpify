@@ -13,9 +13,15 @@ public sealed partial class Database : IDisposable {
     /// <param name="value"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
+    /// <para>
     /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
+    /// </para>
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
     /// </remarks>
-    public void Upsert(string key, byte[]? value, string encryptionKey = "") {
+    public void Upsert(string key, byte[] value, string encryptionKey = "") {
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
         if (encryptionKey.Length is 0) {
             _queue.Enqueue(new(key, value.FastCopy()));
         } else {
@@ -44,8 +50,12 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// The upsert operation will either insert a new value if the key does not exist,
     /// or update the existing value if the key already exists.
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
     /// </remarks>
-    public void Upsert<T>(string key, T? value, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
         Upsert(key, MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions), encryptionKey);
     }
 
@@ -59,8 +69,12 @@ public sealed partial class Database : IDisposable {
     /// <remarks>
     /// The upsert operation will either insert a new value if the key does not exist,
     /// or update the existing value if the key already exists.
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
     /// </remarks>
-    public void UpsertMany<T>(string key, T[]? values, string encryptionKey = "") where T : IMemoryPackable<T> {
+    public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
+        ArgumentNullException.ThrowIfNull(values, nameof(values));
         Upsert(key, MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions), encryptionKey);
     }
 
@@ -71,9 +85,12 @@ public sealed partial class Database : IDisposable {
     /// <param name="value"></param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
-    /// This is much less efficient time and memory wise than <see cref="Upsert(string, byte[], string?)"/>.
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
     /// </remarks>
     public void Upsert(string key, string value, string encryptionKey = "") {
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
         byte[] bytes = value.Length is 0 ?
                     Array.Empty<byte>()
                     : MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
@@ -89,7 +106,9 @@ public sealed partial class Database : IDisposable {
     /// <param name="jsonTypeInfo">That can be used to serialize T</param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
-    /// This is the least efficient option as it uses a reflection JSON serializer and byte conversion.
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
     /// </remarks>
     public void Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "") where T : notnull {
         var asString = JsonSerializer.Serialize(value, jsonTypeInfo);
