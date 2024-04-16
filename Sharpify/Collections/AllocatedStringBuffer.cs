@@ -7,6 +7,7 @@ namespace Sharpify.Collections;
 /// </summary>
 public ref struct AllocatedStringBuffer {
     private static readonly string NewLine = Environment.NewLine;
+    private readonly char[]? _backingArray;
     private readonly Span<char> _buffer;
     private readonly int _length;
     private int _position;
@@ -14,7 +15,19 @@ public ref struct AllocatedStringBuffer {
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
     /// </summary>
+    /// <param name="buffer"></param>
+    internal AllocatedStringBuffer(char[] buffer) {
+        _backingArray = buffer;
+        _buffer = _backingArray;
+        _length = _buffer.Length;
+        _position = 0;
+    }
+
+    /// <summary>
+    /// Represents a mutable interface over a buffer allocated in memory.
+    /// </summary>
     internal AllocatedStringBuffer(Span<char> buffer) {
+        _backingArray = null;
         _buffer = buffer;
         _length = _buffer.Length;
         _position = 0;
@@ -133,12 +146,6 @@ public ref struct AllocatedStringBuffer {
     }
 
     /// <summary>
-    /// Returns the range of the written characters in the buffer.
-    /// </summary>
-    public readonly Range WrittenRange => 0.._position;
-
-
-    /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
     /// </summary>
     public readonly string this[Range range] => Allocate(range);
@@ -165,6 +172,18 @@ public ref struct AllocatedStringBuffer {
     /// <param name="buffer"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlySpan<char>(AllocatedStringBuffer buffer) => buffer._buffer[0..buffer._position];
+
+    /// <summary>
+    /// Returns a readonly memory of the internal buffer up to the index after the last appended item.
+    /// </summary>
+    /// <param name="buffer"></param>
+    public static implicit operator ReadOnlyMemory<char>(AllocatedStringBuffer buffer) {
+        if (buffer._backingArray is null) {
+            throw new InvalidOperationException("The buffer has no backing array, and cannot be converted to a memory.");
+        }
+        return new ReadOnlyMemory<char>(buffer._backingArray, 0, buffer._position);
+    }
+
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.

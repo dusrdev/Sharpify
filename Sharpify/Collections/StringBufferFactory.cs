@@ -13,4 +13,9 @@ public ref partial struct StringBuffer {
     /// Initializes a string buffer that uses a pre-allocated buffer (potentially from the stack).
     /// </summary>
     public static AllocatedStringBuffer Create(Span<char> buffer) => new(buffer);
+
+    /// <summary>
+    /// Initializes a string buffer that uses a pre-allocated array buffer (not stack).
+    /// </summary>
+    public static AllocatedStringBuffer Create(char[] buffer) => new(buffer);
 }
