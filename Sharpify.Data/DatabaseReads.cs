@@ -57,7 +57,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, out T? value) where T : IMemoryPackable<T> => TryGetValue(key, "", out value);
+    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> => TryGetValue(key, "", out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
