@@ -33,6 +33,12 @@ With this the serializer should be able to bypass the part using reflection, and
 
 P.S. The base type of the Database is already registered the same way on its own static constructor.
 
+### Announcement
+
+Internal benchmarks already show a considerable performance improvement in the .NET8 version vs .NET7, and there are already multiple cases where the separate implementations have to be made in order to change to accommodate both versions, with .NET9 release approaching, more cases like this are expected, due the added complexity, .NET7 support will be dropped with the release of version 2.4.0 in the future. Codebases that are enable to migrate to newer .NET version will be forced to use older version of Sharpify.Data.
+
+.NET8 support will be maintained much longer since it is an LTS release.
+
 ## v2.2.0
 
 **Possibly BREAKING** This version changes the base types of `Database` from `ReadOnlyMemory<byte>` to `byte[]`, apparently the change using `ReadOnlyMemory<byte>` produced invalid results as if the underlying array disappeared, which left users of a empty memory which has phantom meta-data.
