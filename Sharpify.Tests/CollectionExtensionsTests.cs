@@ -251,6 +251,42 @@ public class CollectionExtensionsTests {
     }
 
     [Fact]
+    public void ToArrayFast_GivenList_ReturnsArray() {
+        // Arrange
+        var list = new List<int> { 1, 2, 3, 4, 5 };
+
+        // Act
+        var array = list.ToArrayFast();
+
+        // Assert
+        array.Should().Equal(list);
+    }
+
+    [Fact]
+    public void ToArrayFast_GivenHashSet_ReturnsArray() {
+        // Arrange
+        var hashSet = new HashSet<int> { 1, 2, 3, 4, 5 };
+
+        // Act
+        var array = hashSet.ToArrayFast();
+
+        // Assert
+        array.Should().Equal(hashSet);
+    }
+
+    [Fact]
+    public void ToListFast_GivenArray_ReturnsList() {
+        // Arrange
+        var arr = new int[] { 1, 2, 3, 4, 5 };
+
+        // Act
+        var list = arr.ToListFast();
+
+        // Assert
+        list.Should().Equal(arr);
+    }
+
+    [Fact]
     public void ChunkToSegments_GivenEmptyArray_ReturnsEmptyList() {
         // Arrange
         var array = new int[0];

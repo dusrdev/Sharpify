@@ -90,11 +90,11 @@ public class SpecialCollectionsTests {
 
         // Act
         Task[] upsertTasks = [
-            Task.Run(() => dict.UpsertAsync("one", "1")),
-            Task.Run(() => dict.UpsertAsync("two", "2")),
-            Task.Run(() => dict.UpsertAsync("three", "3")),
-            Task.Run(() => dict.UpsertAsync("four", "4")),
-            Task.Run(() => dict.UpsertAsync("five", "5")),
+            Task.Run(async () => await dict.UpsertAsync("one", "1")),
+            Task.Run(async () => await dict.UpsertAsync("two", "2")),
+            Task.Run(async () => await dict.UpsertAsync("three", "3")),
+            Task.Run(async () => await dict.UpsertAsync("four", "4")),
+            Task.Run(async () => await dict.UpsertAsync("five", "5")),
         ];
         await Task.WhenAll(upsertTasks);
 

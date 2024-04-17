@@ -144,7 +144,6 @@ public ref partial struct StringBuffer {
         return new string(span);
     }
 
-
     /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
     /// </summary>
