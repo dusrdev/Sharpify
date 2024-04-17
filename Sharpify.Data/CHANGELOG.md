@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v2.3.0 - Unreleased (Pending Tests)
+## v2.3.0
 
 * The codebase was refactored and separated into smaller files, to make it much easier to work with.
 * `Upserts` of all overloads and entry points will now throw an exception if the `value` is `null`. This change was made to ensure the integrity of `TryGetValue` (from all variants) as it checks nullability of the value to ensure the key exists. This is also no point to add null values, as they are not meaningful data, by enforcing not null, the code becomes simpler, and less error prone.
@@ -28,6 +28,8 @@ MemoryPackFormatterProvider.RegisterDictionary<TDictionary, TKey, TValue>();
 // and so on...
 // for all overloads check peek the definition of MemoryPackFormatterProvider, or their Github Repo
 ```
+
+**Note:** Make sure you don't create a new static constructor in those types, `MemoryPack` already creates those, you will need to find a different entry point.
 
 With this the serializer should be able to bypass the part using reflection, and thus work even on NativeAot.
 

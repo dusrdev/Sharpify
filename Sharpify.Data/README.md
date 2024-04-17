@@ -37,6 +37,8 @@ MemoryPackFormatterProvider.RegisterDictionary<TDictionary, TKey, TValue>();
 // for all overloads check peek the definition of MemoryPackFormatterProvider, or their Github Repo
 ```
 
+**Note:** Make sure you don't create a new static constructor in those types, `MemoryPack` already creates those, you will need to find a different entry point.
+
 With this the serializer should be able to bypass the part using reflection, and thus work even on NativeAot.
 
 P.S. The base type of the Database is already registered the same way on its own static constructor.
