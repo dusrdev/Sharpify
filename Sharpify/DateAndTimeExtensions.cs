@@ -9,7 +9,7 @@ public static partial class Extensions {
     /// Formats a <see cref="TimeSpan"/> to a pretty string
     /// </summary>
     public static string Format(this TimeSpan elapsed)
-        => new(FormatNonAllocated(elapsed, stackalloc char[30]));
+        => FormatNonAllocated(elapsed, Array.Empty<char>(), stackalloc char[30]).Allocate(true, true);
 
     /// <summary>
     /// Formats a <see cref="TimeSpan"/> to a pretty string
@@ -72,7 +72,7 @@ public static partial class Extensions {
     /// Formats time span to human readable format
     /// </summary>
     public static string ToRemainingDuration(this TimeSpan time)
-        => new(ToRemainingDurationNonAllocated(time, stackalloc char[30]));
+        => ToRemainingDurationNonAllocated(time, Array.Empty<char>(), stackalloc char[30]).Allocate(true, true);
 
     /// <summary>
     /// Formats time span to human readable format
@@ -144,7 +144,7 @@ public static partial class Extensions {
     /// Returns a Time Stamp -> HHMM-dd-mmm-yy
     /// </summary>
     public static string ToTimeStamp(this DateTime time)
-        => new(ToTimeStampNonAllocated(time, stackalloc char[30]));
+        => ToTimeStampNonAllocated(time, Array.Empty<char>(), stackalloc char[30]).Allocate(true, true);
 
     /// <summary>
     /// Returns a Time Stamp -> HHMM-dd-mmm-yy
