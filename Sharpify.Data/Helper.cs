@@ -10,6 +10,12 @@ internal sealed class Helper : IDisposable {
 
     private readonly ConcurrentDictionary<string, AesProvider> _cachedProviders = new(Environment.ProcessorCount, 1);
 
+    /// <summary>
+    /// Returns the encrypted version of the specified value using the specified key.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
     internal byte[] Encrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.EncryptBytes(value);
@@ -19,6 +25,11 @@ internal sealed class Helper : IDisposable {
         return newProvider.EncryptBytes(value);
     }
 
+    /// <summary>
+    /// Gets the encryptor for the specified key.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     internal ICryptoTransform GetEncryptor(string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.CreateEncryptor();
@@ -28,6 +39,12 @@ internal sealed class Helper : IDisposable {
         return newProvider.CreateEncryptor();
     }
 
+    /// <summary>
+    /// Returns the decrypted version of the specified value using the specified key.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
     internal byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.DecryptBytes(value);
@@ -37,6 +54,13 @@ internal sealed class Helper : IDisposable {
         return newProvider.DecryptBytes(value);
     }
 
+    /// <summary>
+    /// Decrypts the specified value using the specified key and writes the result to the destination.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="destination"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
     internal int Decrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.DecryptBytes(value, destination);
@@ -46,6 +70,11 @@ internal sealed class Helper : IDisposable {
         return newProvider.DecryptBytes(value, destination);
     }
 
+    /// <summary>
+    /// Gets the decryptor for the specified key.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     internal ICryptoTransform GetDecryptor(string key) {
         if (_cachedProviders.TryGetValue(key, out var provider)) {
             return provider.CreateDecryptor();

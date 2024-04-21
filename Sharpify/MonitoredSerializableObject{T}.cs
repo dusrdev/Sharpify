@@ -1,5 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Sharpify;
 
@@ -20,18 +20,18 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
-    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
+    /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public MonitoredSerializableObject(string path, JsonSerializerContext jsonSerializerContext) : this(path, default!, jsonSerializerContext) { }
+    public MonitoredSerializableObject(string path, JsonTypeInfo<T> jsonTypeInfo) : this(path, default!, jsonTypeInfo) { }
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
-    /// <param name="jsonSerializerContext">The context that can be used to serialize T without reflection</param>
+    /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public MonitoredSerializableObject(string path, T defaultValue, JsonSerializerContext jsonSerializerContext) : base(path, defaultValue, jsonSerializerContext) {
+    public MonitoredSerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo) : base(path, defaultValue, jsonTypeInfo) {
         _watcher = new FileSystemWatcher(_segmentedPath.Directory, _segmentedPath.FileName) {
             NotifyFilter = NotifyFilters.LastWrite,
             EnableRaisingEvents = true
@@ -50,7 +50,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         try {
             _lock.EnterWriteLock();
             using var file = File.Open(_path, FileMode.Open);
-            var deserialized = JsonSerializer.Deserialize(file, typeof(T), _jsonSerializerContext);
+            var deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
             if (deserialized is null) {
                 return;
             }
@@ -61,18 +61,14 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
     }
 
-    /// <summary>
-    /// Modifies the value of the object and performs necessary operations such as serialization and event invocation.
-    /// </summary>
-    /// <param name="modifier">The action that modifies the value of the object.</param>
-    /// <remarks>A lock is used to prevent concurrent modifications</remarks>
+    /// <inheritdoc/>
     public override void Modify(Func<T, T> modifier) {
         try {
             _lock.EnterWriteLock();
             _value = modifier(_value);
             Interlocked.Exchange(ref _isInternalModification, 1);
             using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, typeof(T), _jsonSerializerContext);
+            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();

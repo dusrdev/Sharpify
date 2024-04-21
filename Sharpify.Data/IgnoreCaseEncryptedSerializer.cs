@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 
+using MemoryPack;
+
 using Sharpify.Collections;
 
 namespace Sharpify.Data;
@@ -8,13 +10,13 @@ namespace Sharpify.Data;
 /// A serializer for a database encryption and case sensitive keys
 /// </summary>
 internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
-    internal IgnoreCaseEncryptedSerializer(string path, string key) : base(path, key) {
+    internal IgnoreCaseEncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, key, encoding) {
     }
 
 /// <inheritdoc />
-    internal override Dictionary<string, byte[]> Deserialize(int estimatedSize) {
+    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
         using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
@@ -30,9 +32,9 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, byte[]>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);

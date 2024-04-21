@@ -5,7 +5,7 @@ public class DatabaseEncryptedTests {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = Database.Create(new() {
+        var database = Database.CreateOrLoad(new() {
             Path = path,
             EncryptionKey = "test",
             SerializeOnUpdate = true,
@@ -18,7 +18,7 @@ public class DatabaseEncryptedTests {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = await Database.CreateAsync(new() {
+        var database = await Database.CreateOrLoadAsync(new() {
             Path = path,
             SerializeOnUpdate = false,
             TriggerUpdateEvents = false,
@@ -28,7 +28,7 @@ public class DatabaseEncryptedTests {
 
     [Fact]
     public void SerializeAndDeserialize() {
-        using var database = Database.Create(new() {
+        using var database = Database.CreateOrLoad(new() {
             Path = Path.GetTempFileName(),
             EncryptionKey = "test"
         });
@@ -37,12 +37,12 @@ public class DatabaseEncryptedTests {
         database.Serialize();
         var length = new FileInfo(database.Config.Path).Length;
 
-        using var database2 = Database.Create(new() {
+        using var database2 = Database.CreateOrLoad(new() {
             Path = database.Config.Path,
             EncryptionKey = "test"
         });
 
-        database2.TryGetValue("test", out Person result);
+        database2.TryGetValue("test", out Person result).Should().BeTrue();
         result.Should().Be(new Person("David", 27));
     }
 
@@ -60,7 +60,7 @@ public class DatabaseEncryptedTests {
         using var db2 = await AsyncFactory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out Person result);
+        db2.Database.TryGetValue("test", out Person result).Should().BeTrue();
         result.Should().Be(new Person("David", 27));
 
         // Cleanup
@@ -80,7 +80,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", out string result);
+        db2.Database.TryGetString("test", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
@@ -100,7 +100,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", "enc", out string result);
+        db2.Database.TryGetString("test", "enc", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
@@ -120,7 +120,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result);
+        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
         result.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
@@ -140,7 +140,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue<Person>("1", out var p2);
+        db2.Database.TryGetValue<Person>("1", out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
@@ -161,7 +161,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValues<Person>("1", out var arr);
+        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
         arr.Should().ContainInOrder(p1, p2);
 
         // Cleanup
@@ -180,13 +180,13 @@ public class DatabaseEncryptedTests {
             Green = 0,
             Blue = 0
         };
-        db.Database.Upsert("1", p1, JsonContext.Default);
+        db.Database.Upsert("1", p1, JsonContext.Default.Color);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue<Color>("1", JsonContext.Default, out var p2);
+        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
@@ -201,8 +201,8 @@ public class DatabaseEncryptedTests {
         var p1 = new Person("David", 27);
         var d1 = new Dog("Buddy", 5);
 
-        db.Database.FilterByType<Person>().Upsert("David", p1);
-        db.Database.FilterByType<Dog>().Upsert("Buddy", d1);
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("David", p1);
+        db.Database.CreateMemoryPackFilter<Dog>().Upsert("Buddy", d1);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -210,8 +210,8 @@ public class DatabaseEncryptedTests {
         // Assert
         db2.Database.ContainsKey("David").Should().BeFalse();
         db2.Database.ContainsKey("Buddy").Should().BeFalse();
-        db.Database.FilterByType<Person>().TryGetValue("David", out var p2).Should().BeTrue();
-        db.Database.FilterByType<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Person>().TryGetValue("David", out var p2).Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
         p2.Should().Be(p1);
         d2.Should().Be(d1);
 
@@ -260,10 +260,10 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
 
         // Assert
-        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeTrue();
+        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -291,11 +291,11 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        db.Database.FilterByType<Person>().Upsert("test", new Person("David", 27));
-        db.Database.FilterByType<Person>().Remove("test");
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.Database.CreateMemoryPackFilter<Person>().Remove("test");
 
         // Assert
-        db.Database.FilterByType<Person>().ContainsKey("test").Should().BeFalse();
+        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
         File.Delete(db.Path);

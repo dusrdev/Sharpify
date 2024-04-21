@@ -255,13 +255,51 @@ public static partial class Extensions {
     }
 
     /// <summary>
+    /// Efficiently copies the elements of an array to a new list.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="arr"></param>
+    /// <returns></returns>
+    public static List<T> ToListFast<T>(this T[] arr) {
+        if (arr.Length is 0) {
+            return [];
+        }
+#if NET8_0_OR_GREATER
+        List<T> lst = new();
+        CollectionsMarshal.SetCount(lst, arr.Length);
+        arr.AsSpan().CopyTo(lst.AsSpan());
+#elif NET7_0
+        List<T> lst = [.. arr];
+#endif
+        return lst;
+    }
+
+    /// <summary>
+    /// Efficiently copies the elements of a list to a new array.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="lst"></param>
+    /// <returns></returns>
+    public static T[] ToArrayFast<T>(this List<T> lst) {
+        if (lst.Count is 0) {
+            return Array.Empty<T>();
+        }
+        var arr = GC.AllocateUninitializedArray<T>(lst.Count);
+        lst.AsSpan().CopyTo(arr);
+        return arr;
+    }
+
+    /// <summary>
     /// Converts a HashSet to an array in a fast manner.
     /// </summary>
     /// <typeparam name="T">The type of elements in the HashSet.</typeparam>
     /// <param name="hashSet">The HashSet to convert.</param>
     /// <returns>An array containing the elements of the HashSet.</returns>
     public static T[] ToArrayFast<T>(this HashSet<T> hashSet) {
-        var arr = new T[hashSet.Count];
+        if (hashSet.Count is 0) {
+            return Array.Empty<T>();
+        }
+        var arr = GC.AllocateUninitializedArray<T>(hashSet.Count);
         hashSet.CopyTo(arr);
         return arr;
     }
