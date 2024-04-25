@@ -265,9 +265,8 @@ public static partial class Extensions {
             return [];
         }
 #if NET8_0_OR_GREATER
-        List<T> lst = new();
-        CollectionsMarshal.SetCount(lst, arr.Length);
-        arr.AsSpan().CopyTo(lst.AsSpan());
+        List<T> lst = new(arr.Length);
+        lst.AddRange(arr.AsSpan());
 #elif NET7_0
         List<T> lst = [.. arr];
 #endif
