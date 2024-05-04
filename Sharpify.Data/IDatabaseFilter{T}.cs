@@ -76,6 +76,20 @@ public interface IDatabaseFilter<T> {
 	bool Remove(string key);
 
 	/// <summary>
+    /// Removes all keys that match the <paramref name="keySelector"/>, while applying the key filtering
+    /// </summary>
+    /// <param name="keySelector"></param>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe and will lock the database while removing the keys.
+    /// </para>
+    /// <para>
+    /// If TriggerUpdateEvents is enabled, this method will trigger a <see cref="DataChangedEventArgs"/> event for each key removed.
+    /// </para>
+    /// </remarks>
+	void Remove(Func<string, bool> keySelector);
+
+	/// <summary>
 	/// Serializes the database.
 	/// </summary>
 	public void Serialize();

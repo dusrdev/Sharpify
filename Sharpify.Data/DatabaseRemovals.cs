@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
@@ -25,6 +27,74 @@ public sealed partial class Database : IDisposable {
                 });
             }
             return true;
+        } finally {
+            _lock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// Removes all keys that match the <paramref name="keySelector"/>.
+    /// </summary>
+    /// <param name="keySelector">A predicate for the key</param>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe and will lock the database while removing the keys.
+    /// </para>
+    /// <para>
+    /// If TriggerUpdateEvents is enabled, this method will trigger a <see cref="DataChangedEventArgs"/> event for each key removed.
+    /// </para>
+    /// </remarks>
+    public void Remove(Func<string, bool> keySelector) => Remove(keySelector, null);
+
+    /// <summary>
+    /// Removes all keys that match the <paramref name="keySelector"/>.
+    /// </summary>
+    /// <param name="keySelector">A predicate for the key</param>
+    /// <param name="preFilter">A predicate that pre-filters the database keys (mainly used for IDatabaseFilter implementations), leaving it as null will skip pre-filtering</param>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe and will lock the database while removing the keys.
+    /// </para>
+    /// <para>
+    /// If TriggerUpdateEvents is enabled, this method will trigger a <see cref="DataChangedEventArgs"/> event for each key removed.
+    /// </para>
+    /// </remarks>
+    public void Remove(Func<string, bool> keySelector, string? preFilter) {
+        try {
+            _lock.EnterWriteLock();
+
+            var keys = preFilter is null
+                        ? _data.Keys.Where(keySelector)
+                        : _data.Keys.Where(key => {
+                            if (!key.StartsWith(preFilter)) {
+                                return false;
+                            }
+                            var keySlice = new string(key.AsSpan().Slice(preFilter.Length));
+                            return keySelector(keySlice);
+                        });
+            var matches = keys.ToArray();
+
+            if (matches.Length is 0) {
+                return;
+            }
+
+            foreach (var key in matches) {
+                _data.Remove(key, out var val);
+                var estimatedSize = Extensions.GetEstimatedSize(key, val);
+                Interlocked.Add(ref _estimatedSize, -estimatedSize);
+
+                if (Config.TriggerUpdateEvents) {
+                    InvokeDataEvent(new DataChangedEventArgs {
+                        Key = key,
+                        Value = val,
+                        ChangeType = DataChangeType.Remove
+                    });
+                }
+                if (Config.SerializeOnUpdate) {
+                    Serialize();
+                }
+            }
+
         } finally {
             _lock.ExitWriteLock();
         }
