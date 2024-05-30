@@ -13,14 +13,9 @@ namespace Sharpify.Data;
 /// <typeparam name="T"></typeparam>
 public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
     /// <summary>
-    /// The name of the type.
-    /// </summary>
-	protected static readonly string TName = typeof(T).Name;
-
-    /// <summary>
     /// The key filter, statically created for the type.
     /// </summary>
-    public static readonly string KeyFilter = $"{TName}:";
+    public static readonly string KeyFilter = $"{typeof(T).Name}:";
 
     /// <summary>
     /// Creates a combined key (filter) for the specified key.
