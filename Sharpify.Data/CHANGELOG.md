@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v2.4.0
+
+* Added an overload for `Remove` which takes in a `Func<string, bool> keySelector`, this function is more optimized then using if you were to iterate yourself and call the old `Remove` as this one will execute serialization only once at the end, and only if removals actually happened (selector actually matched at least one key).
+  * The new `Remove` method also has an overload that accepts a `string? preFilter` as well, which can be used to only check keys that start with `preFilter` (the `keySelector` doesn't need to account for it, it will applied to a slice if the `preFilter` is matched), if left `null` it will be ignored.
+  * This addition was also propagated to both implementations of the `IDatabaseFilter<T>`, i.e `MemoryPackDatabaseFilter<T>` and `FlexibleDatabaseFilter<T>`, both of which modify the incoming delegate to the use the filtered key, enabling simple delegate matches without relying on implementation details, they don't have the option to use a `preFilter` as they themselves use the statically generated type filters they create.
+* To accommodate the `Remove` methods, `MemoryPackDatabaseFilter<T>` and `FlexibleDatabaseFilter<T>` now create a `public static readonly string KeyFilter` property, which is the prefix they append to the keys, this is used internally for `Remove` but perhaps the could help if you need to inherit from these classes and override the `Remove` method.
+  * Both of them also use `KeyFilter` internally to generate the filtered keys in a slightly more efficient way to before.
+  * The `static readonly` field that contained the generic type name was also removed as it was integrated into `KeyFilter` at with no additional cost.
+
 ## v2.3.0
 
 * The codebase was refactored and separated into smaller files, to make it much easier to work with.

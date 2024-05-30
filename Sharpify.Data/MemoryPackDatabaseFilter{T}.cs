@@ -13,15 +13,15 @@ namespace Sharpify.Data;
 /// <typeparam name="T"></typeparam>
 public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryPackable<T> {
     /// <summary>
-    /// The name of the type.
+    /// The key filter, statically created for the type.
     /// </summary>
-	protected static readonly string TName = typeof(T).Name;
+    public static readonly string KeyFilter = $"{typeof(T).Name}:";
 
     /// <summary>
     /// Creates a combined key (filter) for the specified key.
     /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual string AcquireKey(ReadOnlySpan<char> key) => string.Intern($"{TName}:{key}");
+    protected virtual string AcquireKey(ReadOnlySpan<char> key) => string.Intern(KeyFilter.Concat(key));
 
     /// <summary>
     /// The database.
@@ -61,6 +61,9 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));
+
+    /// <inheritdoc />
+    public void Remove(Func<string, bool> keySelector) => _database.Remove(keySelector, KeyFilter);
 
     /// <inheritdoc />
     public void Serialize() => _database.Serialize();

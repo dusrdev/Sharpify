@@ -289,6 +289,22 @@ public class DatabaseIgnoreCaseTests {
     }
 
     [Fact]
+    public void RemovePredicate() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.Upsert("test", "test");
+        db.Database.Remove(key => key == "test");
+
+        // Assert
+        db.Database.ContainsKey("test").Should().BeFalse();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
     public void RemoveFiltered() {
         // Arrange
         using var db = Factory("");
@@ -299,6 +315,22 @@ public class DatabaseIgnoreCaseTests {
 
         // Assert
         db.Database.CreateMemoryPackFilter<Person>().ContainsKey("TEST").Should().BeFalse();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void RemoveFilteredPredicate() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.Database.CreateMemoryPackFilter<Person>().Remove(key => key == "test");
+
+        // Assert
+        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
         File.Delete(db.Path);
