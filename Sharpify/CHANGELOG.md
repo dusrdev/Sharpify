@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.8.1
+
+* Small performance improvement to `Array.ToListFast()`
+
 ## v1.8.0
 
 * `AllocatedStringBuffer` now has variation that accepts a `char[]` as input buffer, this version which also has a corresponding overload in `StringBuffer.Create` supports an implicit converter to `ReadOnlyMemory<char>`, intellisense will allow you to use this converter even you used `Span<char>` as a buffer, but doing so will cause an exception to be thrown, as a `Span<char>` can be `stack allocated` and won't be able to be referenced.
