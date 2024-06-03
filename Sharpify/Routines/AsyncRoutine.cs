@@ -84,9 +84,11 @@ public class AsyncRoutine : IDisposable {
     public async Task Start() {
         Debug.Assert(Actions.Count > 0, "Actions.Count must be > 0");
         try {
-            while (_isRunning
-                   && Actions.Count > 0
+            while (Actions.Count > 0
                    && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
+                if (!_isRunning) {
+                    continue;
+                }
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
                     var buffer = ArrayPool<Task>.Shared.Rent(Actions.Count);
