@@ -31,19 +31,19 @@ public class SortedList<T> : IReadOnlyList<T> {
 	public SortedList(IEnumerable<T>? collection) : this(collection, Comparer<T>.Default, false) { }
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that contains elements copied from the specified collection and uses the specified <see cref="IComparer{T}"/> implementation to compare elements.
+	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that contains elements copied from the specified collection and uses the specified <see cref="Comparer{T}"/> implementation to compare elements.
 	/// </summary>
 	/// <param name="collection">The collection whose elements are copied to the new <see cref="SortedList{T}"/>.</param>
-	/// <param name="comparer">The <see cref="IComparer{T}"/> implementation to use when comparing elements, or <see langword="null"/> to use the default comparer <see cref="Comparer{T}.Default"/>.</param>
-	public SortedList(IEnumerable<T>? collection, IComparer<T>? comparer) : this(collection, comparer, false) { }
+	/// <param name="comparer">The <see cref="Comparer{T}"/> implementation to use when comparing elements, or <see langword="null"/> to use the default comparer <see cref="Comparer{T}.Default"/>.</param>
+	public SortedList(IEnumerable<T>? collection, Comparer<T>? comparer) : this(collection, comparer, false) { }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that contains elements copied from the specified collection and uses the specified comparer and duplicate element allowance.
 	/// </summary>
 	/// <param name="collection">The collection whose elements are copied to the new list.</param>
-	/// <param name="comparer">The <see cref="IComparer{T}"/> implementation to use when comparing elements, or <see langword="null"/> to use the default comparer <see cref="Comparer{T}.Default"/>.</param>
+	/// <param name="comparer">The <see cref="Comparer{T}"/> implementation to use when comparing elements, or <see langword="null"/> to use the default comparer <see cref="Comparer{T}.Default"/>.</param>
 	/// <param name="allowDuplicates">A value indicating whether the list allows duplicate elements.</param>
-	public SortedList(IEnumerable<T>? collection, IComparer<T>? comparer, bool allowDuplicates) {
+	public SortedList(IEnumerable<T>? collection, Comparer<T>? comparer, bool allowDuplicates) {
 		_list = collection is null ? new() : new(collection);
 		_comparer = comparer ?? Comparer<T>.Default;
 		_allowDuplicates = allowDuplicates;

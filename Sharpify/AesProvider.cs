@@ -72,13 +72,13 @@ public sealed class AesProvider : IDisposable {
 
         // length = salt + iteration count (3 digits max) + hash + 2 delimiters
         int length = saltString.Length + 3 + hashString.Length + 2;
-        var buffer = StringBuffer.Create(stackalloc char[length]);
-        buffer.Append(saltString);
-        buffer.Append('|');
-        buffer.Append(iterations);
-        buffer.Append('|');
-        buffer.Append(hashString);
-        return buffer.Allocate(true);
+        return StringBuffer.Create(stackalloc char[length])
+                           .Append(saltString)
+                           .Append('|')
+                           .Append(iterations)
+                           .Append('|')
+                           .Append(hashString)
+                           .Allocate(true);
     }
 
     /// <summary>
@@ -167,11 +167,17 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Decrypts the bytes using the key
     /// </summary>
-    /// <remarks>Return an empty array if it failed</remarks>
-    public byte[] DecryptBytes(ReadOnlySpan<byte> encrypted) {
+    /// <param name="encrypted">encrypted bytes</param>
+    /// <param name="throwOnError">throw exception on error</param>
+    /// <returns>decrypted bytes</returns>
+    /// <remarks>If <paramref name="throwOnError"/> is set to false, an empty array will be return in case of an error.</remarks>
+    public byte[] DecryptBytes(ReadOnlySpan<byte> encrypted, bool throwOnError = false) {
         try {
             return _aes.DecryptCbc(encrypted, _aes.IV);
         } catch (CryptographicException) {
+            if (throwOnError) {
+                throw;
+            }
             return Array.Empty<byte>();
         }
     }
@@ -181,12 +187,23 @@ public sealed class AesProvider : IDisposable {
     /// </summary>
     /// <param name="encrypted">The encrypted bytes to decrypt.</param>
     /// <param name="destination">The destination span to store the decrypted bytes.</param>
+    /// <param name="throwOnError">throw exception on error</param>
     /// <returns>The number of decrypted bytes.</returns>
-    /// <remarks>The <paramref name="destination"/> length should be at least the same as <paramref name="encrypted"/></remarks>
-    public int DecryptBytes(ReadOnlySpan<byte> encrypted, Span<byte> destination) {
+    /// <remarks>
+    /// <para>
+    /// The <paramref name="destination"/> length should be at least the same as <paramref name="encrypted"/>
+    /// </para>
+    /// <para>
+    /// If <paramref name="throwOnError"/> is set to false, an empty array will be return in case of an error.
+    /// </para>
+    ///</remarks>
+    public int DecryptBytes(ReadOnlySpan<byte> encrypted, Span<byte> destination, bool throwOnError = false) {
         try {
             return _aes.DecryptCbc(encrypted, _aes.IV, destination);
         } catch (CryptographicException) {
+            if (throwOnError) {
+                throw;
+            }
             return 0;
         }
     }

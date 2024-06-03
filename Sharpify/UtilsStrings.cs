@@ -104,20 +104,18 @@ public static partial class Utils {
                 ? StringBuffer.Create(sBuffer)
                 : StringBuffer.Create(buffer!);
             if (bytes < kb) {
-                buf.Append(Math.Round(bytes, 2));
-                buf.Append(' ');
-                buf.Append(FileSizeSuffix[0]);
-                return buf;
+                return buf.Append(Math.Round(bytes, 2))
+                          .Append(' ')
+                          .Append(FileSizeSuffix[0]);
             }
             var suffix = 0;
             while (bytes >= kb && suffix < FileSizeSuffix.Length) {
                 bytes *= divisor;
                 suffix++;
             }
-            buf.Append(Math.Round(bytes, 2));
-            buf.Append(' ');
-            buf.Append(FileSizeSuffix[suffix]);
-            return buf;
+            return buf.Append(Math.Round(bytes, 2))
+                      .Append(' ')
+                      .Append(FileSizeSuffix[suffix]);
         }
     }
 }

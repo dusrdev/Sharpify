@@ -21,16 +21,20 @@ public class DateAndTimeExtensionsTests {
         result.Should().Be(expected);
     }
 
-    [Fact]
-    public void ToRemainingDuration_GivenTimeSpan_ReturnsHumanReadableFormat() {
+    [Theory]
+    [InlineData(1, 2, 3, 4, 567, "1d 2h 3m 4s")]
+    [InlineData(1, 2, 3, 0, 0, "1d 2h 3m")]
+    [InlineData(1, 2, 0, 4, 0, "1d 2h 4s")]
+    [InlineData(0, 2, 0, 4, 0, "2h 4s")]
+    public void ToRemainingDuration_GivenTimeSpan_ReturnsHumanReadableFormat(int days, int hours, int minutes, int seconds, int milliseconds, string expected) {
         // Arrange
-        var time = new TimeSpan(1, 2, 3, 4, 567);
+        var time = new TimeSpan(days, hours, minutes, seconds, milliseconds);
 
         // Act
         var result = time.ToRemainingDuration();
 
         // Assert
-        result.Should().Be("1d 2h 3m 4s");
+        result.Should().Be(expected);
     }
 
     [Fact]

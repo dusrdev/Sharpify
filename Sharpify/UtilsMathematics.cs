@@ -47,9 +47,8 @@ public static partial class Utils {
             }
 
             var num = 1d;
-            while (n > 1) {
+            for (; n > 1; n--) {
                 num *= n;
-                n--;
             }
             return num;
         }

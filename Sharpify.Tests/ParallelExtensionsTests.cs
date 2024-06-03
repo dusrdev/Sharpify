@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Concurrent;
 
 namespace Sharpify.Tests;
@@ -78,7 +79,7 @@ public class ParallelExtensionsTests {
         var action = new MultiplyActionAsync(results);
 
         // Act
-        await collection.AsAsyncLocal().InvokeAsync(action);
+        await collection.AsAsyncLocal(default(int)).InvokeAsync(action);
 
         // Assert
         results.Should().Equal(new Dictionary<int, int> {
@@ -127,8 +128,11 @@ public class ParallelExtensionsTests {
         var results = new ConcurrentDictionary<int, int>();
         var action = new MultiplyAction(results);
 
+        List<ArrayList> list = new();
+        list.AsAsyncLocal(default(ArrayList));
+
         // Act
-        await collection.AsAsyncLocal().ForEach(action);
+        await collection.AsAsyncLocal<List<int>, int>().ForEach(action);
 
         // Assert
         results.Should().Equal(new Dictionary<int, int> {
@@ -180,7 +184,7 @@ public class ParallelExtensionsTests {
         var (buffer, entries) = dict.RentBufferAndCopyEntries();
 
         // Act
-        await entries.AsAsyncLocal().ForEachAsync(action, loadBalance: false);
+        await entries.AsAsyncLocal(default(KeyValuePair<int,int>)).ForEachAsync(action, loadBalance: false);
         buffer.ReturnBufferToSharedArrayPool();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
@@ -199,7 +203,7 @@ public class ParallelExtensionsTests {
 
 
         // Act
-        await entries.AsAsyncLocal().WhenAllAsync(action);
+        await entries.AsAsyncLocal(default(KeyValuePair<int,int>)).WhenAllAsync(action);
         buffer.ReturnBufferToSharedArrayPool();
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 

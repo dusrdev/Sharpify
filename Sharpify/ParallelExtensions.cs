@@ -17,11 +17,20 @@ public static partial class Extensions {
     /// Returns a <see cref="AsyncLocal{T}"/> wrapper for the given collection.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static AsyncLocal<IList<T>> AsAsyncLocal<T>(this IList<T> source) => source is null
-        ? throw new ArgumentNullException(nameof(source))
-        : new AsyncLocal<IList<T>> {
+    public static AsyncLocal<TList> AsAsyncLocal<TList, TItem>(this TList source) where TList : IList<TItem> {
+        if (source is null) {
+            throw new ArgumentNullException(nameof(source));
+        }
+        return new AsyncLocal<TList> {
             Value = source
         };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="AsyncLocal{T}"/> wrapper for the given collection.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AsyncLocal<TList> AsAsyncLocal<TList, TItem>(this TList source, TItem? @default) where TList : IList<TItem> => AsAsyncLocal<TList, TItem>(source);
 
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
@@ -54,10 +63,10 @@ public static partial class Extensions {
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async Task InvokeAsync<T>(
-        this AsyncLocal<IList<T>> asyncLocalReference,
-        IAsyncAction<T> action,
-        CancellationToken token = default) {
+    public static async Task InvokeAsync<TList, TItem>(
+        this AsyncLocal<TList> asyncLocalReference,
+        IAsyncAction<TItem> action,
+        CancellationToken token = default) where TList : IList<TItem> {
         ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
         var length = asyncLocalReference.Value.Count;
 
@@ -103,11 +112,11 @@ public static partial class Extensions {
     /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, it will be equal to the number of cores in the CPU</para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static ValueTask ForEach<T>(
-        this AsyncLocal<IList<T>> asyncLocalReference,
-        IAction<T> action,
+    public static ValueTask ForEach<TList, TItem>(
+        this AsyncLocal<TList> asyncLocalReference,
+        IAction<TItem> action,
         int degreeOfParallelism = -1,
-        CancellationToken token = default) {
+        CancellationToken token = default) where TList : IList<TItem> {
         ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
         var count = asyncLocalReference.Value.Count;
 
@@ -181,12 +190,12 @@ public static partial class Extensions {
     /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async Task ForEachAsync<T>(
-        this AsyncLocal<IList<T>> asyncLocalReference,
-        IAsyncAction<T> action,
+    public static async Task ForEachAsync<TList, TItem>(
+        this AsyncLocal<TList> asyncLocalReference,
+        IAsyncAction<TItem> action,
         int degreeOfParallelism = -1,
         bool loadBalance = false,
-        CancellationToken token = default) {
+        CancellationToken token = default) where TList : IList<TItem> {
         ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
         var count = asyncLocalReference.Value.Count;
 
@@ -202,7 +211,7 @@ public static partial class Extensions {
             ? 1
             : count / degreeOfParallelism;
 
-        var enumeratedPartition = new EnumeratedPartition<T>(action);
+        var enumeratedPartition = new EnumeratedPartition<TItem>(action);
 
         var parallelPartitions = Partitioner
             .Create(asyncLocalReference.Value, loadBalance)
@@ -230,10 +239,10 @@ public static partial class Extensions {
     /// <param name="action">the async value action object</param>
     /// <param name="token">a cancellation token</param>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async ValueTask WhenAllAsync<T>(
-        this AsyncLocal<IList<T>> asyncLocalReference,
-        IAsyncValueAction<T> action,
-        CancellationToken token = default) {
+    public static async ValueTask WhenAllAsync<TList, TItem>(
+        this AsyncLocal<TList> asyncLocalReference,
+        IAsyncValueAction<TItem> action,
+        CancellationToken token = default) where TList : IList<TItem> {
         ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
         var count = asyncLocalReference.Value.Count;
 

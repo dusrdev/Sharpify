@@ -149,7 +149,7 @@ public static partial class Extensions {
         }
         var current = list[0];
         int i = 1;
-        while (i < list.Count) {
+        while ((uint)i < (uint)list.Count) {
             if (comparer.Compare(list[i], current) is 0) {
                 list.RemoveAt(i);
                 continue;
@@ -199,7 +199,7 @@ public static partial class Extensions {
         comparer ??= EqualityComparer<T>.Default;
         var current = list[0];
         int i = 1;
-        while (i < list.Count) {
+        while ((uint)i < (uint)list.Count) {
             if (comparer.Equals(list[i], current)) {
                 list.RemoveAt(i);
                 continue;
@@ -216,7 +216,7 @@ public static partial class Extensions {
             return;
         }
         int i = 0;
-        while (i < list.Count) {
+        while ((uint)i < (uint)list.Count) {
             if (hSet.Add(list[i])) {
                 i++;
                 continue;
@@ -238,12 +238,13 @@ public static partial class Extensions {
     public static List<ArraySegment<T>> ChunkToSegments<T>(this T[] arr, int sizeOfChunk) {
         Debug.Assert(sizeOfChunk > 0, "Size of chunk must be greater than 0");
         var list = new List<ArraySegment<T>>();
-        if (arr.Length is 0) {
+        int length = arr.Length;
+        if (length is 0) {
             return list;
         }
         int i = 0;
-        while (i < arr.Length) {
-            var remaining = arr.Length - i;
+        while ((uint)i < (uint)length) {
+            var remaining = length - i;
             if (remaining <= sizeOfChunk) {
                 list.Add(new ArraySegment<T>(arr, i, remaining));
                 break;
