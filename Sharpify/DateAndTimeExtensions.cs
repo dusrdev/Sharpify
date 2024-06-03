@@ -63,9 +63,8 @@ public static partial class Extensions {
             ? StringBuffer.Create(sBuffer)
             : StringBuffer.Create(buffer!);
 
-        buf.Append(Math.Round(value, 2));
-        buf.Append(suffix);
-        return buf;
+        return buf.Append(Math.Round(value, 2))
+                  .Append(suffix);
     }
 
     /// <summary>
@@ -117,25 +116,24 @@ public static partial class Extensions {
             : StringBuffer.Create(buffer!);
 
         if (time.TotalSeconds <= 1) {
-            buf.Append("0s");
-            return buf;
+            return buf.Append("0s");
         }
 
         if (time.Days > 0) {
-            buf.Append(time.Days);
-            buf.Append("d ");
+            buf.Append(time.Days)
+               .Append("d ");
         }
         if (time.Hours > 0) {
-            buf.Append(time.Hours);
-            buf.Append("h ");
+            buf.Append(time.Hours)
+               .Append("h ");
         }
         if (time.Minutes > 0) {
-            buf.Append(time.Minutes);
-            buf.Append("m ");
+            buf.Append(time.Minutes)
+               .Append("m ");
         }
         if (time.Seconds > 0) {
-            buf.Append(time.Seconds);
-            buf.Append("s ");
+            buf.Append(time.Seconds)
+               .Append("s ");
         }
         return buf;
     }
@@ -187,14 +185,13 @@ public static partial class Extensions {
         var buf = buffer.Length is 0
             ? StringBuffer.Create(sBuffer)
             : StringBuffer.Create(buffer!);
-        buf.Append(time.Hour);
-        buf.Append(time.Minute);
-        buf.Append('-');
-        buf.Append(time.Day);
-        buf.Append('-');
-        buf.Append(CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month));
-        buf.Append('-');
-        buf.Append(time.Year % 100);
-        return buf;
+        return buf.Append(time.Hour)
+                  .Append(time.Minute)
+                  .Append('-')
+                  .Append(time.Day)
+                  .Append('-')
+                  .Append(CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month))
+                  .Append('-')
+                  .Append(time.Year % 100);
     }
 }
