@@ -3,7 +3,7 @@ namespace Sharpify.Collections;
 /// <summary>
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
-public ref partial struct StringBuffer {
+public unsafe ref partial struct StringBuffer {
     /// <summary>
     /// Initializes a string buffer that uses memory rented from the array pool.
     /// </summary>

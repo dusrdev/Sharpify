@@ -6,7 +6,7 @@ namespace Sharpify.Collections;
 /// <summary>
 /// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
 /// </summary>
-public ref partial struct StringBuffer {
+public unsafe ref partial struct StringBuffer {
     private static readonly string NewLine = Environment.NewLine;
     private readonly char[] _source;
     private readonly Span<char> _buffer;
@@ -37,11 +37,13 @@ public ref partial struct StringBuffer {
     /// </remarks>
     public StringBuffer() : this(0, false) { }
 
+#pragma warning disable CS9084 // Struct member returns 'this' or other instance members by reference
+
     /// <summary>
     /// Appends a character to the string buffer.
     /// </summary>
     /// <param name="c">The character to append.</param>
-    public void Append(char c) {
+    public ref StringBuffer Append(char c) {
 #if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, _length);
 #elif NET7_0
@@ -51,6 +53,7 @@ public ref partial struct StringBuffer {
 #endif
 
         _buffer[_position++] = c;
+        return ref this;
     }
 
     /// <summary>
@@ -58,7 +61,7 @@ public ref partial struct StringBuffer {
     /// </summary>
     /// <param name="str">The string to append.</param>
     /// <returns>The same instance of the buffer</returns>
-    public void Append(ReadOnlySpan<char> str) {
+    public ref StringBuffer Append(ReadOnlySpan<char> str) {
 #if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, _length);
 #elif NET7_0
@@ -69,6 +72,7 @@ public ref partial struct StringBuffer {
 
         str.CopyTo(_buffer[_position..]);
         _position += str.Length;
+        return ref this;
     }
 
     /// <summary>
@@ -79,29 +83,32 @@ public ref partial struct StringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public void Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+    public ref StringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         var written = value.TryFormat(_buffer[_position..], out var charsWritten, format, provider);
         if (!written) {
             throw new ArgumentOutOfRangeException(nameof(_length));
         }
 
         _position += charsWritten;
+        return ref this;
     }
 
     /// <summary>
     /// Appends the platform specific new line to the buffer.
     /// </summary>
-    public void AppendLine() {
+    public ref StringBuffer AppendLine() {
         Append(NewLine);
+        return ref this;
     }
 
     /// <summary>
     /// Appends the specified character to the buffer followed by the platform specific new line.
     /// </summary>
     /// <param name="c"></param>
-    public void AppendLine(char c) {
+    public ref StringBuffer AppendLine(char c) {
         Append(c);
         Append(NewLine);
+        return ref this;
     }
 
     /// <summary>
@@ -109,9 +116,10 @@ public ref partial struct StringBuffer {
     /// </summary>
     /// <param name="str">The string to append.</param>
     /// <returns>The same instance of the buffer</returns>
-    public void AppendLine(ReadOnlySpan<char> str) {
+    public ref StringBuffer AppendLine(ReadOnlySpan<char> str) {
         Append(str);
         Append(NewLine);
+        return ref this;
     }
 
     /// <summary>
@@ -122,10 +130,14 @@ public ref partial struct StringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public void AppendLine<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+    public ref StringBuffer AppendLine<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         Append(value, format, provider);
         Append(NewLine);
+
+        return ref this;
     }
+
+#pragma warning restore CS9084 // Struct member returns 'this' or other instance members by reference
 
     /// <summary>
     /// Allocates a string from the internal buffer.
