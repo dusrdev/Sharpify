@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v2.4.1
+
+* Updated to version 2.0.0 of `Sharpify`.
+
+If you use an older version of `Sharpify` this update is not a requirement, it mainly addresses a fix since `DecryptBytes` of `AesProvider` in `Sharpify` now has 2 overloads with 2 parameters, and the compiler seems to trim the wrong one, unless the optional parameter is specified.
+
+* Also `preFilter` in `Database.Remove()` was renamed to `keyPrefix` to better signify its purpose. this change doesn't alter behavior.
+
 ## v2.4.0
 
 * Added an overload for `Remove` which takes in a `Func<string, bool> keySelector`, this function is more optimized then using if you were to iterate yourself and call the old `Remove` as this one will execute serialization only once at the end, and only if removals actually happened (selector actually matched at least one key).
