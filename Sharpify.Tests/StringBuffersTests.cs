@@ -47,6 +47,22 @@ public class StringBuffersTests {
     }
 
     [Fact]
+    public void StringBuffer_AppendLine_NoParams_Builder() {
+        // Arrange
+        using var buffer = StringBuffer.Rent(20);
+
+        // Act
+        buffer.Append("Hello")
+              .AppendLine()
+              .Append("World");
+
+        var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
+
+        // Assert
+        buffer.Allocate(true).Should().Be(expected);
+    }
+
+    [Fact]
     public void StringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
         using var buffer = StringBuffer.Rent(5, true);
@@ -191,6 +207,22 @@ public class StringBuffersTests {
         buffer.Append("Hello");
         buffer.AppendLine();
         buffer.Append("World");
+
+        var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
+
+        // Assert
+        buffer.Allocate(true).Should().Be(expected);
+    }
+
+    [Fact]
+    public void AllocatedStringBuffer_AppendLine_NoParams_Builder() {
+        // Arrange
+        var buffer = StringBuffer.Create(stackalloc char[20]);
+
+        // Act
+        buffer.Append("Hello")
+              .AppendLine()
+              .Append("World");
 
         var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
 
