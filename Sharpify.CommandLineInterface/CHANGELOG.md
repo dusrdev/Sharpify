@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Version 1.2.1
+
+* Updated core to use `Sharpify` 2.0.0
+* small optimizations
+
 ## Version 1.2.0
 
 * `Arguments`'s internal copy of the parsed args is now an array, this change was necessary to avoid special cases where the backing array was garbage collected leaving a phantom view. To get a read only copy you can use `.ArgsAsSpan` or `.ArgsAsMemory` according to your preference or use case.

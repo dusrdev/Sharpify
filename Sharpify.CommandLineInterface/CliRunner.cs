@@ -125,30 +125,30 @@ public sealed class CliRunner {
 	private string GenerateHelp() {
 		int length = GetRequiredBufferLength();
 		// here the likely help text is larger than per command, so we use a rented buffer
-		var buffer = StringBuffer.Rent(length);
+		using var buffer = StringBuffer.Rent(length);
 		buffer.AppendLine();
 		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
-			buffer.AppendLine(_metaData.Name);
-			buffer.AppendLine();
-			buffer.AppendLine(_metaData.Description);
-			buffer.AppendLine();
-			buffer.Append("Author: ");
-			buffer.AppendLine(_metaData.Author);
-			buffer.Append("Version: ");
-			buffer.AppendLine(_metaData.Version);
-			buffer.Append("License: ");
-			buffer.AppendLine(_metaData.License);
-			buffer.AppendLine();
+			buffer.AppendLine(_metaData.Name)
+		 		  .AppendLine()
+		 		  .AppendLine(_metaData.Description)
+		          .AppendLine()
+		          .Append("Author: ")
+		          .AppendLine(_metaData.Author)
+		          .Append("Version: ")
+		          .AppendLine(_metaData.Version)
+		          .Append("License: ")
+		          .AppendLine(_metaData.License)
+		          .AppendLine();
 		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
-			buffer.AppendLine(_customerHeader);
-			buffer.AppendLine();
+			buffer.AppendLine(_customerHeader)
+         		  .AppendLine();
 		}
 		buffer.AppendLine("Commands:");
 		var maxCommandLength = GetMaximumCommandLength();
 		foreach (Command command in _commands.AsSpan()) {
-			buffer.Append(command.Name.PadRight(maxCommandLength));
-			buffer.Append(" - ");
-			buffer.AppendLine(command.Description);
+			buffer.Append(command.Name.PadRight(maxCommandLength))
+				  .Append(" - ")
+				  .AppendLine(command.Description);
 		}
 		buffer.Append(
 			"""
