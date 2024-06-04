@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -20,7 +19,7 @@ public static class Parser {
         }
         int pos = 0;
         int i = 0;
-        while (i < str.Length) {
+        while ((uint)i < (uint)str.Length) {
             char c = str[i];
             if (char.IsWhiteSpace(c)) {
                 i++;
@@ -59,10 +58,9 @@ public static class Parser {
         var buffer = ArrayPool<string>.Shared.Rent(str.Length);
         try {
             var argList = Split(str, buffer);
-            var list = new List<string>();
-            CollectionsMarshal.SetCount(list, argList.Count);
+            var list = new List<string>(argList.Count);
             ReadOnlySpan<string> argsSpan = argList;
-            argsSpan.CopyTo(CollectionsMarshal.AsSpan(list));
+            list.AddRange(argsSpan);
             return list;
         } finally {
             buffer.ReturnBufferToSharedArrayPool();
@@ -183,7 +181,5 @@ public static class Parser {
 
     // Checks whether a string starts with "-"
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static bool IsParameterName(ReadOnlySpan<char> str) {
-        return str.StartsWith("-");
-    }
+    private static bool IsParameterName(ReadOnlySpan<char> str) => str.StartsWith("-");
 }

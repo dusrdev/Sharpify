@@ -51,7 +51,7 @@ internal sealed class Helper : IDisposable {
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
-        return newProvider.DecryptBytes(value);
+        return newProvider.DecryptBytes(value, false);
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ internal sealed class Helper : IDisposable {
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
-        return newProvider.DecryptBytes(value, destination);
+        return newProvider.DecryptBytes(value, destination, false);
     }
 
     /// <summary>

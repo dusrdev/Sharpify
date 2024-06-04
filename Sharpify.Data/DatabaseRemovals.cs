@@ -50,7 +50,7 @@ public sealed partial class Database : IDisposable {
     /// Removes all keys that match the <paramref name="keySelector"/>.
     /// </summary>
     /// <param name="keySelector">A predicate for the key</param>
-    /// <param name="preFilter">A predicate that pre-filters the database keys (mainly used for IDatabaseFilter implementations), leaving it as null will skip pre-filtering</param>
+    /// <param name="keyPrefix">A prefix to be removed from the keys prior to the keySelector (mainly used for IDatabaseFilter implementations), leaving it as null will skip pre-filtering</param>
     /// <remarks>
     /// <para>
     /// This method is thread-safe and will lock the database while removing the keys.
@@ -59,17 +59,17 @@ public sealed partial class Database : IDisposable {
     /// If TriggerUpdateEvents is enabled, this method will trigger a <see cref="DataChangedEventArgs"/> event for each key removed.
     /// </para>
     /// </remarks>
-    public void Remove(Func<string, bool> keySelector, string? preFilter) {
+    public void Remove(Func<string, bool> keySelector, string? keyPrefix) {
         try {
             _lock.EnterWriteLock();
 
-            var keys = preFilter is null
+            var keys = keyPrefix is null
                         ? _data.Keys.Where(keySelector)
                         : _data.Keys.Where(key => {
-                            if (!key.StartsWith(preFilter)) {
+                            if (!key.StartsWith(keyPrefix)) {
                                 return false;
                             }
-                            var keySlice = new string(key.AsSpan().Slice(preFilter.Length));
+                            var keySlice = new string(key.AsSpan().Slice(keyPrefix.Length));
                             return keySelector(keySlice);
                         });
             var matches = keys.ToArray();
