@@ -176,7 +176,7 @@ public sealed class CliRunner {
 	}
 
 	private int GetRequiredBufferLength() {
-		int length = _commands.Count * 128 + 256; // default buffer for commands and possible extra text
+		int length = (_commands.Count + 5) * 256; // default buffer for commands and possible extra text
 		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
 			length += _metaData.TotalLength;
 		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {

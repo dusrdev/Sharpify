@@ -57,10 +57,9 @@ public static class Parser {
     public static List<string> Split(ReadOnlySpan<char> str) {
         var buffer = ArrayPool<string>.Shared.Rent(str.Length);
         try {
-            var argList = Split(str, buffer);
-            var list = new List<string>(argList.Count);
-            ReadOnlySpan<string> argsSpan = argList;
-            list.AddRange(argsSpan);
+            ReadOnlySpan<string> argList = Split(str, buffer);
+            var list = new List<string>(argList.Length);
+            list.AddRange(argList);
             return list;
         } finally {
             buffer.ReturnBufferToSharedArrayPool();
@@ -85,8 +84,7 @@ public static class Parser {
             if (argList.Count is 0) {
                 return null;
             }
-            var args = ParseArguments(argList, comparer);
-            return args;
+            return ParseArguments(argList, comparer);
         } finally {
             buffer.ReturnBufferToSharedArrayPool();
         }
@@ -113,7 +111,7 @@ public static class Parser {
         }
 
         var argsCopy = GC.AllocateUninitializedArray<string>(args.Length);
-        args.CopyTo(argsCopy.AsSpan());
+        args.CopyTo(argsCopy);
 
         var results = MapArguments(argsCopy, comparer);
 

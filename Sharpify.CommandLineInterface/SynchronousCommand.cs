@@ -4,7 +4,7 @@ namespace Sharpify.CommandLineInterface;
 /// An alternative to <see cref="Command"/> that runs synchronously.
 /// </summary>
 /// <remarks>
-/// This is syntactic sugar for writing wrapping returns from ExecuteAsync in ValueTask.FromResult
+/// This is syntactic sugar for wrapping returns from ExecuteAsync in ValueTask.FromResult
 /// </remarks>
 public abstract class SynchronousCommand : Command {
 	/// <inheritdoc/>
