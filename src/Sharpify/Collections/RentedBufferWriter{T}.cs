@@ -72,7 +72,7 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// </summary>
 	/// <param name="item"></param>
 	/// <returns>true if the operation is successful, false if there is not enough space available</returns>
-	/// <exception cref="InvalidOperationException"></exception>
+	/// <exception cref="InvalidOperationException">if the buffer is disabled</exception>
 	public bool WriteAndAdvance(T item) {
 		if (IsDisabled) {
 			throw new InvalidOperationException("The buffer writer is disabled.");
@@ -92,7 +92,7 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// </summary>
 	/// <param name="data"></param>
 	/// <returns>true if the operation is successful, false if there is not enough space available</returns>
-	/// <exception cref="InvalidOperationException"></exception>
+	/// <exception cref="InvalidOperationException">if the buffer is disabled</exception>
 	public bool WriteAndAdvance(ReadOnlySpan<T> data) {
 		if (IsDisabled) {
 			throw new InvalidOperationException("The buffer writer is disabled.");
