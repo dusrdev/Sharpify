@@ -24,9 +24,15 @@ A collection of high performance language extensions for C#
 * ❗ Static inner exception throwers guide the JIT to further optimize the code during runtime.
 * 🫴 Focus on giving the user complete control by using flexible and common types, and resulting types that can be further used and just viewed.
 
+## Demos
+
+The main repository contains a folder named demos, with time more and more demos will be added, each demo will be accompanied by a tutorial on YouTube.
+
 ## ⬇ Installation
 
-[![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify/)
+* `Sharpify` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify/)
+* `Sharpify.Data` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.Data/)
+* `Sharpify.CommandLineInterface` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.CommandLineInterface/)
 
 ## Sharpify.Data
 

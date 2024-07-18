@@ -3,18 +3,24 @@ using Sharpify.Collections;
 namespace Sharpify.Tests;
 
 public class RentedBufferWriterTests {
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void RentedBufferWriter_InvalidCapacity_Throws(int capacity) {
+    [Fact]
+    public void RentedBufferWriter_InvalidCapacity_Throws() {
         // Arrange
         Action act = () => {
-            using var buffer = new RentedBufferWriter<char>(capacity);
+            using var buffer = new RentedBufferWriter<char>(-1);
         };
 
         // Act & Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void RentedBufferWriter_Capacity0IsDisabled() {
+        // Arrange
+        using var buffer = new RentedBufferWriter<char>(0);
+
+        // Assert
+        buffer.IsDisabled.Should().BeTrue();
     }
 
     [Fact]
@@ -29,6 +35,40 @@ public class RentedBufferWriterTests {
 
         // Assert
         buffer.WrittenSpan.SequenceEqual("Hello").Should().BeTrue();
+    }
+
+    [Fact]
+    public void RentedBufferWriter_WriteAndAdvance() {
+        // Arrange
+        using var buffer = new RentedBufferWriter<char>(20);
+
+        // Act
+        buffer.WriteAndAdvance("Hello");
+
+        // Assert
+        buffer.WrittenSpan.SequenceEqual("Hello").Should().BeTrue();
+    }
+
+    [Fact]
+    public void RentedBufferWriter_UseRefToWriteValue() {
+        // Arrange
+        using var buffer = new RentedBufferWriter<int>(20);
+
+        // Act
+        ref var arr = ref buffer.GetReferenceUnsafe();
+        var length = WriteOnes(ref arr, 5);
+        buffer.Advance(length);
+
+        // Assert
+        buffer.WrittenSpan.SequenceEqual([1, 1, 1, 1, 1]).Should().BeTrue();
+
+        static int WriteOnes(ref int[] buffer, int length) {
+            for (var i = 0; i < length; i++) {
+                buffer[i] = 1;
+            }
+
+            return length;
+        }
     }
 
     [Fact]
