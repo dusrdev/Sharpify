@@ -1,29 +1,17 @@
 # CHANGELOG
 
-## v2.0.0
+## v2.1.0
 
-* Performance improvements to parallel extensions that use `AsyncLocal`
-  * The changes are *BREAKING* as now the call sites should use newer convention, behavior will be the same.
-  * Instead of the previous `.AsAsyncLocal`, there are now 2 overloads, both use nested generics which is the reason for the update, instead of `IList<T>` they use `<TList, TItem>` where `TList : IList<TItem>`. The first overload with no additional parameters can be used but it will require to specify both generic types as the compiler cannot infer `TItem` for some reason. To partially compensate for the verbosity it creates when using complex types, a second overload accepts a `TItem? @default` argument. Specifying `default(TItem)` there will enable the compiler to infer the generic.
+* Changes to `RentedBufferWriter{T}`:
+  * `RenterBufferWriter{T}` no longer throws an exception when the initial capacity is set to 0, instead it will just be disabled, this can be checked with the `.IsDisabled` property. Setting the initial capacity to a negative number will still throw an exception. This change was made to accommodate use cases where a `RentedBufferWriter` could be used as a return type, before an "invalid" operation, could not be attained, as it would've been required to give a valid capacity in any case, lest you risk a runtime exception. Now you could actually return a "Disabled" `RentedBufferWriter` if you set the capacity to 0, which intuitively means that the buffer doesn't actually have a backing array, and all operations would throw an exception.
+  * To increase it's usability, a method `WriteAndAdvance` was also added that accepts either a single `T` or a `ReadOnlySpan{T}`, it checks if there is enough capacity to write the data to the buffer, if so it writes it and advances the position automatically.
+  * A secondary access `ref T[] GetReferenceUnsafe` was added, to allow passing the inner buffer to methods that write to a `ref T[]` which previously required using unsafe code to manipulate the pointers. As implied by the name, this uses `Unsafe` to acquire the reference, and should only be used if you are carful and know what you are doing.
+* Collection extension methods such as `ToArrayFast()` and `ToListFast()` were made deprecated, use the `ToArray()` and `ToList()` Linq methods instead, with time they become the fastest possible implementation and will continue to improve, the performance gap is already minimal, and only improves speed, not memory allocations, which makes it negligible.
 
-  ```csharp
-  // EXAMPLE
-  var items = List<int>() { 1, 2, 3 };
-  _ = items.AsAsyncLocal<List<int>, int>(); // Overload 1 with no arguments
-  _ = items.AsAsyncLocal(default(int)); // Overload 2 with TItem? @default
-  ```
+### Deprecation
 
-  * This might seem like a step backwards but using a nested generic here, can improve performance by not virtualizing interface calls to `IList<T>`, and also enable the compiler to more accurately trim the code when compiling to `NativeAOT`.
-* Both overloads of `DecryptBytes` in `AesProvider` now have an optional parameter `throwOnError` which is set to `false` by default, retaining the previous behavior. Setting it to `true` will make sure the exception is thrown in case of a `CryptographicException` instead of just returning an empty array or 0 (respective of the overloads). This might help catch certain issues.
-  * Note: Previously and still now, exceptions other than `CryptographicException` would and will be thrown. They are not caught in the methods.
-* Implement a trick in `RemoveDuplicatesFromSorted`, `RemoveDuplicates`, `RemoveDuplicatesSorted` and `TryConvertToInt32` to ensure the compiler knows to remove the bounds checking from the loops.
-* `IComparer<T>` parameter type in `SortedList<T>` was changed to `Comparer<T>`, the interface virtualization seemed to make custom comparers produce unexpected results.
-* `StringBuffer` and `AllocatedStringBuffer` can now use the builder pattern to chain its construction, same as `StringBuilder`.
+A lot of features of the package are already deprecated, and some will continue in this direction as Microsoft seems to really focus on improving performance in the latest versions of C#, some methods that this package originally offered to provide a better performance than what is already in core language, will instead provide worse performance, at which point they've served their purpose.
 
-  ```csharp
-  var buffer = StringBuffer.Create(stackalloc char[20]).Append("Hello").AppendLine().Append("World");
-  ```
+As such, in the next major versions, many of these features will be removed. To avoid breaking old codebases, for example for `.NET 7` users, the best way forward would be to stop supporting this `.NET` version in the future versions of `Sharpify`, this means that existing users will still have what they used, but the users of the newer technologies will be able to use newer versions of `Sharpify` that rely on said technologies to remain dynamic, and stay ahead on the performance curve. This is the only way that I will be able to implement new features, without worrying about multiple implementations of each feature for each version of `.NET` just to maintain compatibility.
 
-  * This change required each method to return the actual reference of the struct, Use this with caution as this means you can change the actual reference instead of a copy if you manually assign it a new value.
-  * From my testing, with correct usage, without manually assigning values to the original variable, previous and builder pattern usage passes my tests. If you encounter any issue with this, make sure to submit it in the GitHub repo.
-* Fixed edge case where pausing an `AsyncRoutine` would stop it permanently, regardless of calls to `Resume`.
+The coming release of `.NET 9` and `C# 13` seem like the natural point to start this next chapter, I would've loved to play with the new extension functionality, but seems it will be delayed further. In any case, future features of this package will need to rely on future features from `.NET`, therefore it makes no sense to keep trying to add support for them in older versions as well.

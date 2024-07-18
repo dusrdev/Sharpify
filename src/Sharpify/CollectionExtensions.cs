@@ -119,8 +119,7 @@ public static partial class Extensions {
         if (source.Length <= 1) {
             return source;
         }
-        var newArr = new T[source.Length];
-        Array.Copy(source, newArr, source.Length);
+        var newArr = source.ToArray();
         Array.Sort(newArr, comparer);
         return newArr;
     }
@@ -261,6 +260,7 @@ public static partial class Extensions {
     /// <typeparam name="T"></typeparam>
     /// <param name="arr"></param>
     /// <returns></returns>
+    [Obsolete("Use Linq ToList() instead")]
     public static List<T> ToListFast<T>(this T[] arr) {
         if (arr.Length is 0) {
             return [];
@@ -280,6 +280,7 @@ public static partial class Extensions {
     /// <typeparam name="T"></typeparam>
     /// <param name="lst"></param>
     /// <returns></returns>
+    [Obsolete("Use Linq ToArray() instead")]
     public static T[] ToArrayFast<T>(this List<T> lst) {
         if (lst.Count is 0) {
             return Array.Empty<T>();
@@ -295,6 +296,7 @@ public static partial class Extensions {
     /// <typeparam name="T">The type of elements in the HashSet.</typeparam>
     /// <param name="hashSet">The HashSet to convert.</param>
     /// <returns>An array containing the elements of the HashSet.</returns>
+    [Obsolete("Use Linq ToArray() instead")]
     public static T[] ToArrayFast<T>(this HashSet<T> hashSet) {
         if (hashSet.Count is 0) {
             return Array.Empty<T>();
