@@ -6,7 +6,7 @@ Calc is a demo to showcase the capabilities of `Sharpify.CommandLineInterface` b
 
 This demo is accompanied by a YouTube video showcasing the package and this project, watch it here:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID_HERE)
+[![Your new favorite CLI framework for C# - Sharpify.CommandLineInterface showcase](https://github.com/dusrdev/Sharpify/blob/main/demos/Calc/yt.video.thumbnail.png)](https://www.youtube.com/watch?v=bcuPY96Zr4k)
 
 ## Map of file -> feature
 
