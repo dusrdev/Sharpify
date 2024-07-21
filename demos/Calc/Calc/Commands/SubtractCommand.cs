@@ -5,7 +5,12 @@ public class SubtractCommand : SynchronousCommand {
 
     public override string Description => "Subtract one number from another";
 
-    public override string Usage => "Subtract <number1> <number2>";
+    public override string Usage =>
+	"""
+	Subtract <number1> <number2> [options]
+		Options:
+			--hex - Display the result in hexadecimal";
+	""";
 
     public override int Execute(Arguments args) {
 		if (!args.TryGetValue<int>(0, 0, out int a)) {
@@ -18,7 +23,12 @@ public class SubtractCommand : SynchronousCommand {
 			return 1;
 		}
 
-		Console.WriteLine($"{a} - {b} = {a - b}");
+		if (args.HasFlag("hex")) {
+			Console.WriteLine($"{a} - {b} = {a - b:X}");
+			return 0;
+		} else {
+			Console.WriteLine($"{a} - {b} = {a - b}");
+		}
 
 		return 0;
     }
