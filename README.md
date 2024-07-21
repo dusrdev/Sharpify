@@ -31,8 +31,8 @@ The main repository contains a folder named demos, with time more and more demos
 ## ⬇ Installation
 
 * `Sharpify` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify/)
-* `Sharpify.Data` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.Data/)
-* `Sharpify.CommandLineInterface` [![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.CommandLineInterface/)
+* `Sharpify.Data` [![Nuget](https://img.shields.io/nuget/dt/Sharpify.Data?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.Data/)
+* `Sharpify.CommandLineInterface` [![Nuget](https://img.shields.io/nuget/dt/Sharpify.CommandLineInterface?label=Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.CommandLineInterface/)
 
 ## Sharpify.Data
 
