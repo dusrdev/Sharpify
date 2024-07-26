@@ -1,6 +1,6 @@
 using Sharpify.Collections;
 
-namespace Sharpify.Tests;
+namespace Sharpify.Tests.Collections;
 
 public class RentedBufferWriterTests {
     [Fact]
