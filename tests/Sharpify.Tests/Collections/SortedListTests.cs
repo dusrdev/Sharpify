@@ -56,7 +56,7 @@ public class SortedListTests {
 		list.Remove(3);
 
 		// Assert
-		list.GetIndex(3).Should().Be(-1);
+		list.GetIndex(3).Should().BeLessThan(0);
 
 		// Act
 		for (int i = 0; i < 5; i++) {
@@ -66,7 +66,7 @@ public class SortedListTests {
 		list.Remove(6);
 
 		// Assert
-		list.GetIndex(6).Should().Be(-1);
+		list.GetIndex(6).Should().BeLessThan(0);
 	}
 
 	[Fact]
@@ -84,7 +84,7 @@ public class SortedListTests {
 		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
 
 		// Assert
-		list.GetIndex(4, true).Should().Be(3);
+		(~list.GetIndex(4)).Should().Be(3);
 	}
 
 	[Fact]
@@ -93,7 +93,7 @@ public class SortedListTests {
 		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
 
 		// Assert
-		list.GetIndex(7, true).Should().BeGreaterThan(list.Count - 1);
+		(~list.GetIndex(7)).Should().BeGreaterThan(list.Count - 1);
 	}
 
 	[Fact]
@@ -102,10 +102,40 @@ public class SortedListTests {
 		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
 
 		// Act
-		var index = list.GetIndex(4, true);
-		ReadOnlySpan<int> section = list.Span.Slice(index);
+		var index = list.GetIndex(4);
+		ReadOnlySpan<int> section = list.Span.Slice(~index);
 
 		// Assert
 		section.SequenceEqual(new[] { 5, 6 }).Should().BeTrue();
+	}
+
+	[Fact]
+	public void SortedList_GetIndex_OrIndexOfInsertion_LargerSection_Class() {
+		// Arrange
+		var list = new SortedList<Person>(
+			[
+				new Person("a", 1),
+				new Person("b", 2),
+				new Person("c", 3),
+				new Person("d", 5),
+				new Person("e",6) ]
+			);
+
+		// Act + Assert
+		var section = list.Span.Slice(~list.GetIndex(new Person("f", 4)));
+		section.SequenceEqual([ new Person("d", 5), new Person("e",6) ]).Should().BeTrue();
+
+		// Act + Assert
+		section = list.Span.Slice(list.GetIndex(new Person("f", 3)) + 1);
+		section.SequenceEqual([ new Person("d", 5), new Person("e",6) ]).Should().BeTrue();
+	}
+
+	private record Person(string Name, int Age) : IComparable<Person> {
+		public int CompareTo(Person? other) {
+			if (other is null) {
+				return 1;
+			}
+			return Age.CompareTo(other.Age);
+		}
 	}
 }

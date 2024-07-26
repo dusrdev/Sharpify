@@ -72,15 +72,13 @@ public class SortedList<T> : IReadOnlyList<T> {
     /// Gets the index of the specified item in the sorted list.
     /// </summary>
     /// <param name="item">The item to search for.</param>
-    /// <param name="returnInsertionIndex">If true, it will return the index the item would've received if it was inserted, as in the index of the first item that is larger</param>
-    /// <returns>The zero-based index of the item in the sorted list, or -1 if not found.</returns>
-    public int GetIndex(T item, bool returnInsertionIndex = false) {
-		var index = _list.BinarySearch(item, _comparer);
-		if (index >= 0) {
-			return index;
-		}
-		return returnInsertionIndex ? ~index : -1;
-	}
+    /// <returns>
+	/// The zero-based index of item via the comparer in the sorted list,
+	/// if the item is found; otherwise, a negative number that is the bitwise complement
+    /// of the index of the next element that is larger than the item or, if there is
+    /// no larger element, the bitwise complement of the count.
+	/// </returns>
+    public int GetIndex(T item) => _list.BinarySearch(item, _comparer);
 
 	/// <summary>
 	/// Adds an item to the sorted list.
