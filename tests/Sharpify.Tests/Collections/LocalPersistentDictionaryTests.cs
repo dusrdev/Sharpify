@@ -1,31 +1,14 @@
-using System.Text.Json;
-
 using Sharpify.Collections;
 
 using Xunit.Abstractions;
 
-namespace Sharpify.Tests;
+namespace Sharpify.Tests.Collections;
 
-public class SpecialCollectionsTests {
+public class LocalPersistentDictionaryTests {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public SpecialCollectionsTests(ITestOutputHelper testOutputHelper) {
+    public LocalPersistentDictionaryTests(ITestOutputHelper testOutputHelper) {
         _testOutputHelper = testOutputHelper;
-    }
-
-    [Fact]
-    public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
-        // Arrange
-        var list = new List<int> { 1, 2, 3, 4, 5 };
-
-        // Act
-        var span = list.AsSpan();
-
-        // Assert
-        span.Length.Should().Be(list.Count);
-        for (int i = 0; i < list.Count; i++) {
-            span[i].Should().Be(list[i]);
-        }
     }
 
     [Fact]
@@ -153,57 +136,5 @@ public class SpecialCollectionsTests {
         one.Should().Be(1);
         two.Should().Be(2);
         File.Delete(path);
-    }
-
-    [Fact]
-    public void LazyLocalPersistentDictionary_ReadKey_Null_WhenDoesNotExist() {
-        // Arrange
-        var path = Utils.Env.PathInBaseDirectory("lpdict.json");
-        if (File.Exists(path)) {
-            File.Delete(path);
-        }
-        var dict = new LazyLocalPersistentDictionary(path);
-
-        // Act
-        var result = dict["test"];
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task LazyLocalPersistentDictionary_ReadKey_Valid_WhenExists() {
-        // Arrange
-        var path = Utils.Env.PathInBaseDirectory("lpdict.json");
-        if (File.Exists(path)) {
-            File.Delete(path);
-        }
-        var dict = new LazyLocalPersistentDictionary(path);
-
-        var testJson = new {
-            Name = "test",
-            Age = 21
-        };
-
-        // Act
-        await dict.UpsertAsync("one", JsonSerializer.Serialize(testJson));
-        await dict.UpsertAsync("two", "2");
-
-        // Assert
-        dict["two"].Should().Be("2");
-    }
-}
-
-public class TestLocalPersistentDictionary : LocalPersistentDictionary {
-    private volatile int _serializedCount;
-
-    public TestLocalPersistentDictionary(string path) : base(path) {
-    }
-
-    public int SerializedCount => _serializedCount;
-
-    public override async Task SerializeDictionaryAsync() {
-        Interlocked.Increment(ref _serializedCount);
-        await base.SerializeDictionaryAsync();
     }
 }

@@ -5,7 +5,7 @@ namespace Sharpify.CommandLineInterface.Tests;
 /// </summary>
 public class ArgumentsIsolatedTests {
 	private static readonly Arguments _args = Parser.ParseArguments(
-		"command positional --named1 Harold --named2 Finch positional2 --flag")!;
+		"command positional --named1 Harold --named2 Finch positional2 --flag --words \"word1|word2\" --numbers \"1|2\"")!;
 
 	[Fact]
 	public void Positional_BeforeForwarding_ParsedCorrectly() {
@@ -76,5 +76,17 @@ public class ArgumentsIsolatedTests {
 
 		forwarded.Contains("flag").Should().BeTrue();
 		forwarded.HasFlag("flag").Should().BeTrue();
+	}
+
+	[Fact]
+	public void Named_Array_String_ParsedCorrectly() {
+		_args.TryGetValues("words", "|", out var words).Should().BeTrue();
+		words.Should().BeEquivalentTo(new[] { "word1", "word2" });
+	}
+
+	[Fact]
+	public void Named_Array_Int_ParsedCorrectly() {
+		_args.TryGetValues<int>("numbers", "|", out var numbers).Should().BeTrue();
+		numbers.Should().BeEquivalentTo(new[] { 1, 2 });
 	}
 }

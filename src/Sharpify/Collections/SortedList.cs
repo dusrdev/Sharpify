@@ -68,15 +68,17 @@ public class SortedList<T> : IReadOnlyList<T> {
 	/// <param name="index"></param>
 	public T this[int index] => _list[index];
 
-	/// <summary>
-	/// Gets the index of the specified item in the sorted list.
-	/// </summary>
-	/// <param name="item">The item to search for.</param>
-	/// <returns>The zero-based index of the item in the sorted list, or -1 if not found.</returns>
-	public int GetIndex(T item) {
-		var index = _list.BinarySearch(item, _comparer);
-		return index >= 0 ? index : -1;
-	}
+    /// <summary>
+    /// Gets the index of the specified item in the sorted list.
+    /// </summary>
+    /// <param name="item">The item to search for.</param>
+    /// <returns>
+	/// The zero-based index of item via the comparer in the sorted list,
+	/// if the item is found; otherwise, a negative number that is the bitwise complement
+    /// of the index of the next element that is larger than the item or, if there is
+    /// no larger element, the bitwise complement of the count.
+	/// </returns>
+    public int GetIndex(T item) => _list.BinarySearch(item, _comparer);
 
 	/// <summary>
 	/// Adds an item to the sorted list.
@@ -91,6 +93,26 @@ public class SortedList<T> : IReadOnlyList<T> {
 			index = ~index;
 		}
 		_list.Insert(index, item);
+	}
+
+	/// <summary>
+	/// Adds the elements of the specified collection to the <see cref="SortedList{T}"/>.
+	/// </summary>
+	/// <param name="values"></param>
+	public void AddRange(ReadOnlySpan<T> values) {
+		foreach (var value in values) {
+			Add(value);
+		}
+	}
+
+	/// <summary>
+	/// Adds the elements of the specified collection to the <see cref="SortedList{T}"/>.
+	/// </summary>
+	/// <param name="collection"></param>
+	public void AddRange(IEnumerable<T> collection) {
+		foreach (var item in collection) {
+			Add(item);
+		}
 	}
 
 	/// <summary>

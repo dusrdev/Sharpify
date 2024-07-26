@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Version 1.3.0
+
+* `Arguments` now contains new methods `TryGetValues` and `TryGetValues{T}` to get arrays from values, there are overloads for regular and positional arguments, each overload requires a `string? separator` that is used to split the value, as with te regular values, `T` needs to implement `IParsable{T}`.
+* `CliBuilder` now has a method `ShowErrorCodes` that will enable the error codes next to `CliRunner` error outputs, that was previously enabled by default, now it will hide them by default to provide a cleaner experience for users, but the builder now can easily configure this for testing, or if you still want the user to see them.
+
 ## Version 1.2.2
 
 * Rewritten core function of argument forwarding to fix issue that caused non-positional arguments to be removed, now named arguments and flags should not be affected by positional forwarding at all.
