@@ -11,6 +11,8 @@ public sealed class CliBuilder {
 	private CliRunnerOptions _options;
 	private string _header = "";
 
+	private bool _showErrorCodes;
+
 	internal CliBuilder() {
 		_commands = new List<Command>();
 		_metaData = CliMetadata.Default;
@@ -104,12 +106,21 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
+	/// Show error codes next to the error <see cref="CliRunner"/> messages.
+	/// </summary>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder ShowErrorCodes() {
+		_showErrorCodes = true;
+		return this;
+	}
+
+	/// <summary>
 	/// Builds the CLI runner.
 	/// </summary>
 	public CliRunner Build() {
 		if (_commands.Count is 0) {
 			throw new InvalidOperationException("No commands were added.");
 		}
-		return new CliRunner(_commands, _options, _metaData, _header);
+		return new CliRunner(_commands, _options, _metaData, _header, _showErrorCodes);
 	}
 }
