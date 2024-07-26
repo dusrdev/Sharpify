@@ -1,12 +1,10 @@
 # CHANGELOG
 
-## v2.1.0
+## v2.2.0
 
-* Changes to `RentedBufferWriter{T}`:
-  * `RenterBufferWriter{T}` no longer throws an exception when the initial capacity is set to 0, instead it will just be disabled, this can be checked with the `.IsDisabled` property. Setting the initial capacity to a negative number will still throw an exception. This change was made to accommodate use cases where a `RentedBufferWriter` could be used as a return type, before an "invalid" operation, could not be attained, as it would've been required to give a valid capacity in any case, lest you risk a runtime exception. Now you could actually return a "Disabled" `RentedBufferWriter` if you set the capacity to 0, which intuitively means that the buffer doesn't actually have a backing array, and all operations would throw an exception.
-  * To increase it's usability, a method `WriteAndAdvance` was also added that accepts either a single `T` or a `ReadOnlySpan{T}`, it checks if there is enough capacity to write the data to the buffer, if so it writes it and advances the position automatically.
-  * A secondary access `ref T[] GetReferenceUnsafe` was added, to allow passing the inner buffer to methods that write to a `ref T[]` which previously required using unsafe code to manipulate the pointers. As implied by the name, this uses `Unsafe` to acquire the reference, and should only be used if you are carful and know what you are doing.
-* Collection extension methods such as `ToArrayFast()` and `ToListFast()` were made deprecated, use the `ToArray()` and `ToList()` LINQ methods instead, with time they become the fastest possible implementation and will continue to improve, the performance gap is already minimal, and only improves speed, not memory allocations, which makes it negligible.
+* `SortedList`
+  * `GetIndex` now has an optional parameter `returnInsertionIndex` which is set to `false` by default, when set to `true`, if the item is not found, the theoretical index is returned instead of `-1`, as in the index of the item if it existed in the collection. You can use this index, to get the sections before and after the item.
+  * Added `AddRange` functions for `ReadOnlySpan{T}` and `IEnumerable{T}`
 
 ### Deprecation
 
