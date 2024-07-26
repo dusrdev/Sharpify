@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 
+using Sharpify.Collections;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -38,10 +40,6 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     public bool ContainsKey(string key) => _database.ContainsKey(AcquireKey(key));
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
-
-    /// <inheritdoc />
     public bool TryGetValue(string key, string encryptionKey, out T value) {
         if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
             value = default!;
@@ -50,10 +48,6 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
         value = T.Deserialize(data)!;
         return true;
     }
-
-    /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
 
     /// <inheritdoc />
     public bool TryGetValues(string key, string encryptionKey, out T[] values) {
@@ -66,17 +60,31 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
+    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
+        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
+            return new RentedBufferWriter<T>(0);
+        }
+        T[] values = T.DeserializeMany(data)!;
+        var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);
+        buffer.WriteAndAdvance(values);
+        return buffer;
+    }
+
+    /// <inheritdoc />
     public void Upsert(string key, T value, string encryptionKey = "") {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
         _database.Upsert(AcquireKey(key), T.Serialize(value)!, encryptionKey);
     }
 
-
-
     /// <inheritdoc />
     public void UpsertMany(string key, T[] values, string encryptionKey = "") {
        ArgumentNullException.ThrowIfNull(values, nameof(values));
         _database.Upsert(AcquireKey(key), T.SerializeMany(values)!, encryptionKey);
+    }
+
+    /// <inheritdoc />
+    public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") {
+        _database.UpsertWithoutCopy(AcquireKey(key), T.SerializeMany(values.ToArray())!, encryptionKey);
     }
 
     /// <inheritdoc />

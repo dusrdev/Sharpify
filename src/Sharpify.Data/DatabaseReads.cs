@@ -5,6 +5,8 @@ using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
 
+using Sharpify.Collections;
+
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
@@ -39,12 +41,55 @@ public sealed partial class Database : IDisposable {
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = val!.FastCopy();
+                value = val!.ToArray();
                 return true;
             }
             // Encrypted -> Decrypt
-            value = Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
+            value = Helper.Instance.Decrypt(val, encryptionKey);
             return true;
+        } finally {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, int reservedCapacity = 0)
+        => TryReadToRentedBuffer(key, "", reservedCapacity);
+
+    /// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="encryptionKey"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
+        try {
+            _lock.EnterReadLock();
+            // Get val reference
+            ref var val = ref _data.GetValueRefOrNullRef(key);
+            if (Unsafe.IsNullRef(ref val)) { // Not found
+                return new RentedBufferWriter<byte>(0);
+            }
+            if (encryptionKey.Length is 0) { // Not encrypted
+                var buffer = new RentedBufferWriter<byte>(val!.Length + reservedCapacity);
+                buffer.WriteAndAdvance(val);
+                return buffer;
+            } else {
+                var buffer = new RentedBufferWriter<byte>(val!.Length + AesProvider.ReservedBufferSize + reservedCapacity);
+                int numWritten = Helper.Instance.Decrypt(val, buffer.Buffer, encryptionKey);
+                buffer.Advance(numWritten);
+                return buffer;
+            }
         } finally {
             _lock.ExitReadLock();
         }
@@ -135,6 +180,34 @@ public sealed partial class Database : IDisposable {
     }
 
     /// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, int reservedCapacity = 0) where T : IMemoryPackable<T> => TryReadToRentedBuffer<T>(key, "", reservedCapacity);
+
+    /// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="encryptionKey"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, string encryptionKey = "", int reservedCapacity = 0) where T : IMemoryPackable<T> {
+        if (!TryGetValues<T>(key, encryptionKey, out var values)) {
+            return new RentedBufferWriter<T>(0);
+        }
+        var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);
+        buffer.WriteAndAdvance(values);
+        return buffer;
+    }
+
+    /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
     /// </summary>
     /// <param name="key">The key used to identify the object in the database.</param>
@@ -198,88 +271,5 @@ public sealed partial class Database : IDisposable {
         }
         value = JsonSerializer.Deserialize(asString, jsonTypeInfo)!;
         return true;
-    }
-
-    /// <summary>
-    /// Returns the value for the <paramref name="key"/> as a byte[].
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="encryptionKey">individual encryption key for this specific value</param>
-    /// <remarks>
-    /// <para>This pure method which returns the value as byte[] allows you to use more complex but also more efficient serializers
-    /// </para>
-    /// <para>If the value doesn't exist an empty array is returned. You can use this to check if a value exists.</para>
-    /// </remarks>
-    [Obsolete("Use TryGetValue instead.")]
-    public byte[] Get(string key, string encryptionKey = "") {
-        try {
-            _lock.EnterReadLock();
-            ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
-                return Array.Empty<byte>();
-            }
-            if (encryptionKey.Length is 0) {
-                return val!.FastCopy();
-            }
-            return Helper.Instance.Decrypt(val.AsSpan(), encryptionKey);
-        } finally {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
-    /// Retrieves an object of type T from the database using the specified key.
-    /// </summary>
-    /// <typeparam name="T">The type of object to retrieve.</typeparam>
-    /// <param name="key">The key used to identify the object in the database.</param>
-    /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
-    /// <returns>The retrieved object of type T, or null if the object does not exist.</returns>
-    [Obsolete("Use TryGetValue instead.")]
-    public T? Get<T>(string key, string encryptionKey = "") where T : IMemoryPackable<T> {
-        try {
-            _lock.EnterReadLock();
-            ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
-                return default;
-            }
-            if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<T>(val.AsSpan(), _serializer.SerializerOptions);
-            }
-            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
-            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            var result = bytes.Length is 0 ? default : MemoryPackSerializer.Deserialize<T>(bytes, _serializer.SerializerOptions);
-            buffer.ReturnBufferToSharedArrayPool();
-            return result;
-        } finally {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
-    /// Returns the value for the <paramref name="key"/> as string. or empty string if the value doesn't exist.
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="encryptionKey">individual encryption key for this specific value</param>
-    [Obsolete("Use TryGetString instead.")]
-    public string GetAsString(string key, string encryptionKey = "") {
-        try {
-            _lock.EnterReadLock();
-            ref var val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) {
-                return "";
-            }
-            if (encryptionKey.Length is 0) {
-                return MemoryPackSerializer.Deserialize<string>(val.AsSpan(), _serializer.SerializerOptions)!;
-            }
-            var buffer = ArrayPool<byte>.Shared.Rent(val!.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(val.AsSpan(), buffer, encryptionKey);
-            var bytes = new ReadOnlySpan<byte>(buffer, 0, length);
-            var result = bytes.Length is 0 ? "" : MemoryPackSerializer.Deserialize<string>(bytes, _serializer.SerializerOptions)!;
-            buffer.ReturnBufferToSharedArrayPool();
-            return result;
-        } finally {
-            _lock.ExitReadLock();
-        }
     }
 }

@@ -1,3 +1,5 @@
+using Sharpify.Collections;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -18,15 +20,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to retrieve the value for.</param>
 	/// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValue(string key, out T value);
-
-	/// <summary>
-	/// Gets the values for the specified key from the database.
-	/// </summary>
-	/// <param name="key">The key to retrieve the value for.</param>
-	/// <param name="values">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
-	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValues(string key, out T[] values);
+	bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
 
 	/// <summary>
 	/// Gets the value for the specified key from the database using the specified encryption key.
@@ -36,6 +30,35 @@ public interface IDatabaseFilter<T> {
 	/// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
 	bool TryGetValue(string key, string encryptionKey, out T value);
+
+	/// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+	RentedBufferWriter<T> TryReadToRentedBuffer(string key, int reservedCapacity = 0) => TryReadToRentedBuffer(key, "", reservedCapacity);
+
+	/// <summary>
+    /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="encryptionKey"></param>
+    /// <param name="reservedCapacity">Reserved capacity after the values, useful to write additional data</param>
+    /// <returns>
+    /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
+    /// </returns>
+	RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0);
+
+	/// <summary>
+	/// Gets the values for the specified key from the database.
+	/// </summary>
+	/// <param name="key">The key to retrieve the value for.</param>
+	/// <param name="values">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
+	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
+	bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
 
 	/// <summary>
 	/// Gets the values for the specified key from the database using the specified encryption key.
@@ -60,13 +83,21 @@ public interface IDatabaseFilter<T> {
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
 	/// </summary>
-	/// <param name="key">The key to upsert the value for.</param>
-	/// <param name="values">The value to upsert.</param>
+	/// <param name="key">The key to upsert the values for.</param>
+	/// <param name="values">The values to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
 	/// <remarks>
 	/// Null values are disallowed and will cause an exception to be thrown.
 	/// </remarks>
 	void UpsertMany(string key, T[] values, string encryptionKey = "");
+
+	/// <summary>
+	/// Upserts multiple values into the database under a single key.
+	/// </summary>
+	/// <param name="key">The key to upsert the values for.</param>
+	/// <param name="values">The values to upsert.</param>
+	/// <param name="encryptionKey">The encryption key to use.</param>
+	void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "");
 
 	/// <summary>
 	/// Removes the item with the specified key from the filtered database.

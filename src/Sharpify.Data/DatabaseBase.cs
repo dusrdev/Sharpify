@@ -38,7 +38,6 @@ public sealed partial class Database : IDisposable {
         return (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
     }
 
-
     /// <summary>
     /// Holds the configuration for this database.
     /// </summary>

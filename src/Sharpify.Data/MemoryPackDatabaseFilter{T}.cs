@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 
 using MemoryPack;
 
+using Sharpify.Collections;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -40,24 +42,23 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     public bool ContainsKey(string key) => _database.ContainsKey(AcquireKey(key));
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
-
-    /// <inheritdoc />
     public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
 
     /// <inheritdoc />
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
+    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
+    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0)
+        => _database.TryReadToRentedBuffer<T>(AcquireKey(key), encryptionKey, reservedCapacity);
 
     /// <inheritdoc />
     public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), value, encryptionKey);
 
     /// <inheritdoc />
     public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
+
+    /// <inheritdoc />
+    public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));

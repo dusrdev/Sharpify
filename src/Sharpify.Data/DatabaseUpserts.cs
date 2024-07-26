@@ -14,18 +14,34 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <remarks>
     /// <para>
-    /// This pure method which accepts the value as byte[] allows you to use more complex but also more efficient serializers.
-    /// </para>
-    /// <para>
-    /// Null values are disallowed and will cause an exception to be thrown.
+    /// This pure method which accepts the value as ReadOnlySpan{byte} allows you to use more complex but also more efficient serializers.
     /// </para>
     /// </remarks>
-    public void Upsert(string key, byte[] value, string encryptionKey = "") {
-        ArgumentNullException.ThrowIfNull(value, nameof(value));
+    public void Upsert(string key, ReadOnlySpan<byte> value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new(key, value.FastCopy()));
+            _queue.Enqueue(new(key, value.ToArray()));
         } else {
-            var encrypted = Helper.Instance.Encrypt(value.AsSpan(), encryptionKey);
+            var encrypted = Helper.Instance.Encrypt(value, encryptionKey);
+            _queue.Enqueue(new(key, encrypted));
+        }
+
+        if (Config.TriggerUpdateEvents) {
+            InvokeDataEvent(new DataChangedEventArgs {
+                Key = key,
+                Value = value.ToArray(),
+                ChangeType = DataChangeType.Upsert
+            });
+        }
+
+        EmptyQueue();
+    }
+
+    // This method is used internally to avoid copying the byte array in cases where it is redundant.
+    internal void UpsertWithoutCopy(string key, byte[] value, string encryptionKey = "") {
+        if (encryptionKey.Length is 0) {
+            _queue.Enqueue(new(key, value));
+        } else {
+            var encrypted = Helper.Instance.Encrypt(value, encryptionKey);
             _queue.Enqueue(new(key, encrypted));
         }
 
@@ -60,15 +76,15 @@ public sealed partial class Database : IDisposable {
     }
 
     /// <summary>
-    /// Upserts a value into the database using the specified key.
+    /// Upserts values into the database using the specified key.
     /// </summary>
-    /// <typeparam name="T">The type of the value being upserted.</typeparam>
-    /// <param name="key">The key used to identify the value.</param>
-    /// <param name="values">The value to be upserted.</param>
-    /// <param name="encryptionKey">The encryption key used to encrypt the value.</param>
+    /// <typeparam name="T">The type of the values being upserted.</typeparam>
+    /// <param name="key">The key used to identify the values.</param>
+    /// <param name="values">The values to be upserted.</param>
+    /// <param name="encryptionKey">The encryption key used to encrypt the values.</param>
     /// <remarks>
-    /// The upsert operation will either insert a new value if the key does not exist,
-    /// or update the existing value if the key already exists.
+    /// The upsert operation will either insert if the key does not exist,
+    /// or update the existing values if the key already exists.
     /// <para>
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
@@ -76,6 +92,24 @@ public sealed partial class Database : IDisposable {
     public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         Upsert(key, MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions), encryptionKey);
+    }
+
+    /// <summary>
+    /// Upserts values into the database using the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of the values being upserted.</typeparam>
+    /// <param name="key">The key used to identify the values.</param>
+    /// <param name="values">The values to be upserted.</param>
+    /// <param name="encryptionKey">The encryption key used to encrypt the values.</param>
+    /// <remarks>
+    /// The upsert operation will either insert if the key does not exist,
+    /// or update the existing values if the key already exists.
+    /// <para>
+    /// Null values are disallowed and will cause an exception to be thrown.
+    /// </para>
+    /// </remarks>
+    public void UpsertMany<T>(string key, ReadOnlySpan<T> values, string encryptionKey = "") where T : IMemoryPackable<T> {
+        Upsert(key, MemoryPackSerializer.Serialize(values.ToArray(), _serializer.SerializerOptions), encryptionKey);
     }
 
     /// <summary>

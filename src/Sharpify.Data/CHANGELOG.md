@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v2.5.0
+
+* Updated to use version 2.2.0 of `Sharpify` and later, and `MemoryPack` 1.21.1 and later.
+* Removed apis that were previously marked as `Obsolete`
+* The simplest version of `Database.Upsert` now accepts a `ReadOnlySpan<byte>` instead of `byte[]`, a copy is still created to make sure the database always has a valid reference, but the use of span allows greater flexibility such as upserting sections, lists (which you can access the span), and rented buffers.
+* `UpsertMany<T>` now also has a `ReadOnlySpan{T}` accepting overload, it will not improve performance, but still adds flexibility, it doesn't replace the original `T[]` overload, it is an alternative. If the main `T[]` suits your context, as in you already have a fixed size array, it will actually be more performant.
+* New method `Database.TryReadToRentedBuffer` now rents an appropriately sized `RentedBufferWriter{T}` and attempts to write the value to it, then return it. If it is successful, the result can be viewed with `RentedBufferWriter{T}.WrittenSpan` and other apis, if not successful (i.e key not found), a disabled `RentedBufferWriter{T}` will be returned, it can be checked with the `RentedBufferWriter{T}.IsDisabled` property.
+  * There is also an optional parameter for `reservedCapacity`, this will make sure the buffer has a matching amount free capacity after writing the data, an explanation of why this is useful will be lower down the page.
+  * There are overloads in `Database` for both `byte` and `T : IMemoryPackable{T}`, as well as methods in `MemoryPackableDatabaseFilter{T}` and `FlexibleDatabaseFilter{T}`.
+
 ## v2.4.1
 
 * Updated to version 2.0.0 of `Sharpify`.
