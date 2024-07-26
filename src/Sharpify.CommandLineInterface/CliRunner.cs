@@ -37,12 +37,14 @@ public sealed class CliRunner {
 	private readonly CliMetadata _metaData;
 	private readonly string _customerHeader;
 	private readonly string _help;
+	private readonly bool _showErrorCodes;
 
 	/// <summary>
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
-	internal CliRunner(List<Command> commands, CliRunnerOptions options, CliMetadata metaData, string customHeader) {
+	internal CliRunner(List<Command> commands, CliRunnerOptions options, CliMetadata metaData, string customHeader,
+		bool showErrorCodes) {
 		_options = options;
 		_commands = commands;
 		if (_options.HasFlag(CliRunnerOptions.SortCommandsAlphabetically)) {
@@ -51,6 +53,7 @@ public sealed class CliRunner {
 		_metaData = metaData;
 		_customerHeader = customHeader;
 		_help = GenerateHelp(); // Keep this last to make sure changes are reflected in the help text
+		_showErrorCodes = showErrorCodes;
 	}
 
 	/// <summary>
@@ -58,7 +61,7 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, true);
+			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
 		}
 		var arguments = Parser.ParseArguments(args);
 		return RunAsync(arguments, commandNameRequired);
@@ -69,7 +72,7 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, true);
+			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
 		}
 		var arguments = Parser.ParseArguments(args, StringComparer.CurrentCultureIgnoreCase);
 		return RunAsync(arguments, commandNameRequired);
@@ -80,11 +83,11 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(Arguments? arguments, bool commandNameRequired = true) {
 		if (arguments is null) {
-			return OutputHelper.Return("Input could not be parsed", 400, true);
+			return OutputHelper.Return("Input could not be parsed", 400, _showErrorCodes);
 		}
 		if (!commandNameRequired) {
 			if (_commands.Count is not 1) {
-				return OutputHelper.Return("Command name is required when using more than one command", 405, true);
+				return OutputHelper.Return("Command name is required when using more than one command", 405, _showErrorCodes);
 			}
 			if (arguments.Contains("help")) {
 				return OutputHelper.Return(_commands[0].GetHelp(), 0);
@@ -97,7 +100,7 @@ public sealed class CliRunner {
 		}
 
 		if (!arguments.TryGetValue(0, out string commandName)) {
-			return OutputHelper.Return("Command name is required", 405, true);
+			return OutputHelper.Return("Command name is required", 405, _showErrorCodes);
 		}
 
 		if (commandName.Equals("help", StringComparison.OrdinalIgnoreCase)) {
@@ -112,7 +115,7 @@ public sealed class CliRunner {
 			}
 		}
 		if (command is null) {
-			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, true);
+			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _showErrorCodes);
 		}
 		if (arguments.Contains("help")) {
 			OutputWriter.WriteLine(command.GetHelp());
