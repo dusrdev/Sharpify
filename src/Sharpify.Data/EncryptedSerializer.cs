@@ -52,7 +52,7 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var buffer = new RentedBufferWriter<byte>(estimatedSize + AesProvider.ReservedBufferSize);
         MemoryPackSerializer.Serialize(buffer, dict, SerializerOptions);
         using var file = new FileStream(_path, FileMode.Create);
-        using var transform = Helper.Instance.GetEncryptor(_key);
+        using ICryptoTransform transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
         cryptoStream.Write(buffer.WrittenSpan);
     }
@@ -60,7 +60,7 @@ internal class EncryptedSerializer : DatabaseSerializer {
 /// <inheritdoc />
     internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
-        using var transform = Helper.Instance.GetEncryptor(_key);
+        using ICryptoTransform transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
         await MemoryPackSerializer.SerializeAsync(cryptoStream, dict, SerializerOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
     }

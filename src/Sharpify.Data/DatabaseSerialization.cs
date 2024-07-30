@@ -8,7 +8,7 @@ public sealed partial class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
-                var estimatedSize = kvp.GetEstimatedSize();
+                int estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
         }
@@ -19,7 +19,8 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     public void Serialize() {
         EnsureUpsertsAreFinished();
-        _serializer.Serialize(_data, GetOverestimatedSize());
+        int estimatedSize = GetOverestimatedSize();
+        _serializer.Serialize(_data, estimatedSize);
     }
 
     /// <summary>
@@ -27,6 +28,7 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     public ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
         EnsureUpsertsAreFinished();
-        return _serializer.SerializeAsync(_data, GetOverestimatedSize(), cancellationToken);
+        int estimatedSize = GetOverestimatedSize();
+        return _serializer.SerializeAsync(_data, estimatedSize, cancellationToken);
     }
 }

@@ -63,16 +63,11 @@ public sealed partial class Database : IDisposable {
         try {
             _lock.EnterWriteLock();
 
-            var keys = keyPrefix is null
-                        ? _data.Keys.Where(keySelector)
-                        : _data.Keys.Where(key => {
-                            if (!key.StartsWith(keyPrefix)) {
-                                return false;
-                            }
-                            var keySlice = new string(key.AsSpan().Slice(keyPrefix.Length));
-                            return keySelector(keySlice);
-                        });
-            var matches = keys.ToArray();
+            var predicate = keyPrefix is null
+                ? keySelector
+                : key => key.StartsWith(keyPrefix) && keySelector(key.Substring(keyPrefix.Length));
+
+            var matches = _data.Keys.Where(predicate).ToArray();
 
             if (matches.Length is 0) {
                 return;

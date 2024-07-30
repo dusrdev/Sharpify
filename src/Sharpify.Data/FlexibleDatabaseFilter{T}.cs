@@ -73,18 +73,22 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     /// <inheritdoc />
     public void Upsert(string key, T value, string encryptionKey = "") {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
-        _database.Upsert(AcquireKey(key), T.Serialize(value)!, encryptionKey);
+        var bytes = T.Serialize(value)!;
+        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
     }
 
     /// <inheritdoc />
     public void UpsertMany(string key, T[] values, string encryptionKey = "") {
        ArgumentNullException.ThrowIfNull(values, nameof(values));
-        _database.Upsert(AcquireKey(key), T.SerializeMany(values)!, encryptionKey);
+       var bytes = T.SerializeMany(values)!;
+        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
     }
 
     /// <inheritdoc />
     public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") {
-        _database.UpsertWithoutCopy(AcquireKey(key), T.SerializeMany(values.ToArray())!, encryptionKey);
+        var array = values.ToArray();
+        var bytes = T.SerializeMany(array)!;
+        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
     }
 
     /// <inheritdoc />

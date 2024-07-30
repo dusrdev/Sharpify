@@ -17,8 +17,8 @@ internal sealed class Helper : IDisposable {
     /// <param name="key"></param>
     /// <returns></returns>
     internal byte[] Encrypt(ReadOnlySpan<byte> value, string key) {
-        if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.EncryptBytes(value);
+        if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
+            return provider!.EncryptBytes(value);
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
@@ -31,8 +31,8 @@ internal sealed class Helper : IDisposable {
     /// <param name="key"></param>
     /// <returns></returns>
     internal ICryptoTransform GetEncryptor(string key) {
-        if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.CreateEncryptor();
+        if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
+            return provider!.CreateEncryptor();
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
@@ -46,8 +46,8 @@ internal sealed class Helper : IDisposable {
     /// <param name="key"></param>
     /// <returns></returns>
     internal byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
-        if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.DecryptBytes(value);
+        if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
+            return provider!.DecryptBytes(value);
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
@@ -62,8 +62,8 @@ internal sealed class Helper : IDisposable {
     /// <param name="key"></param>
     /// <returns></returns>
     internal int Decrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
-        if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.DecryptBytes(value, destination);
+        if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
+            return provider!.DecryptBytes(value, destination);
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
@@ -76,8 +76,8 @@ internal sealed class Helper : IDisposable {
     /// <param name="key"></param>
     /// <returns></returns>
     internal ICryptoTransform GetDecryptor(string key) {
-        if (_cachedProviders.TryGetValue(key, out var provider)) {
-            return provider.CreateDecryptor();
+        if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
+            return provider!.CreateDecryptor();
         }
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);

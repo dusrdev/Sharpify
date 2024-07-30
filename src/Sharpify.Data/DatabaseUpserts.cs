@@ -21,7 +21,7 @@ public sealed partial class Database : IDisposable {
         if (encryptionKey.Length is 0) {
             _queue.Enqueue(new(key, value.ToArray()));
         } else {
-            var encrypted = Helper.Instance.Encrypt(value, encryptionKey);
+            byte[] encrypted = Helper.Instance.Encrypt(value, encryptionKey);
             _queue.Enqueue(new(key, encrypted));
         }
 
@@ -36,12 +36,25 @@ public sealed partial class Database : IDisposable {
         EmptyQueue();
     }
 
-    // This method is used internally to avoid copying the byte array in cases where it is redundant.
-    internal void UpsertWithoutCopy(string key, byte[] value, string encryptionKey = "") {
+    /// <summary>
+    /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    /// <remarks>
+    /// <para>
+    /// This method directly inserts the array reference in to the database to reduce copying.
+    /// </para>
+    /// <para>
+    /// If you cannot ensure that this reference doesn't change, for example if using a pooled array, use the <see cref="Upsert(string, ReadOnlySpan{byte}, string)"/> method instead.
+    /// </para>
+    /// </remarks>
+    public void Upsert(string key, byte[] value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
             _queue.Enqueue(new(key, value));
         } else {
-            var encrypted = Helper.Instance.Encrypt(value, encryptionKey);
+            byte[] encrypted = Helper.Instance.Encrypt(value, encryptionKey);
             _queue.Enqueue(new(key, encrypted));
         }
 
@@ -72,7 +85,8 @@ public sealed partial class Database : IDisposable {
     /// </remarks>
     public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
-        Upsert(key, MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions), encryptionKey);
+        byte[] bytes = MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
+        Upsert(key, bytes, encryptionKey);
     }
 
     /// <summary>
@@ -91,7 +105,8 @@ public sealed partial class Database : IDisposable {
     /// </remarks>
     public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
-        Upsert(key, MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions), encryptionKey);
+        byte[] bytes = MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions);
+        Upsert(key, bytes, encryptionKey);
     }
 
     /// <summary>
@@ -109,7 +124,9 @@ public sealed partial class Database : IDisposable {
     /// </para>
     /// </remarks>
     public void UpsertMany<T>(string key, ReadOnlySpan<T> values, string encryptionKey = "") where T : IMemoryPackable<T> {
-        Upsert(key, MemoryPackSerializer.Serialize(values.ToArray(), _serializer.SerializerOptions), encryptionKey);
+        T[] array = values.ToArray();
+        byte[] bytes = MemoryPackSerializer.Serialize(array, _serializer.SerializerOptions);
+        Upsert(key, bytes, encryptionKey);
     }
 
     /// <summary>
@@ -145,8 +162,8 @@ public sealed partial class Database : IDisposable {
     /// </para>
     /// </remarks>
     public void Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "") where T : notnull {
-        var asString = JsonSerializer.Serialize(value, jsonTypeInfo);
-        Upsert(key, asString, encryptionKey);
+        byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(value, jsonTypeInfo);
+        Upsert(key, bytes, encryptionKey);
     }
 
     // Adds items to the dictionary and serializes if needed at the end.
@@ -160,7 +177,7 @@ public sealed partial class Database : IDisposable {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
-                var estimatedSize = kvp.GetEstimatedSize();
+                int estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
             }
             if (itemsAdded is not 0 && Config.SerializeOnUpdate) {

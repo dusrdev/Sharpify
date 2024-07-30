@@ -4,11 +4,15 @@
 
 * Updated to use version 2.2.0 of `Sharpify` and later, and `MemoryPack` 1.21.1 and later.
 * Removed apis that were previously marked as `Obsolete`
-* The simplest version of `Database.Upsert` now accepts a `ReadOnlySpan<byte>` instead of `byte[]`, a copy is still created to make sure the database always has a valid reference, but the use of span allows greater flexibility such as upserting sections, lists (which you can access the span), and rented buffers.
+* An overload with `ReadOnlySpan{byte}` was added to `Upsert`, enables using `Upsert` on other types, such as lists or even pooled arrays. Be careful when using the `byte[]` overload, as now it doesn't create copies and instead inserts the reference instead to improve performance where needed. **DO NOT USE** this overload with buffers which you only temporarily own, for those use the new `ReadOnlySpan{byte}` overload.
 * `UpsertMany<T>` now also has a `ReadOnlySpan{T}` accepting overload, it will not improve performance, but still adds flexibility, it doesn't replace the original `T[]` overload, it is an alternative. If the main `T[]` suits your context, as in you already have a fixed size array, it will actually be more performant.
 * New method `Database.TryReadToRentedBuffer` now rents an appropriately sized `RentedBufferWriter{T}` and attempts to write the value to it, then return it. If it is successful, the result can be viewed with `RentedBufferWriter{T}.WrittenSpan` and other apis, if not successful (i.e key not found), a disabled `RentedBufferWriter{T}` will be returned, it can be checked with the `RentedBufferWriter{T}.IsDisabled` property.
   * There is also an optional parameter for `reservedCapacity`, this will make sure the buffer has a matching amount free capacity after writing the data, an explanation of why this is useful will be lower down the page.
   * There are overloads in `Database` for both `byte` and `T : IMemoryPackable{T}`, as well as methods in `MemoryPackableDatabaseFilter{T}` and `FlexibleDatabaseFilter{T}`.
+* **POSSIBLY BREAKING** for those who use the `JSON` serialized `T` overloads, in the previous versions, the `JsonSerializer` was used to generate a `string`, which then passed to `MemoryPack` for secondary serialization. To improve performance, now `JsonSerializer` directly serializes to `byte[]` which means using these types is now both faster and more memory efficient than before. But if you try to read values with the new version which were serialized in the old version, there may be inconsistencies which may cause errors.
+  * If you encounter such issues, you may want to synchronize manually as follows:
+  * Read the values with `TryGetString`, then use `JsonSerializer.Deserialize` on the strings to get the actual values, you can then proceed to upsert those values with the `JSON` overloads on the same keys.
+* Some of the new changes were also leveraged internally to improve performance/memory allocations in various places.
 
 ### New APIs: Purposely Built For Performance
 
