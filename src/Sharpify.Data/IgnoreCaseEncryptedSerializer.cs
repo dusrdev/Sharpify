@@ -22,12 +22,12 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        var rawSpan = rawBuffer.WrittenSpan;
+        ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        var decrypted = decryptedBuffer.WrittenSpan;
-        var dict = IgnoreCaseSerializer.FromSpan(decrypted);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
         return dict;
     }
 
@@ -38,11 +38,11 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        using var transform = Helper.Instance.GetDecryptor(_key);
+        using ICryptoTransform transform = Helper.Instance.GetDecryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        var numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
+        int numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        var dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
         return dict;
     }
 }

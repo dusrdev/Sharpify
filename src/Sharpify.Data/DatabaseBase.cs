@@ -38,7 +38,6 @@ public sealed partial class Database : IDisposable {
         return (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
     }
 
-
     /// <summary>
     /// Holds the configuration for this database.
     /// </summary>
@@ -72,7 +71,7 @@ public sealed partial class Database : IDisposable {
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        var estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Extensions.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
 
@@ -91,7 +90,7 @@ public sealed partial class Database : IDisposable {
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        var estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Extensions.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
 

@@ -1,3 +1,5 @@
+using System.Buffers;
+
 namespace Sharpify.Data.Tests;
 
 public class DatabaseTests {
@@ -127,9 +129,35 @@ public class DatabaseTests {
     }
 
     [Fact]
+    public void SpanBasedByteReadWrite() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
+        db.Database.Upsert("test", bytes);
+
+        using var buffer = db.Database.TryReadToRentedBuffer("test", "", 1);
+        buffer.WriteAndAdvance(6);
+        db.Database.Upsert("test", buffer.WrittenSpan);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
+        result.SequenceEqual<byte>([1, 2, 3, 4, 5, 6]).Should().BeTrue();
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
     public void UpsertMemoryPackable() {
         // Arrange
         using var db = Factory("");
+
+        var filter = db.Database.CreateMemoryPackFilter<Person>();
 
         // Act
         var p1 = new Person("David", 27);
@@ -162,6 +190,55 @@ public class DatabaseTests {
         // Assert
         db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
         arr.Should().ContainInOrder(p1, p2);
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void UpsertManySpan() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        var p1 = new Person("David", 27);
+        var p2 = new Person("John", 30);
+        Span<Person> span = new []{ p1, p2 };
+        db.Database.UpsertMany<Person>("1", span);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
+        arr.Should().ContainInOrder(p1, p2);
+
+        // Cleanup
+        File.Delete(db.Path);
+    }
+
+    [Fact]
+    public void SpanBasedTReadWrite() {
+        // Arrange
+        using var db = Factory("");
+
+        // Act
+        var p1 = new Person("David", 27);
+        var p2 = new Person("John", 30);
+        var p3 = new Person("Jane", 25);
+        Span<Person> span = new []{ p1, p2 };
+        db.Database.UpsertMany<Person>("1", span);
+
+        using var buffer = db.Database.TryReadToRentedBuffer<Person>("1", "", 1);
+        buffer.WriteAndAdvance(p3);
+        db.Database.UpsertMany("1", buffer.WrittenSpan);
+
+        // Arrange
+        using var db2 = Factory(db.Path);
+
+        // Assert
+        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
+        arr.Should().ContainInOrder(p1, p2, p3);
 
         // Cleanup
         File.Delete(db.Path);
