@@ -82,7 +82,6 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         _watcher?.Dispose();
         _lock?.Dispose();
-        GC.SuppressFinalize(this);
         _disposed = true;
     }
 }
