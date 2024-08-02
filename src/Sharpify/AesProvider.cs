@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -40,14 +39,10 @@ public sealed class AesProvider : IDisposable {
 
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
-        var buffer = ArrayPool<byte>.Shared.Rent(strKey.Length * sizeof(char));
-        int bytesWritten = Encoding.UTF8.GetBytes(strKey, buffer);
-        ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
-        try {
-            return SHA256.HashData(bytesSpan);
-        } finally {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
+        using var buffer = new RentedBufferWriter<byte>(strKey.Length * sizeof(char));
+        long bytesWritten = Encoding.UTF8.GetBytes(strKey, buffer);
+        buffer.Advance((int)bytesWritten);
+        return SHA256.HashData(buffer.WrittenSpan);
     }
 
 
@@ -118,18 +113,13 @@ public sealed class AesProvider : IDisposable {
     /// <param name="unencrypted">original text</param>
     /// <returns>Unicode string</returns>
     public string Encrypt(ReadOnlySpan<char> unencrypted) {
-        var bytesBuffer = ArrayPool<byte>.Shared.Rent(unencrypted.Length * sizeof(char));
-        int bytesWritten = Encoding.UTF8.GetBytes(unencrypted, bytesBuffer);
-        ReadOnlySpan<byte> bytesSpan = bytesBuffer.AsSpan(0, bytesWritten);
-        var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);
-        int encryptedWritten = EncryptBytes(bytesSpan, encryptedBuffer);
-        ReadOnlySpan<byte> encrypted = encryptedBuffer.AsSpan(0, encryptedWritten);
-        try {
-            return Convert.ToBase64String(encrypted);
-        } finally {
-            ArrayPool<byte>.Shared.Return(bytesBuffer);
-            ArrayPool<byte>.Shared.Return(encryptedBuffer);
-        }
+        using var bytesBuffer = new RentedBufferWriter<byte>(unencrypted.Length * sizeof(char));
+        _ = Encoding.UTF8.GetBytes(unencrypted, bytesBuffer); // IBufferWriter overload advances automatically
+        var writtenSpan = bytesBuffer.WrittenSpan;
+        using var encryptedBuffer = new RentedBufferWriter<byte>(writtenSpan.Length + ReservedBufferSize);
+        int encryptedWritten = EncryptBytes(writtenSpan, encryptedBuffer.GetSpan());
+        encryptedBuffer.Advance(encryptedWritten);
+        return Convert.ToBase64String(encryptedBuffer.WrittenSpan);
     }
 
     /// <summary>
@@ -138,16 +128,13 @@ public sealed class AesProvider : IDisposable {
     /// <remarks>Returns an empty string if it fails</remarks>
     public string Decrypt(string encrypted) {
         var buffer = Convert.FromBase64String(encrypted);
-        var decryptedBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
-        int decryptedWritten = DecryptBytes(buffer, decryptedBuffer);
-        ReadOnlySpan<byte> decrypted = decryptedBuffer.AsSpan(0, decryptedWritten);
-        try {
-            return decrypted.Length is 0
-                ? string.Empty
-                : Encoding.UTF8.GetString(decrypted);
-        } finally {
-            ArrayPool<byte>.Shared.Return(decryptedBuffer);
-        }
+        using var decryptedBuffer = new RentedBufferWriter<byte>(buffer.Length);
+        int decryptedWritten = DecryptBytes(buffer, decryptedBuffer.GetSpan());
+        decryptedBuffer.Advance(decryptedWritten);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        return decrypted.Length is 0
+            ? string.Empty
+            : Encoding.UTF8.GetString(decrypted);
     }
 
     /// <summary>
@@ -230,18 +217,13 @@ public sealed class AesProvider : IDisposable {
     /// <param name="url">original url</param>
     /// <returns>Encrypted url with Base64Url encoding</returns>
     public string EncryptUrl(string url) {
-        var buffer = ArrayPool<byte>.Shared.Rent(url.Length * sizeof(char));
-        int bytesWritten = Encoding.UTF8.GetBytes(url, buffer);
-        ReadOnlySpan<byte> bytesSpan = buffer.AsSpan(0, bytesWritten);
-        var encryptedBuffer = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize);
-        int encryptedWritten = EncryptBytes(bytesSpan, encryptedBuffer);
-        ReadOnlySpan<byte> encrypted = encryptedBuffer.AsSpan(0, encryptedWritten);
-        try {
-            return Base64UrlEncode(encrypted);
-        } finally {
-            ArrayPool<byte>.Shared.Return(buffer);
-            ArrayPool<byte>.Shared.Return(encryptedBuffer);
-        }
+        using var buffer = new RentedBufferWriter<byte>(url.Length * sizeof(char));
+        _ = Encoding.UTF8.GetBytes(url, buffer); // IBufferWriter overload advances automatically
+        ReadOnlySpan<byte> bytesSpan = buffer.WrittenSpan;
+        using var encryptedBuffer = new RentedBufferWriter<byte>(bytesSpan.Length + ReservedBufferSize);
+        int encryptedWritten = EncryptBytes(bytesSpan, encryptedBuffer.GetSpan());
+        encryptedBuffer.Advance(encryptedWritten);
+        return Base64UrlEncode(encryptedBuffer.WrittenSpan);
     }
 
     /// <summary>
@@ -252,16 +234,13 @@ public sealed class AesProvider : IDisposable {
     /// <remarks>Returns an empty string if it fails</remarks>
     public string DecryptUrl(string encryptedUrl) {
         var base64 = Base64UrlDecode(encryptedUrl);
-        var decryptedBuffer = ArrayPool<byte>.Shared.Rent(base64.Length);
-        int decryptedWritten = DecryptBytes(base64, decryptedBuffer);
-        ReadOnlySpan<byte> decrypted = decryptedBuffer.AsSpan(0, decryptedWritten);
-        try {
-            return decrypted.Length is 0
-                ? string.Empty
-                : Encoding.UTF8.GetString(decrypted);
-        } finally {
-            ArrayPool<byte>.Shared.Return(decryptedBuffer);
-        }
+        using var decryptedBuffer = new RentedBufferWriter<byte>(base64.Length);
+        int decryptedWritten = DecryptBytes(base64, decryptedBuffer.GetSpan());
+        decryptedBuffer.Advance(decryptedWritten);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        return decrypted.Length is 0
+            ? string.Empty
+            : Encoding.UTF8.GetString(decrypted);
     }
 
     // Helper method to convert Base64Url encoded string to byte array
