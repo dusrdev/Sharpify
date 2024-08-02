@@ -16,6 +16,11 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	private volatile bool _disposed;
 
 	/// <summary>
+	/// The current position in the buffer
+	/// </summary>
+	public int CurrentPosition => _index;
+
+	/// <summary>
 	/// The actual capacity of the rented buffer
 	/// </summary>
 	public readonly int ActualCapacity;
@@ -24,6 +29,12 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// If the <see cref="RentedBufferWriter{T}"/> is disabled, it means that it is not usable, doesn't contain a backing array and all operations will throw an exception
 	/// </summary>
 	public readonly bool IsDisabled;
+
+	/// <summary>
+	/// Creates a new rented buffer writer with the at least the given capacity
+	/// </summary>
+	/// <param name="capacity"></param>
+	public static RentedBufferWriter<T> Create(int capacity) => new(capacity);
 
 	/// <summary>
 	/// Creates a new rented buffer writer with the at least the given capacity
