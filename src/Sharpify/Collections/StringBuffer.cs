@@ -10,7 +10,12 @@ public unsafe ref partial struct StringBuffer {
     private static readonly string NewLine = Environment.NewLine;
     private readonly char[] _source;
     private readonly Span<char> _buffer;
-    private readonly int _length;
+
+    /// <summary>
+    /// The total length of the buffer.
+    /// </summary>
+    public readonly int Length;
+
     private int _position;
     private volatile bool _disposed;
 
@@ -20,12 +25,12 @@ public unsafe ref partial struct StringBuffer {
     /// <param name="capacity">The capacity</param>
     /// <param name="clearBuffer">Whether clearing the buffer. Has a slight performance hit</param>
     internal StringBuffer(int capacity, bool clearBuffer = false) {
-        _length = capacity;
-        _source = ArrayPool<char>.Shared.Rent(_length);
+        Length = capacity;
+        _source = ArrayPool<char>.Shared.Rent(Length);
         if (clearBuffer) {
             Array.Clear(_source);
         }
-        _buffer = _source.AsSpan()[0.._length];
+        _buffer = _source.AsSpan()[0..Length];
         _position = 0;
     }
 
@@ -45,10 +50,10 @@ public unsafe ref partial struct StringBuffer {
     /// <param name="c">The character to append.</param>
     public ref StringBuffer Append(char c) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, Length);
 #elif NET7_0
-        if (_position + 1 > _length) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+        if (_position + 1 > Length) {
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 #endif
 
@@ -63,10 +68,10 @@ public unsafe ref partial struct StringBuffer {
     /// <returns>The same instance of the buffer</returns>
     public ref StringBuffer Append(ReadOnlySpan<char> str) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
 #elif NET7_0
-        if (_position + str.Length > _length) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+        if (_position + str.Length > Length) {
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 #endif
 
@@ -86,7 +91,7 @@ public unsafe ref partial struct StringBuffer {
     public ref StringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         var written = value.TryFormat(_buffer[_position..], out var charsWritten, format, provider);
         if (!written) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 
         _position += charsWritten;
@@ -162,6 +167,18 @@ public unsafe ref partial struct StringBuffer {
     public readonly string this[Range range] => Allocate(range);
 
     /// <summary>
+    /// Returns the character at the specified index.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public readonly char this[int index] => _buffer[index];
+
+    /// <summary>
+    /// Returns the used portion of the buffer as a readonly span.
+    /// </summary>
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[0.._position];
+
+    /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
     /// </summary>
     /// <param name="range"></param>
@@ -182,7 +199,7 @@ public unsafe ref partial struct StringBuffer {
     /// </summary>
     /// <param name="buffer"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer._buffer[0..buffer._position];
+    public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer.WrittenSpan;
 
     /// <summary>
     /// Returns a readonly memory of the internal buffer up to the index after the last appended item.

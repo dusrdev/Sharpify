@@ -7,29 +7,21 @@ namespace Sharpify.Collections;
 /// </summary>
 public unsafe ref struct AllocatedStringBuffer {
     private static readonly string NewLine = Environment.NewLine;
-    private readonly char[]? _backingArray;
     private readonly Span<char> _buffer;
-    private readonly int _length;
+
+    /// <summary>
+    /// The total length of the buffer.
+    /// </summary>
+    public readonly int Length;
+
     private int _position;
 
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
     /// </summary>
-    /// <param name="buffer"></param>
-    internal AllocatedStringBuffer(char[] buffer) {
-        _backingArray = buffer;
-        _buffer = _backingArray;
-        _length = _buffer.Length;
-        _position = 0;
-    }
-
-    /// <summary>
-    /// Represents a mutable interface over a buffer allocated in memory.
-    /// </summary>
     internal AllocatedStringBuffer(Span<char> buffer) {
-        _backingArray = null;
         _buffer = buffer;
-        _length = _buffer.Length;
+        Length = _buffer.Length;
         _position = 0;
     }
 
@@ -39,6 +31,9 @@ public unsafe ref struct AllocatedStringBuffer {
     public AllocatedStringBuffer() : this(Span<char>.Empty) {
     }
 
+    internal Span<char> Remaining => _buffer[_position..];
+    internal void Advance(int count) => _position += count;
+
 #pragma warning disable CS9084 // Struct member returns 'this' or other instance members by reference
 
     /// <summary>
@@ -47,10 +42,10 @@ public unsafe ref struct AllocatedStringBuffer {
     /// <param name="c">The character to append.</param>
     public ref AllocatedStringBuffer Append(char c) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, Length);
 #elif NET7_0
-        if (_position + 1 > _length) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+        if (_position + 1 > Length) {
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 #endif
 
@@ -64,10 +59,10 @@ public unsafe ref struct AllocatedStringBuffer {
     /// <param name="str">The string to append.</param>
     public ref AllocatedStringBuffer Append(ReadOnlySpan<char> str) {
 #if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, _length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
 #elif NET7_0
-        if (_position + str.Length > _length) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+        if (_position + str.Length > Length) {
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 #endif
 
@@ -87,7 +82,7 @@ public unsafe ref struct AllocatedStringBuffer {
     public ref AllocatedStringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         var written = value.TryFormat(_buffer[_position..], out var charsWritten, format, provider);
         if (!written) {
-            throw new ArgumentOutOfRangeException(nameof(_length));
+            throw new ArgumentOutOfRangeException(nameof(Length));
         }
 
         _position += charsWritten;
@@ -162,6 +157,18 @@ public unsafe ref struct AllocatedStringBuffer {
     public readonly string this[Range range] => Allocate(range);
 
     /// <summary>
+    /// Returns the character at the specified index.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public readonly char this[int index] => _buffer[index];
+
+    /// <summary>
+    /// Returns the used portion of the buffer as a readonly span.
+    /// </summary>
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[0.._position];
+
+    /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
     /// </summary>
     /// <param name="range"></param>
@@ -182,19 +189,7 @@ public unsafe ref struct AllocatedStringBuffer {
     /// </summary>
     /// <param name="buffer"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlySpan<char>(AllocatedStringBuffer buffer) => buffer._buffer[0..buffer._position];
-
-    /// <summary>
-    /// Returns a readonly memory of the internal buffer up to the index after the last appended item.
-    /// </summary>
-    /// <param name="buffer"></param>
-    public static implicit operator ReadOnlyMemory<char>(AllocatedStringBuffer buffer) {
-        if (buffer._backingArray is null) {
-            throw new InvalidOperationException("The buffer has no backing array, and cannot be converted to a memory.");
-        }
-        return new ReadOnlyMemory<char>(buffer._backingArray, 0, buffer._position);
-    }
-
+    public static implicit operator ReadOnlySpan<char>(AllocatedStringBuffer buffer) => buffer.WrittenSpan;
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.
