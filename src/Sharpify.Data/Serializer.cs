@@ -18,7 +18,7 @@ internal class Serializer : DatabaseSerializer {
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        var numRead = file.Read(buffer.Buffer, 0, estimatedSize);
+        int numRead = file.Read(buffer.Buffer, 0, estimatedSize);
         buffer.Advance(numRead);
         Dictionary<string, byte[]?> dict =
             MemoryPackSerializer.Deserialize<Dictionary<string, byte[]?>>(buffer.WrittenSpan, SerializerOptions)

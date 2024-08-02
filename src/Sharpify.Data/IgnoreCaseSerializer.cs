@@ -33,9 +33,9 @@ internal class IgnoreCaseSerializer : Serializer {
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        var numRead = file.Read(buffer.Buffer, 0, estimatedSize);
+        int numRead = file.Read(buffer.Buffer, 0, estimatedSize);
         buffer.Advance(numRead);
-        var dict = FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan);
         return dict;
     }
 
@@ -46,9 +46,9 @@ internal class IgnoreCaseSerializer : Serializer {
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
-        var numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
+        int numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        var dict = FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan);
         return dict;
     }
 }

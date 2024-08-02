@@ -15,20 +15,6 @@ internal static class Extensions {
 	}
 
 	/// <summary>
-	/// Copies the specified source array.
-	/// </summary>
-	/// <param name="source"></param>
-	/// <returns></returns>
-	internal static byte[] FastCopy(this byte[] source) {
-		if (source.Length is 0) {
-			return Array.Empty<byte>();
-		}
-		var dest = GC.AllocateUninitializedArray<byte>(source.Length);
-		source.AsSpan().CopyTo(dest);
-		return dest;
-	}
-
-	/// <summary>
 	/// Gets the estimated size of the key-value pair.
 	/// </summary>
 	/// <param name="kvp"></param>
