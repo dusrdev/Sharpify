@@ -14,6 +14,7 @@ namespace Sharpify;
 public sealed class AesProvider : IDisposable {
     private static readonly byte[] Vector = [181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 23, 19, 17];
     private readonly Aes _aes;
+    private volatile bool _disposed;
 
     private const int SaltSize = 24;
 
@@ -40,8 +41,7 @@ public sealed class AesProvider : IDisposable {
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
         using var buffer = new RentedBufferWriter<byte>(strKey.Length * sizeof(char));
-        long bytesWritten = Encoding.UTF8.GetBytes(strKey, buffer);
-        buffer.Advance((int)bytesWritten);
+        _ = Encoding.UTF8.GetBytes(strKey, buffer);
         return SHA256.HashData(buffer.WrittenSpan);
     }
 
@@ -280,8 +280,9 @@ public sealed class AesProvider : IDisposable {
         base64.AsSpan().CopyTo(buffer);
         MemoryExtensions.Replace(buffer, '+', '-');
         MemoryExtensions.Replace(buffer, '/', '_');
-        if (buffer[^1] is '=') {
-            buffer = buffer[..^1];
+        int last = buffer.Length - 1;
+        if (buffer[last] is '=') {
+            buffer = buffer.Slice(0, last);
         }
         return new string(buffer);
 #elif NET7_0
@@ -298,5 +299,11 @@ public sealed class AesProvider : IDisposable {
     /// <summary>
     /// Disposes the AES object
     /// </summary>
-    public void Dispose() => _aes?.Dispose();
+    public void Dispose() {
+        if (_disposed) {
+            return;
+        }
+        _aes?.Dispose();
+        _disposed = true;
+    }
 }
