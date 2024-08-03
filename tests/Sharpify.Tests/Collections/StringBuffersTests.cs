@@ -16,6 +16,21 @@ public class StringBuffersTests {
     }
 
     [Fact]
+    public void AllocatedStringBuffer_Append_Interpolated() {
+        // Arrange
+        var buffer = StringBuffer.Rent(20);
+
+        // Act
+        string a = "Hello";
+        string b = "World";
+
+        buffer.AppendInterpolated($"{a} {b}");
+
+        // Assert
+        buffer.WrittenSpan.SequenceEqual("Hello World").Should().BeTrue();
+    }
+
+    [Fact]
     public void StringBuffer_AppendLine_OnElement() {
         // Arrange
         using var buffer = StringBuffer.Rent(20);
