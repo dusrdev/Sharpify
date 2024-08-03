@@ -31,9 +31,6 @@ public unsafe ref struct AllocatedStringBuffer {
     public AllocatedStringBuffer() : this(Span<char>.Empty) {
     }
 
-    internal Span<char> Remaining => _buffer[_position..];
-    internal void Advance(int count) => _position += count;
-
 #pragma warning disable CS9084 // Struct member returns 'this' or other instance members by reference
 
     /// <summary>
@@ -57,7 +54,7 @@ public unsafe ref struct AllocatedStringBuffer {
     /// Appends the specified string to the buffer.
     /// </summary>
     /// <param name="str">The string to append.</param>
-    public ref AllocatedStringBuffer Append(ReadOnlySpan<char> str) {
+    public ref AllocatedStringBuffer Append(scoped ReadOnlySpan<char> str) {
 #if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
 #elif NET7_0
@@ -66,7 +63,7 @@ public unsafe ref struct AllocatedStringBuffer {
         }
 #endif
 
-        str.CopyTo(_buffer[_position..]);
+        str.CopyTo(_buffer.Slice(_position));
         _position += str.Length;
         return ref this;
     }
@@ -79,13 +76,27 @@ public unsafe ref struct AllocatedStringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public ref AllocatedStringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
-        var written = value.TryFormat(_buffer[_position..], out var charsWritten, format, provider);
-        if (!written) {
+    public ref AllocatedStringBuffer Append<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+        bool appended = value.TryFormat(_buffer.Slice(_position), out var charsWritten, format, provider);
+        if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
         }
 
         _position += charsWritten;
+        return ref this;
+    }
+
+    /// <summary>
+    /// Appends an interpolated string to the buffer.
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <returns></returns>
+    public ref AllocatedStringBuffer AppendInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
+        bool appended = _buffer.Slice(_position).TryWrite(ref handler, out int written);
+        if (!appended) {
+            throw new ArgumentOutOfRangeException(nameof(Length), "Buffer didn't have enough available space");
+        }
+        _position += written;
         return ref this;
     }
 
@@ -126,8 +137,19 @@ public unsafe ref struct AllocatedStringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public ref AllocatedStringBuffer AppendLine<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+    public ref AllocatedStringBuffer AppendLine<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         Append(value, format, provider);
+        Append(NewLine);
+        return ref this;
+    }
+
+    /// <summary>
+    /// Appends an interpolated string to the buffer, followed by the platform specific new line.
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <returns></returns>
+    public ref AllocatedStringBuffer AppendLineInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
+        AppendInterpolated(ref handler);
         Append(NewLine);
         return ref this;
     }
@@ -173,9 +195,16 @@ public unsafe ref struct AllocatedStringBuffer {
     /// </summary>
     /// <param name="range"></param>
     private readonly string Allocate(Range range) {
-        ReadOnlySpan<char> span = _buffer[range];
+        (int offset, int length) = range.GetOffsetAndLength(Length);
+        ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
+
+    /// <summary>
+    /// Returns a span of the remaining unwritten buffer.
+    /// </summary>
+    /// <param name="buffer"></param>
+    public static implicit operator Span<char>(AllocatedStringBuffer buffer) => buffer._buffer.Slice(buffer._position);
 
     /// <summary>
     /// Use the allocate function with the trimEnd parameter set to true.
