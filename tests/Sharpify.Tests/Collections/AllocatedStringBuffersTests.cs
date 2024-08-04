@@ -126,7 +126,7 @@ public class AllocatedStringBuffersTests {
     [Fact]
     public void AllocatedStringBuffer_ImplicitOperatorString() {
         // Arrange
-        var buffer = StringBuffer.Create(stackalloc char[4]);
+        var buffer = StringBuffer.Create(stackalloc char[10]);
 
         // Act
         buffer.Append('a');
@@ -142,7 +142,7 @@ public class AllocatedStringBuffersTests {
     [Fact]
     public void AllocatedStringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
-        var buffer = StringBuffer.Create(stackalloc char[4]);
+        var buffer = StringBuffer.Create(stackalloc char[10]);
 
         // Act
         buffer.Append('a');

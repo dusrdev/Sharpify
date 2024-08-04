@@ -23,8 +23,7 @@ public static partial class Extensions {
 
         return StringBuffer.Create(stackalloc char[TimeSpanRequiredBufferLength])
                            .Append(Math.Round(value, 2))
-                           .Append(suffix)
-                           .Allocate(true, true);
+                           .Append(suffix);
     }
 
     /// <summary>
@@ -68,7 +67,10 @@ public static partial class Extensions {
             buffer.Append(time.Seconds)
                .Append("s ");
         }
-        return buffer.Allocate(true, true);
+
+        ReadOnlySpan<char> span = buffer.WrittenSpan;
+        span = span.Slice(0, span.Length - 1);
+        return new(span);
     }
 
     /// <summary>
@@ -116,8 +118,7 @@ public static partial class Extensions {
                            .Append('-')
                            .Append(CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month))
                            .Append('-')
-                           .Append(time.Year % 100)
-                           .Allocate(true, true);
+                           .Append(time.Year % 100);
     }
 
 

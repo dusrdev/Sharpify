@@ -142,7 +142,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
-        using var buffer = StringBuffer.Rent(4);
+        using var buffer = StringBuffer.Rent(10);
 
         // Act
         buffer.Append('a');
@@ -158,7 +158,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_ImplicitOperatorReadOnlyMemory() {
         // Arrange
-        using var buffer = StringBuffer.Rent(4);
+        using var buffer = StringBuffer.Rent(10);
 
         // Act
         buffer.Append('a');
