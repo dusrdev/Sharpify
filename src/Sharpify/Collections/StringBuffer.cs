@@ -100,20 +100,6 @@ public unsafe ref partial struct StringBuffer {
     }
 
     /// <summary>
-    /// Appends an interpolated string to the buffer.
-    /// </summary>
-    /// <param name="handler"></param>
-    /// <returns></returns>
-    public ref StringBuffer AppendInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
-        bool appended = _buffer.Slice(_position).TryWrite(ref handler, out int written);
-        if (!appended) {
-            throw new ArgumentOutOfRangeException(nameof(Length), "Buffer didn't have enough available space");
-        }
-        _position += written;
-        return ref this;
-    }
-
-    /// <summary>
     /// Appends the platform specific new line to the buffer.
     /// </summary>
     public ref StringBuffer AppendLine() {
@@ -154,17 +140,6 @@ public unsafe ref partial struct StringBuffer {
         Append(value, format, provider);
         Append(NewLine);
 
-        return ref this;
-    }
-
-    /// <summary>
-    /// Appends an interpolated string to the buffer, followed by the platform specific new line.
-    /// </summary>
-    /// <param name="handler"></param>
-    /// <returns></returns>
-    public ref StringBuffer AppendLineInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
-        AppendInterpolated(ref handler);
-        Append(NewLine);
         return ref this;
     }
 
@@ -213,12 +188,6 @@ public unsafe ref partial struct StringBuffer {
         ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
-
-    /// <summary>
-    /// Returns a span of the remaining unwritten buffer.
-    /// </summary>
-    /// <param name="buffer"></param>
-    public static implicit operator Span<char>(StringBuffer buffer) => buffer._buffer.Slice(buffer._position);
 
     /// <summary>
     /// Uses the allocate function with the trimEnd parameter set to true.

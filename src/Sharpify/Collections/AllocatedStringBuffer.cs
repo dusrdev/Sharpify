@@ -87,20 +87,6 @@ public unsafe ref struct AllocatedStringBuffer {
     }
 
     /// <summary>
-    /// Appends an interpolated string to the buffer.
-    /// </summary>
-    /// <param name="handler"></param>
-    /// <returns></returns>
-    public ref AllocatedStringBuffer AppendInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
-        bool appended = _buffer.Slice(_position).TryWrite(ref handler, out int written);
-        if (!appended) {
-            throw new ArgumentOutOfRangeException(nameof(Length), "Buffer didn't have enough available space");
-        }
-        _position += written;
-        return ref this;
-    }
-
-    /// <summary>
     /// Appends the platform specific new line to the buffer.
     /// </summary>
     public ref AllocatedStringBuffer AppendLine() {
@@ -143,17 +129,6 @@ public unsafe ref struct AllocatedStringBuffer {
         return ref this;
     }
 
-    /// <summary>
-    /// Appends an interpolated string to the buffer, followed by the platform specific new line.
-    /// </summary>
-    /// <param name="handler"></param>
-    /// <returns></returns>
-    public ref AllocatedStringBuffer AppendLineInterpolated([InterpolatedStringHandlerArgument("")] scoped ref MemoryExtensions.TryWriteInterpolatedStringHandler handler) {
-        AppendInterpolated(ref handler);
-        Append(NewLine);
-        return ref this;
-    }
-
 #pragma warning restore CS9084 // Struct member returns 'this' or other instance members by reference
 
     /// <summary>
@@ -188,7 +163,7 @@ public unsafe ref struct AllocatedStringBuffer {
     /// <summary>
     /// Returns the used portion of the buffer as a readonly span.
     /// </summary>
-    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[0.._position];
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer.Slice(0, _position);
 
     /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
@@ -199,12 +174,6 @@ public unsafe ref struct AllocatedStringBuffer {
         ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
-
-    /// <summary>
-    /// Returns a span of the remaining unwritten buffer.
-    /// </summary>
-    /// <param name="buffer"></param>
-    public static implicit operator Span<char>(AllocatedStringBuffer buffer) => buffer._buffer.Slice(buffer._position);
 
     /// <summary>
     /// Use the allocate function with the trimEnd parameter set to true.

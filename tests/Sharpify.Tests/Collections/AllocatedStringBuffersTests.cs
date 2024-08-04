@@ -16,21 +16,6 @@ public class AllocatedStringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_Append_Interpolated() {
-        // Arrange
-        var buffer = StringBuffer.Create(stackalloc char[20]);
-
-        // Act
-        string a = "Hello";
-        string b = "World";
-
-        buffer.AppendInterpolated($"{a} {b}");
-
-        // Assert
-        (buffer.WrittenSpan is "Hello World").Should().BeTrue();
-    }
-
-    [Fact]
     public void AllocatedStringBuffer_AppendLine_OnElement() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[20]);
