@@ -120,7 +120,8 @@ public class AllocatedStringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        buffer[1..^1].Should().Be("bc");
+        ReadOnlySpan<char> span = buffer;
+        span[1..^1].ToString().Should().Be("bc");
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public class AllocatedStringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        string str = buffer;
+        string str = buffer.Allocate();
         str.Should().Be("abcd");
     }
 

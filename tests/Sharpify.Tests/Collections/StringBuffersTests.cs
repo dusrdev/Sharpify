@@ -120,7 +120,8 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        buffer[1..^1].Should().Be("bc");
+        ReadOnlySpan<char> span = buffer;
+        (span[1..^1] is "bc").Should().BeTrue();
     }
 
     [Fact]
@@ -135,8 +136,7 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        string str = buffer;
-        str.Should().Be("abcd");
+        buffer.Allocate().Should().Be("abcd");
     }
 
     [Fact]

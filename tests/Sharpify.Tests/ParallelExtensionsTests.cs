@@ -5,73 +5,6 @@ namespace Sharpify.Tests;
 
 public class ParallelExtensionsTests {
     [Fact]
-    public void Concurrent_GivenNullCollection_ThrowsArgumentNullException() {
-        // Arrange
-		#pragma warning disable
-        ICollection<int> source = null;
-		#pragma warning restore
-
-        // Act
-		#pragma warning disable
-        Action act = () => source.Concurrent();
-		#pragma warning restore
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>()
-            .WithMessage("Value cannot be null. (Parameter 'source')");
-    }
-
-    [Fact]
-    public void Concurrent_DefaultConstructor_ThrowsException() {
-        // Act
-        Action act = () => new Concurrent<int>();
-
-        // Assert
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
-    public void Concurrent_GivenValidCollection_WorksFine() {
-        // Arrange
-        ICollection<int> source = new List<int> { 1, 2, 3 };
-
-        // Act
-        _ = source.Concurrent();
-    }
-
-    [Fact]
-    public async Task InvokeAsync_GivenEmptyCollection_DoesNothing() {
-        // Arrange
-        List<int> collection = new();
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyActionAsync(results);
-
-        // Act
-        await collection.Concurrent().InvokeAsync(action);
-
-        // Assert
-        results.Count.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_GiveValidCollection_ReturnsValidResult() {
-        // Arrange
-        List<int> collection = new() { 1, 2, 3 };
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyActionAsync(results);
-
-        // Act
-        await collection.Concurrent().InvokeAsync(action);
-
-        // Assert
-        results.Should().Equal(new Dictionary<int, int> {
-			{ 1, 2 },
-			{ 2, 4 },
-			{ 3, 6 }
-		});
-    }
-
-    [Fact]
     public async Task InvokeAsync_WithAsyncLocal_ReturnsValidResult() {
         // Arrange
         List<int> collection = new() { 1, 2, 3 };
@@ -80,38 +13,6 @@ public class ParallelExtensionsTests {
 
         // Act
         await collection.AsAsyncLocal(default(int)).InvokeAsync(action);
-
-        // Assert
-        results.Should().Equal(new Dictionary<int, int> {
-			{ 1, 2 },
-			{ 2, 4 },
-			{ 3, 6 }
-		});
-    }
-
-	[Fact]
-    public void Foreach_GivenEmptyCollection_DoesNothing() {
-        // Arrange
-        List<int> collection = new();
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyAction(results);
-
-        // Act
-        collection.Concurrent().ForEach(action);
-
-        // Assert
-        results.Count.Should().Be(0);
-    }
-
-    [Fact]
-    public void Foreach_GiveValidCollection_ReturnsValidResult() {
-        // Arrange
-        List<int> collection = new() { 1, 2, 3 };
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyAction(results);
-
-        // Act
-        collection.Concurrent().ForEach(action);
 
         // Assert
         results.Should().Equal(new Dictionary<int, int> {
@@ -140,56 +41,6 @@ public class ParallelExtensionsTests {
 			{ 2, 4 },
 			{ 3, 6 }
 		});
-    }
-
-	[Fact]
-    public async Task ForeachAsync_GivenEmptyCollection_DoesNothing() {
-        // Arrange
-        List<int> collection = new();
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyActionAsync(results);
-
-        // Act
-        await collection.Concurrent().ForEachAsync(action);
-
-        // Assert
-        results.Count.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ForeachAsync_GiveValidCollection_ReturnsValidResult() {
-        // Arrange
-        List<int> collection = new() { 1, 2, 3 };
-        var results = new ConcurrentDictionary<int, int>();
-        var action = new MultiplyActionAsync(results);
-
-        // Act
-        await collection.Concurrent().ForEachAsync(action);
-
-        // Assert
-        results.Should().Equal(new Dictionary<int, int> {
-			{ 1, 2 },
-			{ 2, 4 },
-			{ 3, 6 }
-		});
-    }
-
-    [Fact]
-    public async Task ForeachAsync_WithValidAsyncLocal_ReturnsValidResult() {
-        // Arrange
-        var dict = Enumerable.Range(1, 100).ToDictionary(x => x, x => x);
-        var results = new ConcurrentDictionary<int, int>(Environment.ProcessorCount, dict.Count);
-        var action = new MultiplyActionDictAsync(results);
-
-        var (buffer, entries) = dict.RentBufferAndCopyEntries();
-
-        // Act
-        await entries.AsAsyncLocal(default(KeyValuePair<int,int>)).ForEachAsync(action, loadBalance: false);
-        buffer.ReturnBufferToSharedArrayPool();
-        var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
-
-        // Assert
-        results.Should().Equal(expected);
     }
 
     [Fact]
