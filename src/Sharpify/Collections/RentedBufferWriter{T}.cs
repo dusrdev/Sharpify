@@ -18,7 +18,7 @@ public sealed class RentedBufferWriter<T> : IBufferWriter<T>, IDisposable {
 	/// <summary>
 	/// The current position in the buffer
 	/// </summary>
-	public int CurrentPosition => _index;
+	public int Position => _index;
 
 	/// <summary>
 	/// The actual capacity of the rented buffer

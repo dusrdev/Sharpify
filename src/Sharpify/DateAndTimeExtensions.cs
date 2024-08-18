@@ -23,7 +23,8 @@ public static partial class Extensions {
 
         return StringBuffer.Create(stackalloc char[TimeSpanRequiredBufferLength])
                            .Append(Math.Round(value, 2))
-                           .Append(suffix);
+                           .Append(suffix)
+                           .Allocate();
     }
 
     /// <summary>
@@ -118,7 +119,8 @@ public static partial class Extensions {
                            .Append('-')
                            .Append(CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(time.Month))
                            .Append('-')
-                           .Append(time.Year % 100);
+                           .Append(time.Year % 100)
+                           .Allocate();
     }
 
 

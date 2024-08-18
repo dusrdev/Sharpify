@@ -72,5 +72,6 @@ public class Routine : IDisposable {
         }
         _timer?.Close();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

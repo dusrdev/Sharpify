@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Sharpify.Routines;
 
@@ -70,7 +69,6 @@ public class AsyncRoutine : IDisposable {
     /// </summary>
     /// <param name="options">The new options to apply.</param>
     /// <returns>The current AsyncRoutine instance.</returns>
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public AsyncRoutine ChangeOptions(RoutineOptions options) {
         _options = options;
         return this;
@@ -80,7 +78,6 @@ public class AsyncRoutine : IDisposable {
     /// Starts the async routine and executes the registered actions either sequentially or in parallel.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public async Task Start() {
         Debug.Assert(Actions.Count > 0, "Actions.Count must be > 0");
         try {
@@ -150,5 +147,6 @@ public class AsyncRoutine : IDisposable {
         }
         _timer?.Dispose();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -4,6 +4,8 @@ namespace Sharpify;
 /// A wrapper around a value that makes it thread safe.
 /// </summary>
 public sealed class ThreadSafe<T> {
+    //TODO: Switch to NET9 new Lock type
+    //TODO: Remove IModifier and use Func<T, T> instead
     private readonly object _lock = new();
     private T _value;
 

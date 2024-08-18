@@ -84,7 +84,6 @@ public sealed class AesProvider : IDisposable {
     /// <returns>bool</returns>
     public static bool IsPasswordValid(string password, string hashedPassword) {
         //extract original values from delimited hash text
-#if NET8_0_OR_GREATER
         ReadOnlySpan<char> hpSpan = hashedPassword;
         Span<Range> parts = stackalloc Range[3];
         hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
@@ -92,12 +91,6 @@ public sealed class AesProvider : IDisposable {
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
         hpSpan[parts[1]].TryConvertToInt32(out var origIterations);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
-#elif NET7_0
-        var origHashedParts = hashedPassword.Split('|', 3, StringSplitOptions.RemoveEmptyEntries);
-        ReadOnlySpan<byte> origSalt = Convert.FromBase64String(origHashedParts[0]);
-        origHashedParts[1].AsSpan().TryConvertToInt32(out var origIterations);
-        ReadOnlySpan<char> origHash = origHashedParts[2];
-#endif
 
         //generate hash from test password and original salt and iterations
 
@@ -245,7 +238,6 @@ public sealed class AesProvider : IDisposable {
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
-#if NET8_0_OR_GREATER
         Span<char> buffer = stackalloc char[base64Url.Length + 2];
         base64Url.AsSpan().CopyTo(buffer);
         buffer.Replace('-', '+');
@@ -260,22 +252,11 @@ public sealed class AesProvider : IDisposable {
             length += 1;
         }
         return Convert.FromBase64String(new string(buffer[0..length]));
-#elif NET7_0
-        var base64 = new StringBuilder(base64Url);
-        base64.Replace('-', '+')
-              .Replace('_', '/');
-        switch (base64.Length % 4) {
-            case 2: base64.Append("=="); break;
-            case 3: base64.Append('='); break;
-        }
-        return Convert.FromBase64String(base64.ToString());
-#endif
     }
 
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(ReadOnlySpan<byte> bytes) {
         string base64 = Convert.ToBase64String(bytes);
-#if NET8_0_OR_GREATER
         Span<char> buffer = stackalloc char[base64.Length];
         base64.AsSpan().CopyTo(buffer);
         MemoryExtensions.Replace(buffer, '+', '-');
@@ -285,15 +266,6 @@ public sealed class AesProvider : IDisposable {
             buffer = buffer.Slice(0, last);
         }
         return new string(buffer);
-#elif NET7_0
-        var sb = new StringBuilder(base64);
-        sb.Replace('+', '-')
-          .Replace('/', '_');
-        while (sb[^1] is '=') {
-            sb.Remove(sb.Length - 1, 1);
-        }
-        return sb.ToString();
-#endif
     }
 
     /// <summary>

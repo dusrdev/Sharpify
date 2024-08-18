@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 
 namespace Sharpify;
@@ -59,6 +60,9 @@ public static partial class Utils {
         /// <remarks>
         /// Currently only Windows, Linux and Mac are supported.
         /// </remarks>
+        [SupportedOSPlatform("Windows")]
+        [SupportedOSPlatform("Linux")]
+        [SupportedOSPlatform("MacOS")]
         public static void OpenLink(string url) {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 var processInfo = new ProcessStartInfo {

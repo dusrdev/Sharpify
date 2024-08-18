@@ -38,14 +38,7 @@ public unsafe ref struct AllocatedStringBuffer {
     /// </summary>
     /// <param name="c">The character to append.</param>
     public ref AllocatedStringBuffer Append(char c) {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, Length);
-#elif NET7_0
-        if (_position + 1 > Length) {
-            throw new ArgumentOutOfRangeException(nameof(Length));
-        }
-#endif
-
         _buffer[_position++] = c;
         return ref this;
     }
@@ -55,14 +48,7 @@ public unsafe ref struct AllocatedStringBuffer {
     /// </summary>
     /// <param name="str">The string to append.</param>
     public ref AllocatedStringBuffer Append(scoped ReadOnlySpan<char> str) {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
-#elif NET7_0
-        if (_position + str.Length > Length) {
-            throw new ArgumentOutOfRangeException(nameof(Length));
-        }
-#endif
-
         str.CopyTo(_buffer.Slice(_position));
         _position += str.Length;
         return ref this;
@@ -149,11 +135,6 @@ public unsafe ref struct AllocatedStringBuffer {
     }
 
     /// <summary>
-    /// Allocates a substring from the internal buffer using the specified range.
-    /// </summary>
-    public readonly string this[Range range] => Allocate(range);
-
-    /// <summary>
     /// Returns the character at the specified index.
     /// </summary>
     /// <param name="index"></param>
@@ -174,13 +155,6 @@ public unsafe ref struct AllocatedStringBuffer {
         ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
-
-    /// <summary>
-    /// Use the allocate function with the trimEnd parameter set to true.
-    /// </summary>
-    /// <param name="buffer"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator string(AllocatedStringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
     /// Returns a readonly span of the internal buffer up to the index after the last appended item.

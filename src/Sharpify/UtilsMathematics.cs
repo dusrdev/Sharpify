@@ -17,13 +17,10 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double RollingAverage(double oldAverage, double newNumber, int sampleCount) {
-#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(sampleCount, 0);
-#endif
-
-            if (sampleCount is <= 0)
+            if (sampleCount is 1) {
                 return newNumber;
-
+            }
             double denominator = 1d / sampleCount;
             return ((oldAverage * (sampleCount - 1)) + newNumber) * denominator;
         }
@@ -38,14 +35,10 @@ public static partial class Utils {
         /// <para>An exception will not be thrown at runtime to increase performance.</para>
         /// </remarks>
         public static double Factorial(double n) {
-#if NET8_0_OR_GREATER
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(n, 0);
-#endif
-
             if (n is <= 2) {
                 return n;
             }
-
             var num = 1d;
             for (; n > 1; n--) {
                 num *= n;

@@ -30,7 +30,6 @@ public unsafe ref partial struct StringBuffer {
         if (clearBuffer) {
             Array.Clear(_source);
         }
-
         _buffer = _source.AsSpan(0, Length);
         _position = 0;
     }
@@ -50,14 +49,7 @@ public unsafe ref partial struct StringBuffer {
     /// </summary>
     /// <param name="c">The character to append.</param>
     public ref StringBuffer Append(char c) {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, Length);
-#elif NET7_0
-        if (_position + 1 > Length) {
-            throw new ArgumentOutOfRangeException(nameof(Length));
-        }
-#endif
-
         _buffer[_position++] = c;
         return ref this;
     }
@@ -68,15 +60,8 @@ public unsafe ref partial struct StringBuffer {
     /// <param name="str">The string to append.</param>
     /// <returns>The same instance of the buffer</returns>
     public ref StringBuffer Append(scoped ReadOnlySpan<char> str) {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
-#elif NET7_0
-        if (_position + str.Length > Length) {
-            throw new ArgumentOutOfRangeException(nameof(Length));
-        }
-#endif
         str.CopyTo(_buffer.Slice(_position));
-
         _position += str.Length;
         return ref this;
     }
@@ -94,7 +79,6 @@ public unsafe ref partial struct StringBuffer {
         if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
         }
-
         _position += charsWritten;
         return ref this;
     }
@@ -139,7 +123,6 @@ public unsafe ref partial struct StringBuffer {
     public ref StringBuffer AppendLine<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         Append(value, format, provider);
         Append(NewLine);
-
         return ref this;
     }
 
@@ -154,18 +137,13 @@ public unsafe ref partial struct StringBuffer {
     public readonly string Allocate(bool trimIfShorter = true, bool trimEndWhiteSpace = false) {
         ReadOnlySpan<char> span = _buffer;
         if (trimIfShorter) {
-            span = span[0.._position];
+            span = span.Slice(0, _position);
         }
         if (trimEndWhiteSpace) {
             span = span.TrimEnd();
         }
         return new string(span);
     }
-
-    /// <summary>
-    /// Allocates a substring from the internal buffer using the specified range.
-    /// </summary>
-    public readonly string this[Range range] => Allocate(range);
 
     /// <summary>
     /// Returns the character at the specified index.
@@ -177,7 +155,7 @@ public unsafe ref partial struct StringBuffer {
     /// <summary>
     /// Returns the used portion of the buffer as a readonly span.
     /// </summary>
-    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[0.._position];
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer.Slice(0, _position);
 
     /// <summary>
     /// Allocates a substring from the internal buffer using the specified range.
@@ -188,13 +166,6 @@ public unsafe ref partial struct StringBuffer {
         ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
-
-    /// <summary>
-    /// Uses the allocate function with the trimEnd parameter set to true.
-    /// </summary>
-    /// <param name="buffer"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator string(StringBuffer buffer) => buffer.Allocate(true, false);
 
     /// <summary>
     /// Returns a readonly span of the internal buffer up to the index after the last appended item.

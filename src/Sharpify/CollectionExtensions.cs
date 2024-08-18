@@ -258,13 +258,7 @@ public static partial class Extensions {
     /// <returns>The number of elements copied to the destination array.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the number of elements in the source HashSet is greater than the available space from index to the end of the destination array.</exception>
     public static int CopyToArray<T>(this HashSet<T> hashSet, T[] destination, int index) {
-#if NET8_0_OR_GREATER
         ArgumentOutOfRangeException.ThrowIfGreaterThan(index + hashSet.Count, destination.Length);
-#elif NET7_0
-        if (index + hashSet.Count > destination.Length) {
-            throw new ArgumentOutOfRangeException();
-        }
-#endif
         hashSet.CopyTo(destination, index);
         return hashSet.Count;
     }
