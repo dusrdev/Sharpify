@@ -67,9 +67,9 @@ public sealed partial class Database : IDisposable {
                 ? keySelector
                 : key => key.StartsWith(keyPrefix) && keySelector(key.Substring(keyPrefix.Length));
 
-            var matches = _data.Keys.Where(predicate).ToArray();
+            var matches = _data.Keys.Where(predicate);
 
-            if (matches.Length is 0) {
+            if (!matches.Any()) {
                 return;
             }
 

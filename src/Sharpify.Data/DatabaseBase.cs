@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 using MemoryPack;
 
@@ -33,7 +32,6 @@ public sealed partial class Database : IDisposable {
     /// <summary>
     /// Overestimated size of the database.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private int GetOverestimatedSize() {
         return (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
     }

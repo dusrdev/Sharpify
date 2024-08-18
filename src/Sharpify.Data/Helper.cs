@@ -16,7 +16,7 @@ internal sealed class Helper : IDisposable {
     /// <param name="value"></param>
     /// <param name="key"></param>
     /// <returns></returns>
-    internal byte[] Encrypt(ReadOnlySpan<byte> value, string key) {
+    internal byte[] Encrypt(scoped ref readonly ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.EncryptBytes(value);
         }
@@ -45,7 +45,7 @@ internal sealed class Helper : IDisposable {
     /// <param name="value"></param>
     /// <param name="key"></param>
     /// <returns></returns>
-    internal byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
+    internal byte[] Decrypt(scoped ref readonly ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.DecryptBytes(value);
         }
@@ -61,7 +61,7 @@ internal sealed class Helper : IDisposable {
     /// <param name="destination"></param>
     /// <param name="key"></param>
     /// <returns></returns>
-    internal int Decrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
+    internal int Decrypt(scoped ref readonly ReadOnlySpan<byte> value, scoped Span<byte> destination, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.DecryptBytes(value, destination);
         }

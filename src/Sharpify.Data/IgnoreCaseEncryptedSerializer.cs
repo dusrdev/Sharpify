@@ -7,7 +7,7 @@ using Sharpify.Collections;
 namespace Sharpify.Data;
 
 /// <summary>
-/// A serializer for a database encryption and case sensitive keys
+/// A serializer for a database encryption and case-sensitive keys
 /// </summary>
 internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     internal IgnoreCaseEncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, key, encoding) {
@@ -22,12 +22,12 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
+        scoped ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(in rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
+        scoped ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(in decrypted);
         return dict;
     }
 
@@ -42,7 +42,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
         int numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenMemory);
         return dict;
     }
 }

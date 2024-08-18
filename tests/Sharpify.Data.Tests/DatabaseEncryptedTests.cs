@@ -120,8 +120,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);

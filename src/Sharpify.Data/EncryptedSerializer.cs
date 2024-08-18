@@ -26,11 +26,11 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        var rawSpan = rawBuffer.WrittenSpan;
+        scoped ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(in rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        var decrypted = decryptedBuffer.WrittenSpan;
+        scoped ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
         var dict = MemoryPackSerializer.Deserialize<Dictionary<string, byte[]?>>(decrypted, SerializerOptions);
         return dict ?? new Dictionary<string, byte[]?>();
     }

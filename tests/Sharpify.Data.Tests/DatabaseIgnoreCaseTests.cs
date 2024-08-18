@@ -123,8 +123,8 @@ public class DatabaseIgnoreCaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("TEST", out byte[] result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        db2.Database.TryGetValue("TEST", out var result).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);

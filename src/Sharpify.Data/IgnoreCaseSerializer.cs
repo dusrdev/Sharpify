@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 using MemoryPack;
 
 using Sharpify.Collections;
@@ -13,8 +11,12 @@ internal class IgnoreCaseSerializer : Serializer {
     internal IgnoreCaseSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Dictionary<string, byte[]?> FromSpan(ReadOnlySpan<byte> bin) {
+    internal static Dictionary<string, byte[]?> FromSpan(ReadOnlyMemory<byte> bin) {
+        scoped ReadOnlySpan<byte> data = bin.Span;
+        return FromSpan(in data);
+    }
+
+    internal static Dictionary<string, byte[]?> FromSpan(scoped ref readonly ReadOnlySpan<byte> bin) {
         if (bin.Length is 0) {
             return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
@@ -22,8 +24,8 @@ internal class IgnoreCaseSerializer : Serializer {
         var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
         var reader = new MemoryPackReader(bin, state);
         Dictionary<string, byte[]?>? dict = null;
-        formatter.GetFormatter().Deserialize(ref reader, ref dict!);
-        return dict ?? new(StringComparer.OrdinalIgnoreCase);
+        formatter.GetFormatter().Deserialize(ref reader, ref dict);
+        return dict ?? new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />
@@ -35,7 +37,8 @@ internal class IgnoreCaseSerializer : Serializer {
         using var file = new FileStream(_path, FileMode.Open);
         int numRead = file.Read(buffer.Buffer, 0, estimatedSize);
         buffer.Advance(numRead);
-        Dictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan);
+        scoped ReadOnlySpan<byte> deserialized = buffer.WrittenSpan;
+        Dictionary<string, byte[]?> dict = FromSpan(in deserialized);
         return dict;
     }
 
@@ -48,7 +51,7 @@ internal class IgnoreCaseSerializer : Serializer {
         using var file = new FileStream(_path, FileMode.Open);
         int numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        Dictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = FromSpan(buffer.WrittenMemory);
         return dict;
     }
 }

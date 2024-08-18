@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v2.6.0 [Unreleased]
+
+* All `byte[]` value returning reads from the database, now return `ReadOnlyMemory<byte>` instead, previously, to maintain the integrity of the value, a copy was made and returned, because there wasn't any guarantee against modification, `ReadOnlyMemory<byte>` enforced this guarantee without creating a copy, if you just reading the data this is much more performant, and if you want to modify it, you can always create a copy at your own discretion.
+* Decreased memory allocations for the `Func` based `Remove` method.
+* Removed compiler directions that potentially could not allow the JIT compiler to perform Dynamic and regular PGO.
+* Added accessability modifiers to `ReadOnlySpan` based parameters.
+
 ## v2.5.0
 
 * Updated to use version 2.2.0 of `Sharpify` and later, and `MemoryPack` 1.21.1 and later.

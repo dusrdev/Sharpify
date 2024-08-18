@@ -125,7 +125,7 @@ public class DatabaseEncryptedIgnoreCaseTests {
 
         // Assert
         db2.Database.TryGetValue("TEST", out var result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);

@@ -1,5 +1,3 @@
-using System.Buffers;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -22,7 +20,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, out byte[] value) => TryGetValue(key, "", out value);
+    public bool TryGetValue(string key, out ReadOnlyMemory<byte> value) => TryGetValue(key, "", out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -31,21 +29,21 @@ public sealed partial class Database : IDisposable {
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, string encryptionKey, out byte[] value) {
+    public bool TryGetValue(string key, string encryptionKey, out ReadOnlyMemory<byte> value) {
         try {
             _lock.EnterReadLock();
             // Get val reference
-            ref byte[]? val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) { // Not found
-                value = default!;
+            if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+                value = ReadOnlyMemory<byte>.Empty;
                 return false;
             }
             if (encryptionKey.Length is 0) { // Not encrypted
-                value = val!.ToArray();
+                value = val ?? ReadOnlyMemory<byte>.Empty;
                 return true;
             }
             // Encrypted -> Decrypt
-            value = Helper.Instance.Decrypt(val, encryptionKey);
+            ReadOnlySpan<byte> valSpan = val ?? ReadOnlySpan<byte>.Empty;
+            value = Helper.Instance.Decrypt(in valSpan, encryptionKey);
             return true;
         } finally {
             _lock.ExitReadLock();
@@ -76,8 +74,7 @@ public sealed partial class Database : IDisposable {
         try {
             _lock.EnterReadLock();
             // Get val reference
-            ref byte[]? val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) { // Not found
+            if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
                 return new RentedBufferWriter<byte>(0);
             }
             if (encryptionKey.Length is 0) { // Not encrypted
@@ -85,8 +82,9 @@ public sealed partial class Database : IDisposable {
                 buffer.WriteAndAdvance(val);
                 return buffer;
             } else {
-                var buffer = new RentedBufferWriter<byte>(val!.Length + AesProvider.ReservedBufferSize + reservedCapacity);
-                int numWritten = Helper.Instance.Decrypt(val, buffer.Buffer, encryptionKey);
+                ReadOnlySpan<byte> valSpan = val;
+                var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize + reservedCapacity);
+                int numWritten = Helper.Instance.Decrypt(in valSpan, buffer.Buffer, encryptionKey);
                 buffer.Advance(numWritten);
                 return buffer;
             }
@@ -116,8 +114,7 @@ public sealed partial class Database : IDisposable {
         try {
             _lock.EnterReadLock();
             // Get val reference
-            ref byte[]? val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) { // Not found
+            if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
                 value = default!;
                 return false;
             }
@@ -128,7 +125,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 value = default!;
@@ -163,9 +160,8 @@ public sealed partial class Database : IDisposable {
         try {
             _lock.EnterReadLock();
             // Get val reference
-            ref byte[]? val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) { // Not found
-                values = default!;
+            if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+                values = Array.Empty<T>();
                 return false;
             }
             ReadOnlySpan<byte> valSpan = val;
@@ -175,7 +171,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 values = default!;
@@ -236,8 +232,7 @@ public sealed partial class Database : IDisposable {
         try {
             _lock.EnterReadLock();
             // Get val reference
-            ref byte[]? val = ref _data.GetValueRefOrNullRef(key);
-            if (Unsafe.IsNullRef(ref val)) { // Not found
+            if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
                 value = "";
                 return false;
             }
@@ -248,7 +243,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 value = "";
@@ -280,11 +275,11 @@ public sealed partial class Database : IDisposable {
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
     public bool TryGetValue<T>(string key, string encryptionKey, JsonTypeInfo<T> jsonTypeInfo, out T value) {
-        if (!TryGetValue(key, encryptionKey, out byte[] bytes)) {
+        if (!TryGetValue(key, encryptionKey, out ReadOnlyMemory<byte> bytes)) {
             value = default!;
             return false;
         }
-        value = JsonSerializer.Deserialize(bytes, jsonTypeInfo)!;
+        value = JsonSerializer.Deserialize(bytes.Span, jsonTypeInfo)!;
         return true;
     }
 }

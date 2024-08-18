@@ -1,9 +1,6 @@
-using System.Runtime.CompilerServices;
-
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void EnsureUpsertsAreFinished() {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {

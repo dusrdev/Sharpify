@@ -40,7 +40,7 @@ internal class Serializer : DatabaseSerializer {
     internal override void Serialize(Dictionary<string, byte[]?> dict, int estimatedSize) {
         using var file = new FileStream(_path, FileMode.Create);
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
-        MemoryPackSerializer.Serialize(buffer, dict, SerializerOptions);
+        MemoryPackSerializer.Serialize(in buffer, in dict, SerializerOptions);
         file.Write(buffer.WrittenSpan);
     }
 

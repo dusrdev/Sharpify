@@ -45,26 +45,29 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
             value = default!;
             return false;
         }
-        value = T.Deserialize(data)!;
+        var span = data.Span;
+        value = T.Deserialize(in span)!;
         return true;
     }
 
     /// <inheritdoc />
     public bool TryGetValues(string key, string encryptionKey, out T[] values) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
+        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out ReadOnlyMemory<byte> data)) {
             values = default!;
             return false;
         }
-        values = T.DeserializeMany(data)!;
+        var span = data.Span;
+        values = T.DeserializeMany(in span)!;
         return true;
     }
 
     /// <inheritdoc />
     public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
+        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out ReadOnlyMemory<byte> data)) {
             return new RentedBufferWriter<T>(0);
         }
-        T[] values = T.DeserializeMany(data)!;
+        var span = data.Span;
+        T[] values = T.DeserializeMany(in span)!;
         var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);
         buffer.WriteAndAdvance(values);
         return buffer;

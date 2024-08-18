@@ -121,8 +121,8 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -139,14 +139,15 @@ public class DatabaseTests {
 
         using var buffer = db.Database.TryReadToRentedBuffer("test", "", 1);
         buffer.WriteAndAdvance(6);
-        db.Database.Upsert("test", buffer.WrittenSpan);
+        scoped ReadOnlySpan<byte> span = buffer.WrittenSpan;
+        db.Database.Upsert("test", in span);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual<byte>([1, 2, 3, 4, 5, 6]).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual<byte>([1, 2, 3, 4, 5, 6]).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);

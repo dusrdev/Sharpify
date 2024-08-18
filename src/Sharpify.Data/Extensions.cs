@@ -18,8 +18,6 @@ internal static class Extensions {
 	/// Gets the estimated size of the key-value pair.
 	/// </summary>
 	/// <param name="kvp"></param>
-	/// <returns></returns>
-	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	internal static int GetEstimatedSize(this KeyValuePair<string, byte[]> kvp)
 		=> GetEstimatedSize(kvp.Key, kvp.Value);
 
@@ -30,7 +28,7 @@ internal static class Extensions {
 	/// <param name="key"></param>
 	/// <param name="value"></param>
 	/// <returns></returns>
-	[MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static int GetEstimatedSize(ReadOnlySpan<char> key, ReadOnlySpan<byte> value)
 		=> key.Length * sizeof(char) + value.Length;
 }
