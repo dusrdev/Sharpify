@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Version 1.4.0 [Unreleased]
+
+* Optimized `Parser`:
+  * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.
+  * Changed lower level array allocation code to use generalized api to optimize on more platforms.
+
 ## Version 1.3.0
 
 * `Arguments` now contains new methods `TryGetValues` and `TryGetValues{T}` to get arrays from values, there are overloads for regular and positional arguments, each overload requires a `string? separator` that is used to split the value, as with te regular values, `T` needs to implement `IParsable{T}`.

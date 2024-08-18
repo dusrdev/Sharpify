@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## v2.4.0 [Unreleased]
+
 ## v2.3.0
 
 This release contains multiple **BREAKING CHANGES**, please read the following list carefully to see if and where you need to make changes to your code.
