@@ -114,7 +114,6 @@ public static partial class Extensions {
     /// If you are using a built-in type you can specify the <see cref="Comparer{T}.Default"/>
     /// </remarks>
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static T[] PureSort<T>(this T[] source, IComparer<T> comparer) {
         if (source.Length <= 1) {
             return source;
@@ -131,7 +130,6 @@ public static partial class Extensions {
     /// If you are using a built-in type you can specify the <see cref="Comparer{T}.Default"/>
     /// </remarks>
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static List<T> PureSort<T>(this IEnumerable<T> source, IComparer<T> comparer) {
         var list = new List<T>(source);
         if (list.Count <= 1) {

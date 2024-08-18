@@ -100,7 +100,7 @@ public class SortedList<T> : IReadOnlyList<T> {
 	/// </summary>
 	/// <param name="values"></param>
 	public void AddRange(ReadOnlySpan<T> values) {
-		foreach (var value in values) {
+		foreach (T value in values) {
 			Add(value);
 		}
 	}
@@ -110,7 +110,7 @@ public class SortedList<T> : IReadOnlyList<T> {
 	/// </summary>
 	/// <param name="collection"></param>
 	public void AddRange(IEnumerable<T> collection) {
-		foreach (var item in collection) {
+		foreach (T item in collection) {
 			Add(item);
 		}
 	}

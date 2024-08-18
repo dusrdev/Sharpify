@@ -48,7 +48,7 @@ public static partial class Extensions {
         var buffer = StringBuffer.Create(stackalloc char[TimeSpanRequiredBufferLength]);
 
         if (time.TotalSeconds <= 1) {
-            return buffer.Append("0s");
+            return "0s";
         }
 
         if (time.Days > 0) {
@@ -70,7 +70,7 @@ public static partial class Extensions {
 
         ReadOnlySpan<char> span = buffer.WrittenSpan;
         span = span.Slice(0, span.Length - 1);
-        return new(span);
+        return new string(span);
     }
 
     /// <summary>

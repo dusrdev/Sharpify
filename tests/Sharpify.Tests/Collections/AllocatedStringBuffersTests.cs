@@ -152,6 +152,6 @@ public class AllocatedStringBuffersTests {
 
         // Assert
         ReadOnlySpan<char> span = buffer;
-        span.SequenceEqual("abcd").Should().Be(true);
+        (span is "abcd").Should().Be(true);
     }
 }

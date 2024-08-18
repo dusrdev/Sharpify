@@ -144,7 +144,7 @@ public class AsyncRoutine : IDisposable {
         if (_disposed) {
             return;
         }
-        if (_cancellationTokenSource is not null && !_cancellationTokenSource.IsCancellationRequested) {
+        if (!_cancellationTokenSource.IsCancellationRequested) {
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
         }
