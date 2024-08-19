@@ -77,6 +77,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the value.</param>
     /// <param name="value">The value to be upserted.</param>
     /// <param name="encryptionKey">The encryption key used to encrypt the value.</param>
+    /// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
     /// <remarks>
     /// The upsert operation will either insert a new value if the key does not exist,
     /// or update the existing value if the key already exists.
@@ -84,10 +85,22 @@ public sealed partial class Database : IDisposable {
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
     /// </remarks>
-    public void Upsert<T>(string key, T value, string encryptionKey = "") where T : IMemoryPackable<T> {
+    /// <returns>
+	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+    public bool Upsert<T>(string key,
+                          T value,
+                          string encryptionKey = "",
+                          Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
+        if (updateCondition is not null) {
+            if (!TryGetValue<T>(key, encryptionKey, out var existingValue) || !updateCondition(existingValue)) {
+                return false;
+            }
+        }
         byte[] bytes = MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
         Upsert(key, bytes, encryptionKey);
+        return true;
     }
 
     /// <summary>
@@ -97,6 +110,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the values.</param>
     /// <param name="values">The values to be upserted.</param>
     /// <param name="encryptionKey">The encryption key used to encrypt the values.</param>
+    /// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
     /// <remarks>
     /// The upsert operation will either insert if the key does not exist,
     /// or update the existing values if the key already exists.
@@ -104,10 +118,22 @@ public sealed partial class Database : IDisposable {
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
     /// </remarks>
-    public void UpsertMany<T>(string key, T[] values, string encryptionKey = "") where T : IMemoryPackable<T> {
+    /// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+    public bool UpsertMany<T>(string key,
+                              T[] values,
+                              string encryptionKey = "",
+                              Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
+        if (updateCondition is not null) {
+            if (!TryGetValues<T>(key, encryptionKey, out var existingValues) || !updateCondition(existingValues)) {
+                return false;
+            }
+        }
         byte[] bytes = MemoryPackSerializer.Serialize(values, _serializer.SerializerOptions);
         Upsert(key, bytes, encryptionKey);
+        return true;
     }
 
     /// <summary>
@@ -117,6 +143,7 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the values.</param>
     /// <param name="values">The values to be upserted.</param>
     /// <param name="encryptionKey">The encryption key used to encrypt the values.</param>
+    /// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
     /// <remarks>
     /// The upsert operation will either insert if the key does not exist,
     /// or update the existing values if the key already exists.
@@ -124,11 +151,14 @@ public sealed partial class Database : IDisposable {
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
     /// </remarks>
-    public void UpsertMany<T>(string key, ReadOnlySpan<T> values, string encryptionKey = "") where T : IMemoryPackable<T> {
-        T[] array = values.ToArray();
-        byte[] bytes = MemoryPackSerializer.Serialize(array, _serializer.SerializerOptions);
-        Upsert(key, bytes, encryptionKey);
-    }
+    /// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+    public bool UpsertMany<T>(string key,
+                              ReadOnlySpan<T> values,
+                              string encryptionKey = "",
+                              Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T>
+        => UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
 
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
@@ -157,14 +187,28 @@ public sealed partial class Database : IDisposable {
     /// <param name="value"></param>
     /// <param name="jsonTypeInfo">That can be used to serialize T</param>
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
+    /// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
     /// <remarks>
     /// <para>
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
     /// </remarks>
-    public void Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "") where T : notnull {
+    /// <returns>
+	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+    public bool Upsert<T>(string key,
+                          T value,
+                          JsonTypeInfo<T> jsonTypeInfo,
+                          string encryptionKey = "",
+                          Func<T, bool>? updateCondition = null) where T : notnull {
+        if (updateCondition is not null) {
+            if (!TryGetValue(key, encryptionKey, jsonTypeInfo, out var existingValue) || !updateCondition(existingValue)) {
+                return false;
+            }
+        }
         byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(value, jsonTypeInfo);
         Upsert(key, bytes, encryptionKey);
+        return true;
     }
 
     // Adds items to the dictionary and serializes if needed at the end.

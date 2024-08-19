@@ -52,13 +52,25 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
         => _database.TryReadToRentedBuffer<T>(AcquireKey(key), encryptionKey, reservedCapacity);
 
     /// <inheritdoc />
-    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), value, encryptionKey);
+    public bool Upsert(string key,
+                       T value,
+                       string encryptionKey = "",
+                       Func<T, bool>? updateCondition = null)
+                       => _database.Upsert(AcquireKey(key), value, encryptionKey, updateCondition);
 
     /// <inheritdoc />
-    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
+    public bool UpsertMany(string key,
+                           T[] values,
+                           string encryptionKey = "",
+                           Func<T[], bool>? updateCondition = null)
+                           => _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
 
     /// <inheritdoc />
-    public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
+    public bool UpsertMany(string key,
+                           ReadOnlySpan<T> values,
+                           string encryptionKey = "",
+                           Func<T[], bool>? updateCondition = null)
+                           => _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));

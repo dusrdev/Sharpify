@@ -75,10 +75,14 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the value for.</param>
 	/// <param name="value">The value to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
 	/// <remarks>
 	/// Null values are disallowed and will cause an exception to be thrown.
 	/// </remarks>
-	void Upsert(string key, T value, string encryptionKey = "");
+	/// <returns>
+	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -86,10 +90,14 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the values for.</param>
 	/// <param name="values">The values to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
 	/// <remarks>
 	/// Null values are disallowed and will cause an exception to be thrown.
 	/// </remarks>
-	void UpsertMany(string key, T[] values, string encryptionKey = "");
+	/// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -97,7 +105,11 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the values for.</param>
 	/// <param name="values">The values to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
-	void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "");
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
+	/// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Removes the item with the specified key from the filtered database.

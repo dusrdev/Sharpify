@@ -74,25 +74,43 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public void Upsert(string key, T value, string encryptionKey = "") {
+    public bool Upsert(string key,
+                       T value,
+                       string encryptionKey = "",
+                       Func<T, bool>? updateCondition = null) {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
+        if (updateCondition is not null) {
+            if (!TryGetValue(key, encryptionKey, out var existingValue) || !updateCondition(existingValue)) {
+                return false;
+            }
+        }
         var bytes = T.Serialize(value)!;
         _database.Upsert(AcquireKey(key), bytes, encryptionKey);
+        return true;
     }
 
     /// <inheritdoc />
-    public void UpsertMany(string key, T[] values, string encryptionKey = "") {
-       ArgumentNullException.ThrowIfNull(values, nameof(values));
-       var bytes = T.SerializeMany(values)!;
+    public bool UpsertMany(string key,
+                           T[] values,
+                           string encryptionKey = "",
+                           Func<T[], bool>? updateCondition = null) {
+        ArgumentNullException.ThrowIfNull(values, nameof(values));
+        if (updateCondition is not null) {
+            if (!TryGetValues(key, encryptionKey, out var existingValues) || !updateCondition(existingValues)) {
+                return false;
+            }
+        }
+        var bytes = T.SerializeMany(values)!;
         _database.Upsert(AcquireKey(key), bytes, encryptionKey);
+        return true;
     }
 
     /// <inheritdoc />
-    public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") {
-        var array = values.ToArray();
-        var bytes = T.SerializeMany(array)!;
-        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
-    }
+    public bool UpsertMany(string key,
+                           ReadOnlySpan<T> values,
+                           string encryptionKey = "",
+                           Func<T[], bool>? updateCondition = null)
+                           => UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
 
     /// <inheritdoc />
     public bool Remove(string key) => _database.Remove(AcquireKey(key));

@@ -6,6 +6,13 @@
 * Decreased memory allocations for the `Func` based `Remove` method.
 * Removed compiler directions that potentially could not allow the JIT compiler to perform Dynamic and regular PGO.
 * Added accessability modifiers to `ReadOnlySpan` based parameters.
+* `Upsert{T}` overloads now have a `Func<T, bool> updateCondition` parameter that can be used to ensure that the previously stored value passes a condition before being updated, this is a feature of NoSQL databases that protects against concurrent writes overwriting each other. Now you can use this feature in `Sharpify.Data` as well.
+  * Of course this feature is also available in `UpsertMany{T}` overloads, and also in the overloads of the `JsonTypeInfo T`.
+  * To make it easier to see the result, these `Upsert` methods now return `bool`.
+  * `False` will only be returned if all of the next conditions are met:
+    1. Previous value was stored under this key
+    2. The previous value was successfully deserialized
+    3. The `updateCondition` was not met
 
 ## v2.5.0
 
