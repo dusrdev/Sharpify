@@ -94,7 +94,7 @@ public sealed partial class Database : IDisposable {
                           Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
         if (updateCondition is not null) {
-            if (!TryGetValue<T>(key, encryptionKey, out var existingValue) || !updateCondition(existingValue)) {
+            if (TryGetValue<T>(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
             }
         }
@@ -127,7 +127,7 @@ public sealed partial class Database : IDisposable {
                               Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
-            if (!TryGetValues<T>(key, encryptionKey, out var existingValues) || !updateCondition(existingValues)) {
+            if (TryGetValues<T>(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
                 return false;
             }
         }

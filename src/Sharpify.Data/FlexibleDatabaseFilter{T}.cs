@@ -80,7 +80,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
                        Func<T, bool>? updateCondition = null) {
         ArgumentNullException.ThrowIfNull(value, nameof(value));
         if (updateCondition is not null) {
-            if (!TryGetValue(key, encryptionKey, out var existingValue) || !updateCondition(existingValue)) {
+            if (TryGetValue(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
             }
         }
@@ -96,7 +96,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
                            Func<T[], bool>? updateCondition = null) {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
-            if (!TryGetValues(key, encryptionKey, out var existingValues) || !updateCondition(existingValues)) {
+            if (TryGetValues(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
                 return false;
             }
         }
