@@ -13,6 +13,8 @@
     1. Previous value was stored under this key
     2. The previous value was successfully deserialized
     3. The `updateCondition` was not met
+* `Database` now tracks changes (additions, updates, removals) and compares them serialization events, to avoid serialization if no updates occurred since the previous serialization.
+  * This means that you can automate serialization without worrying about potential waste of resources, for example you could omit `SerializeOnUpdate` from the `DatabaseConfiguration`, then create a background task that serializes on a given interval for example with `Sharpify.Routines.Routine` or `Sharpify.Routines.AsyncRoutine`, and it will only actually serialize if updates occurred. This can significantly improve performance in cases where there are write peaks, but the database is mostly read from.
 
 ## v2.5.0
 

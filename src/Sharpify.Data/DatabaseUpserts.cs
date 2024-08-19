@@ -224,6 +224,7 @@ public sealed partial class Database : IDisposable {
                 itemsAdded++;
                 int estimatedSize = kvp.GetEstimatedSize();
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
+                Interlocked.Increment(ref _updatesCount);
             }
             if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
                 Serialize();

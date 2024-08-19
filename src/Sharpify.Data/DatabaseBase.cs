@@ -22,6 +22,12 @@ public sealed partial class Database : IDisposable {
 
     private volatile bool _disposed;
 
+    // The updates count increments every time a value is updated, added or removed.
+    private long _updatesCount = 0;
+
+    // The serialization reference is checking against the updates to reduce redundant serialization.
+    private long _serializationReference = 0;
+
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly DatabaseSerializer _serializer;
     private volatile int _estimatedSize;

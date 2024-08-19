@@ -1,5 +1,3 @@
-using System.Buffers;
-
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
@@ -16,6 +14,7 @@ public sealed partial class Database : IDisposable {
             }
             var estimatedSize = Extensions.GetEstimatedSize(key, val);
             Interlocked.Add(ref _estimatedSize, -estimatedSize);
+            Interlocked.Increment(ref _updatesCount);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }
@@ -77,6 +76,7 @@ public sealed partial class Database : IDisposable {
                 _data.Remove(key, out var val);
                 var estimatedSize = Extensions.GetEstimatedSize(key, val);
                 Interlocked.Add(ref _estimatedSize, -estimatedSize);
+                Interlocked.Increment(ref _updatesCount);
 
                 if (Config.TriggerUpdateEvents) {
                     InvokeDataEvent(new DataChangedEventArgs {
@@ -85,9 +85,10 @@ public sealed partial class Database : IDisposable {
                         ChangeType = DataChangeType.Remove
                     });
                 }
-                if (Config.SerializeOnUpdate) {
-                    Serialize();
-                }
+            }
+
+            if (Config.SerializeOnUpdate) {
+                Serialize();
             }
 
         } finally {
