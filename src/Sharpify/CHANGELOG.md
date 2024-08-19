@@ -23,6 +23,7 @@ This release contains multiple **BREAKING CHANGES**, please read the following l
 * `RentedBufferWriter{T}` now has a computed property `CurrentPosition` which returns the current position in the buffer. Which means `GetMemorySlice` and `GetSpanSlice` are now usable in more scenarios.
 * `AesProvider` now uses internally uses `RentedBufferWriter` which allows should increase stability.
 * `LazyLocalPersistentDictionary` now also uses `RentedBufferWriter`.
+* All derived types of `PersistentDictionary` now implement `IDisposable` interface.
 
 ## v2.2.0
 

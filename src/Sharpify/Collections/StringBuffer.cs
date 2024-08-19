@@ -17,7 +17,7 @@ public unsafe ref partial struct StringBuffer {
     public readonly int Length;
 
     private int _position;
-    private volatile bool _disposed;
+    private bool _disposed;
 
     /// <summary>
     /// Creates a mutable string buffer with the specified capacity.
@@ -191,10 +191,10 @@ public unsafe ref partial struct StringBuffer {
     /// Releases the resources used by the StringBuffer.
     /// </summary>
     public void Dispose() {
-        if (_disposed) {
+        if (Volatile.Read(ref _disposed)) {
             return;
         }
         ArrayPool<char>.Shared.Return(_source, false);
-        _disposed = true;
+        Volatile.Write(ref _disposed, true);
     }
 }

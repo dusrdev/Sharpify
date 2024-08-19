@@ -7,7 +7,7 @@ namespace Sharpify.Collections;
 /// <summary>
 /// Provides a thread-safe dictionary that can be efficiently persisted.
 /// </summary>
-public abstract class PersistentDictionary {
+public abstract class PersistentDictionary : IDisposable{
     /// <summary>
     /// A thread-safe dictionary that stores string keys and values.
     /// </summary>
@@ -16,6 +16,8 @@ public abstract class PersistentDictionary {
     private readonly ConcurrentQueue<KeyValuePair<string, string>> _queue = new();
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+    private bool _disposed;
 
     /// <summary>
     /// Gets the number of key-value pairs contained in the PersistentDictionary.
@@ -165,4 +167,16 @@ public abstract class PersistentDictionary {
     /// </summary>
     /// <remarks>It is executed automatically after <see cref="UpsertAsync(string, string)"/>.</remarks>
     public virtual async Task SerializeDictionaryAsync() => await SerializeAsync();
+
+    /// <summary>
+    /// Disposes of the resources used by the persistent dictionary.
+    /// </summary>
+    public void Dispose() {
+        if (Volatile.Read(ref _disposed)) {
+            return;
+        }
+        _semaphore.Dispose();
+        Volatile.Write(ref _disposed, true);
+        GC.SuppressFinalize(this);
+    }
 }

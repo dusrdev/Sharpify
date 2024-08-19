@@ -8,10 +8,10 @@ namespace Sharpify.Routines;
 /// </summary>
 public class AsyncRoutine : IDisposable {
     private readonly PeriodicTimer _timer;
-    private volatile bool _isRunning;
+    private bool _isRunning;
     private RoutineOptions _options;
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private volatile bool _disposed;
+    private bool _disposed;
 
     /// <summary>
     /// List of asynchronous actions to be executed.
@@ -83,7 +83,7 @@ public class AsyncRoutine : IDisposable {
         try {
             while (Actions.Count > 0
                    && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
-                if (!_isRunning) {
+                if (!Volatile.Read(ref _isRunning)) {
                     continue;
                 }
                 // Execute in Parallel
@@ -115,16 +115,12 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// Stops the routine.
     /// </summary>
-    public void Stop() {
-        _isRunning = false;
-    }
+    public void Stop() => Volatile.Write(ref _isRunning, false);
 
     /// <summary>
     /// Resumes the execution of the asynchronous routine.
     /// </summary>
-    public void Resume() {
-        _isRunning = true;
-    }
+    public void Resume() => Volatile.Write(ref _isRunning, true);
 
     /// <summary>
     /// Disposes the timer and suppresses finalization of the object.
@@ -138,7 +134,7 @@ public class AsyncRoutine : IDisposable {
     /// </para>
     /// </remarks>
     public void Dispose() {
-        if (_disposed) {
+        if (Volatile.Read(ref _disposed)) {
             return;
         }
         if (!_cancellationTokenSource.IsCancellationRequested) {
@@ -146,7 +142,7 @@ public class AsyncRoutine : IDisposable {
             _cancellationTokenSource.Dispose();
         }
         _timer?.Dispose();
-        _disposed = true;
+        Volatile.Write(ref _disposed, true);
         GC.SuppressFinalize(this);
     }
 }

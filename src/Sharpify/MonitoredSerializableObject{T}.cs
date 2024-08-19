@@ -14,7 +14,6 @@ namespace Sharpify;
 public class MonitoredSerializableObject<T> : SerializableObject<T> {
     private readonly FileSystemWatcher _watcher;
     private volatile uint _isInternalModification;
-    private volatile bool _disposed;
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
@@ -77,11 +76,12 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
 
     /// <inheritdoc/>
     public override void Dispose() {
-        if (_disposed) {
+        if (Volatile.Read(ref _disposed)) {
             return;
         }
         _watcher?.Dispose();
         _lock?.Dispose();
-        _disposed = true;
+        Volatile.Write(ref _disposed, true);
+        GC.SuppressFinalize(this);
     }
 }
