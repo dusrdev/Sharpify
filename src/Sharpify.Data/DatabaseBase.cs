@@ -20,7 +20,7 @@ public sealed partial class Database : IDisposable {
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
-    private volatile bool _disposed;
+    private bool _disposed;
 
     // The updates count increments every time a value is updated, added or removed.
     private long _updatesCount = 0;
@@ -147,10 +147,11 @@ public sealed partial class Database : IDisposable {
     /// Frees the resources used by the database.
     /// </summary>
     public void Dispose() {
-        if (_disposed) {
+        if (Volatile.Read(ref _disposed)) {
             return;
         }
         _lock.Dispose();
-        _disposed = true;
+        Volatile.Write(ref _disposed, true);
+        GC.SuppressFinalize(this);
     }
 }
