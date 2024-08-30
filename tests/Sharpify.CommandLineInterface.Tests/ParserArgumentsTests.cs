@@ -1,3 +1,5 @@
+using ConsoleDump;
+
 namespace Sharpify.CommandLineInterface.Tests;
 
 public class ParserArgumentsTests {
@@ -107,6 +109,17 @@ public class ParserArgumentsTests {
 		var arguments = Parser.ParseArguments(input);
 		arguments.Should().NotBeNull();
 		arguments!.HasFlag("force").Should().BeTrue();
+	}
+
+	[Fact]
+	public void Parse_And_Arguments_Positional_Negative_Numeric() {
+		const string input = "command -5 -9";
+		var arguments = Parser.ParseArguments(input);
+		arguments.Should().NotBeNull();
+		arguments!.TryGetValue(1, 0, out int num).Should().BeTrue();
+		num.Should().Be(-5);
+		arguments!.TryGetValue(2, 0, out int num2).Should().BeTrue();
+		num2.Should().Be(-9);
 	}
 
 	[Fact]
