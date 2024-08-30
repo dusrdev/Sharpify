@@ -6,8 +6,9 @@ namespace Sharpify.CommandLineInterface.Tests;
 public class ArgumentsIsolatedTests {
 	private static readonly Arguments _args = Parser.ParseArguments(
 		"command positional --named1 Harold --named2 Finch positional2 --flag --words \"word1|word2\" --numbers \"1|2\"")!;
+    private static readonly int[] expectation = [1, 2];
 
-	[Fact]
+    [Fact]
 	public void Positional_BeforeForwarding_ParsedCorrectly() {
 		// Positional 0 [Command]
 		_args.TryGetValue(0, out var pos0).Should().BeTrue();
@@ -66,27 +67,24 @@ public class ArgumentsIsolatedTests {
 
 	[Fact]
 	public void Flag_BeforeForwarding_ParsedCorrectly() {
-		_args.Contains("flag").Should().BeTrue();
 		_args.HasFlag("flag").Should().BeTrue();
 	}
 
 	[Fact]
 	public void Flag_AfterForwarding_ParsedCorrectly() {
 		var forwarded = _args.ForwardPositionalArguments();
-
-		forwarded.Contains("flag").Should().BeTrue();
 		forwarded.HasFlag("flag").Should().BeTrue();
 	}
 
 	[Fact]
 	public void Named_Array_String_ParsedCorrectly() {
 		_args.TryGetValues("words", "|", out var words).Should().BeTrue();
-		words.Should().BeEquivalentTo(new[] { "word1", "word2" });
+		words.Should().BeEquivalentTo(["word1", "word2"]);
 	}
 
 	[Fact]
 	public void Named_Array_Int_ParsedCorrectly() {
 		_args.TryGetValues<int>("numbers", "|", out var numbers).Should().BeTrue();
-		numbers.Should().BeEquivalentTo(new[] { 1, 2 });
+		numbers.Should().BeEquivalentTo(expectation);
 	}
 }

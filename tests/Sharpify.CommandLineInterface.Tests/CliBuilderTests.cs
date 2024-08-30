@@ -65,7 +65,7 @@ public class CliBuilderTests {
                            .AddCommand(echo)
 						   .AddCommand(add)
 						   .SetOutputWriter(writer)
-						   .WithMetadata(data => data.Author = "Dave")
+						   .WithMetadata(options => options.Author = "Dave")
                            .Build();
 		await cliRunner.RunAsync("--help");
 
