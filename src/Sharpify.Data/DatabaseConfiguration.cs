@@ -9,6 +9,9 @@ public record DatabaseConfiguration {
     /// <summary>
     /// The path to which the database file will be saved.
     /// </summary>
+    /// <remarks>
+    /// Setting path to an empty string "" will create an in-memory database.
+    /// </remarks>
     public required string Path { get; init; }
 
     /// <summary>

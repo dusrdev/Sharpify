@@ -55,6 +55,8 @@ internal abstract class DatabaseSerializer {
     /// <exception cref="ArgumentException"></exception>
     internal static DatabaseSerializer Create(DatabaseConfiguration configuration) {
         return configuration switch {
+            { Path: "", IgnoreCase: false } => new DisabledSerializer(configuration.Path, configuration.Encoding),
+            { Path: "", IgnoreCase: true } => new DisabledIgnoreCaseSerializer(configuration.Path, configuration.Encoding),
             { HasEncryption: true, IgnoreCase: true } => new IgnoreCaseEncryptedSerializer(configuration.Path, configuration.EncryptionKey),
             { HasEncryption: true, IgnoreCase: false } => new EncryptedSerializer(configuration.Path, configuration.EncryptionKey),
             { HasEncryption: false, IgnoreCase: true } => new IgnoreCaseSerializer(configuration.Path),

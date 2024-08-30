@@ -35,6 +35,8 @@ public sealed partial class Database : IDisposable {
     private const int BufferMultiple = 4096;
     private const int ReservedBufferSize = 256;
 
+    private readonly bool _isInMemory;
+
     /// <summary>
     /// Overestimated size of the database.
     /// </summary>
