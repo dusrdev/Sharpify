@@ -4,18 +4,10 @@ namespace Sharpify.CommandLineInterface;
 /// Represents a builder for a CliRunner.
 /// </summary>
 public sealed class CliBuilder {
-	private readonly List<Command> _commands;
-
-	private readonly CliMetadata _metaData;
-
-	private CliRunnerOptions _options;
-	private string _header = "";
-
-	private bool _showErrorCodes;
+	private readonly CliRunnerConfiguration _config;
 
 	internal CliBuilder() {
-		_commands = new List<Command>();
-		_metaData = CliMetadata.Default;
+		_config = new CliRunnerConfiguration();
 	}
 
 	/// <summary>
@@ -24,17 +16,7 @@ public sealed class CliBuilder {
 	/// <param name="command"></param>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder AddCommand(Command command) {
-		_commands.Add(command);
-		return this;
-	}
-
-	/// <summary>
-	/// Adds commands to the CLI runner.
-	/// </summary>
-	/// <param name="commands"></param>
-	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder AddCommands(params Command[] commands) {
-		_commands.AddRange(commands);
+		_config.Commands.Add(command);
 		return this;
 	}
 
@@ -44,7 +26,7 @@ public sealed class CliBuilder {
 	/// <param name="commands"></param>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder AddCommands(ReadOnlySpan<Command> commands) {
-		_commands.AddRange(commands);
+		_config.Commands.AddRange(commands);
 		return this;
 	}
 
@@ -75,7 +57,7 @@ public sealed class CliBuilder {
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder SortCommandsAlphabetically() {
-		_options |= CliRunnerOptions.SortCommandsAlphabetically;
+		_config.SortCommandsAlphabetically = true;
 		return this;
 	}
 
@@ -86,9 +68,9 @@ public sealed class CliBuilder {
 	/// Has priority over the custom header, and only one is used, so including a custom header as well will not do anything.
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder WithMetadata(Action<CliMetadata> action) {
-		action(_metaData);
-		_options |= CliRunnerOptions.IncludeMetadata;
+	public CliBuilder WithMetadata(Action<CliMetadata> options) {
+		options(_config.MetaData);
+		_config.IncludeMetadata = true;
 		return this;
 	}
 
@@ -100,8 +82,20 @@ public sealed class CliBuilder {
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder WithCustomHeader(string header) {
-		_header = header;
-		_options |= CliRunnerOptions.UseCustomHeader;
+		_config.Header = header;
+		_config.UseCustomHeader = true;
+		return this;
+	}
+
+	/// <summary>
+	/// Configures the arguments to be case sensitive.
+	/// </summary>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	/// <remarks>
+	/// This can be useful if you have many short flags, like grep
+	/// </remarks>
+	public CliBuilder WithCaseSensitiveParameters() {
+		_config.IgnoreParameterCase = false;
 		return this;
 	}
 
@@ -110,7 +104,16 @@ public sealed class CliBuilder {
 	/// </summary>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder ShowErrorCodes() {
-		_showErrorCodes = true;
+		_config.ShowErrorCodes = true;
+		return this;
+	}
+
+	/// <summary>
+	/// Disables automatic defaulting to help text when no input is provided. Instead an error indicating that no command was found will be shown.
+	/// </summary>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder WithoutHelpTextForEmptyInput() {
+		_config.OutputHelpTextForEmptyInput = false;
 		return this;
 	}
 
@@ -118,9 +121,9 @@ public sealed class CliBuilder {
 	/// Builds the CLI runner.
 	/// </summary>
 	public CliRunner Build() {
-		if (_commands.Count is 0) {
+		if (_config.Commands.Count is 0) {
 			throw new InvalidOperationException("No commands were added.");
 		}
-		return new CliRunner(_commands, _options, _metaData, _header, _showErrorCodes);
+		return new CliRunner(_config);
 	}
 }

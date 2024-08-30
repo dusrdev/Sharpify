@@ -35,7 +35,7 @@ public static class Parser {
                 continue;
             }
             // next is a word
-            str = str[i..];
+            str = str.Slice(i);
             int nextSpace = str.IndexOf(' ');
             if (nextSpace <= 0) { // the last word, no spaces after
                 buffer.WriteAndAdvance(new string(str));
@@ -122,7 +122,7 @@ public static class Parser {
             while (current[ii] is '-') { // Skip the dashes
                 ii++;
             }
-            var name = current[ii..]; // Parameter name without dashes
+            var name = current.Substring(ii); // Parameter name without dashes
 
             // i + 1 == args.Length => checks if the next argument is available
             // if not, then this is a switch (i.e. a named boolean toggle)

@@ -5,6 +5,11 @@
 * Optimized `Parser`:
   * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.
   * Changed lower level array allocation code to use generalized api to optimize on more platforms.
+* `Arguments.TryGetValue` and `Arguments.TryGetValues` now have overloads that accept a `ReadOnlySpan<string> keys`, this overload enables much simpler retrieval of parameters that have aliases, for example you might want something like `--name` and `-n` to map to the same value.
+  * If you specify the aliases using the collections expression (i.e `["one", "two"]`), since .NET 8, the compiler will generate an inline array for that, which is very efficient, you don't need to create an array yourself. but if you wanted to to you could for example create a `static readonly ReadOnlySpan<string> aliases => new[] { "one", "two" };` and pass that instead, the compiler optimizes such case by writing the values directly in the assembly.
+* `CliBuilder` now has an option `WithCaseSensitiveParameters` that will make the parser case sensitive, this is useful if you want to have parameters that are case sensitive, by default the parser is case insensitive. the decision to default to ignore case is centered around making it easier for users to use the cli. But for cases where you need more short flags like `grep` you can opt in for this feature.
+* `CliBuilder` now has an option `WithoutHelpTextForEmptyInput` that will prevent the general help text from being displayed when no input is given, this is useful for cases where you want to have a more silent cli, by default the general help text is displayed when no input is given.
+  * This is a change in behavior, as previously by default an error showing that no command was found was displayed, but seems that showing the help text in those situations is the more common approach in modern CLIs.
 
 ## Version 1.3.0
 

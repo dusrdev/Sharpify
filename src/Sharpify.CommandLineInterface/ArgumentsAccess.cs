@@ -54,6 +54,15 @@ public sealed partial class Arguments {
     }
 
     /// <summary>
+    /// Tries to retrieve a value of one of a specified key's aliases in the arguments.
+    /// </summary>
+    /// <param name="keys">A collection of aliases for a parameter name</param>
+    /// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+    /// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetValue(ReadOnlySpan<string> keys, out string value)
+        => _arguments.TryGetValue(keys, out value);
+
+    /// <summary>
     /// Tries to retrieve the value of a specified key in the arguments.
     /// </summary>
 	/// <param name="position">The positional argument to check.</param>
@@ -87,6 +96,35 @@ public sealed partial class Arguments {
 	/// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValue<T>(string key, T defaultValue, out T value) where T : IParsable<T> {
         if (!TryGetValue(key, out string val)) {
+            value = defaultValue;
+            return false;
+        }
+        var wasParsed = T.TryParse(val, CultureInfo.CurrentCulture, out T? result);
+        if (!wasParsed) {
+            value = defaultValue;
+            return false;
+        }
+        value = result!;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to retrieve the value of a either of specified key's aliases in the arguments.
+    /// </summary>
+	/// <param name="keys">A collection of aliases for a parameter name</param>
+	/// <param name="defaultValue">The default value to return if the key doesn't exist.</param>
+	/// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+	/// <remarks>
+	/// <para>
+	/// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+    /// </para>
+    /// <para>
+    /// The default value makes it very easy to default to some value that is used later even if not provided, for example: a downloader may accept the number of parallel connections as a parameter, but it should always default to some number, so you could put it here. Saving a few lines of code for checking and reverting to default yourself.
+    /// </para>
+	/// </remarks>
+	/// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetValue<T>(ReadOnlySpan<string> keys, T defaultValue, out T value) where T : IParsable<T> {
+        if (!TryGetValue(keys, out string val)) {
             value = defaultValue;
             return false;
         }
@@ -173,6 +211,56 @@ public sealed partial class Arguments {
     /// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetEnum<TEnum>(string key, TEnum defaultValue, bool ignoreCase, out TEnum value) where TEnum : struct, Enum {
         if (!TryGetValue(key, out string val)) {
+            value = defaultValue;
+            return false;
+        }
+        var wasParsed = Enum.TryParse(val, ignoreCase, out TEnum result);
+        if (!wasParsed) {
+            value = defaultValue;
+            return false;
+        }
+        value = result;
+        return true;
+    }
+
+    /// <summary>
+    /// Tries to retrieve the enum value of one of a specified key's aliases in the arguments.
+    /// </summary>
+    /// <param name="keys">A collection of aliases for a parameter name</param>
+    /// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+    /// <remarks>
+    /// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+    /// </remarks>
+    /// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, out TEnum value) where TEnum : struct, Enum
+        => TryGetEnum(keys, default, false, out value);
+
+    /// <summary>
+    /// Tries to retrieve the enum value of one of a specified key's aliases in the arguments.
+    /// </summary>
+    /// <param name="keys">A collection of aliases for a parameter name</param>
+    /// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+    /// <param name="ignoreCase">Whether to ignore case in parsing the enum</param>
+    /// <remarks>
+    /// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+    /// </remarks>
+    /// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, bool ignoreCase, out TEnum value) where TEnum : struct, Enum
+        => TryGetEnum(keys, default, ignoreCase, out value);
+
+    /// <summary>
+    /// Tries to retrieve the enum value of one of a specified key's aliases in the arguments.
+    /// </summary>
+    /// <param name="keys">A collection of aliases for a parameter name</param>
+    /// <param name="value">The value of the argument ("" if doesn't exist - NOT NULL).</param>
+    /// <param name="defaultValue">The default value to return if the key doesn't exist.</param>
+    /// <param name="ignoreCase">Whether to ignore case in parsing the enum</param>
+    /// <remarks>
+    /// If the key doesn't exist or can't be parsed, the default value will be used in the out parameter.
+    /// </remarks>
+    /// <returns>true if the key exists, false otherwise.</returns>
+    public bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, TEnum defaultValue, bool ignoreCase, out TEnum value) where TEnum : struct, Enum {
+        if (!TryGetValue(keys, out string val)) {
             value = defaultValue;
             return false;
         }

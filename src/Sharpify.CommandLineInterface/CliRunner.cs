@@ -13,12 +13,10 @@ public sealed class CliRunner {
 	/// </summary>
 	public static CliBuilder CreateBuilder() => new();
 
-	private readonly List<Command> _commands;
-
 	/// <summary>
 	/// Gets the commands registered with the CLI runner.
 	/// </summary>
-	public ReadOnlyCollection<Command> Commands => _commands.AsReadOnly();
+	public ReadOnlyCollection<Command> Commands => _config.Commands.AsReadOnly();
 
 	/// <summary>
 	/// Gets the output writer for the CLI runner.
@@ -33,37 +31,38 @@ public sealed class CliRunner {
 		OutputWriter = writer;
 	}
 
-	private readonly CliRunnerOptions _options;
-	private readonly CliMetadata _metaData;
-	private readonly string _customerHeader;
+	private readonly CliRunnerConfiguration _config;
 	private readonly string _help;
-	private readonly bool _showErrorCodes;
 
 	/// <summary>
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
-	internal CliRunner(List<Command> commands, CliRunnerOptions options, CliMetadata metaData, string customHeader,
-		bool showErrorCodes) {
-		_options = options;
-		_commands = commands;
-		if (_options.HasFlag(CliRunnerOptions.SortCommandsAlphabetically)) {
-			_commands.Sort(Command.ByNameComparer);
+	internal CliRunner(CliRunnerConfiguration config) {
+		_config = config;
+		if (_config.SortCommandsAlphabetically) {
+			_config.Commands.Sort(Command.ByNameComparer);
 		}
-		_metaData = metaData;
-		_customerHeader = customHeader;
 		_help = GenerateHelp(); // Keep this last to make sure changes are reflected in the help text
-		_showErrorCodes = showErrorCodes;
 	}
 
-	/// <summary>
-	/// Runs the CLI application with the specified arguments.
-	/// </summary>
-	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
+    /// <summary>
+    /// Handles the case where no input was provided.
+    /// </summary>
+    /// <returns></returns>
+    private ValueTask<int> HandleNoInput() =>
+			_config.OutputHelpTextForEmptyInput
+            ? OutputHelper.Return(_help, 0)
+            : OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
+
+    /// <summary>
+    /// Runs the CLI application with the specified arguments.
+    /// </summary>
+    public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
+			return HandleNoInput();
 		}
-		var arguments = Parser.ParseArguments(args);
+		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
 	}
 
@@ -72,9 +71,9 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
+			return HandleNoInput();
 		}
-		var arguments = Parser.ParseArguments(args, StringComparer.CurrentCultureIgnoreCase);
+		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
 	}
 
@@ -83,16 +82,17 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(Arguments? arguments, bool commandNameRequired = true) {
 		if (arguments is null) {
-			return OutputHelper.Return("Input could not be parsed", 400, _showErrorCodes);
+			return OutputHelper.Return("Input could not be parsed", 400, _config.ShowErrorCodes);
 		}
 		if (!commandNameRequired) {
-			if (_commands.Count is not 1) {
-				return OutputHelper.Return("Command name is required when using more than one command", 405, _showErrorCodes);
+			if (_config.Commands.Count is not 1) {
+				return OutputHelper.Return("Command name is required when using more than one command", 405, _config.ShowErrorCodes);
 			}
 			if (arguments.Contains("help")) {
-				return OutputHelper.Return(_commands[0].GetHelp(), 0);
+				return OutputHelper.Return(_config.Commands[0].GetHelp(), 0);
+			} else {
+				return _config.Commands[0].ExecuteAsync(arguments);
 			}
-			return _commands[0].ExecuteAsync(arguments);
 		}
 
 		if (arguments.Count is 1 && arguments.Contains("help")) {
@@ -100,28 +100,23 @@ public sealed class CliRunner {
 		}
 
 		if (!arguments.TryGetValue(0, out string commandName)) {
-			return OutputHelper.Return("Command name is required", 405, _showErrorCodes);
+			return OutputHelper.Return("Command name is required", 405, _config.ShowErrorCodes);
 		}
 
 		if (commandName.Equals("help", StringComparison.OrdinalIgnoreCase)) {
 			return OutputHelper.Return(_help, 0);
 		}
 
-		Command? command = null;
-		foreach (Command c in _commands.AsSpan()) {
-			if (c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase)) {
-				command = c;
-				break;
-			}
+		Command? command = _config.Commands.FirstOrDefault(c => c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase));
+		if (command == default) {
+			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _config.ShowErrorCodes);
 		}
-		if (command is null) {
-			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _showErrorCodes);
-		}
+
 		if (arguments.Contains("help")) {
-			OutputWriter.WriteLine(command.GetHelp());
-			return ValueTask.FromResult(0);
+			return OutputHelper.Return(command.GetHelp(), 0);
+		} else {
+			return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 		}
-		return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 	}
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
@@ -130,25 +125,26 @@ public sealed class CliRunner {
 		// here the likely help text is larger than per command, so we use a rented buffer
 		using var buffer = StringBuffer.Rent(length);
 		buffer.AppendLine();
-		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
-			buffer.AppendLine(_metaData.Name)
+		if (_config.IncludeMetadata) {
+			var metaData = _config.MetaData;
+			buffer.AppendLine(metaData.Name)
 		 		  .AppendLine()
-		 		  .AppendLine(_metaData.Description)
+		 		  .AppendLine(metaData.Description)
 		          .AppendLine()
 		          .Append("Author: ")
-		          .AppendLine(_metaData.Author)
+		          .AppendLine(metaData.Author)
 		          .Append("Version: ")
-		          .AppendLine(_metaData.Version)
+		          .AppendLine(metaData.Version)
 		          .Append("License: ")
-		          .AppendLine(_metaData.License)
+		          .AppendLine(metaData.License)
 		          .AppendLine();
-		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
-			buffer.AppendLine(_customerHeader)
+		} else if (_config.UseCustomHeader) {
+			buffer.AppendLine(_config.Header)
          		  .AppendLine();
 		}
 		buffer.AppendLine("Commands:");
 		var maxCommandLength = GetMaximumCommandLength();
-		foreach (Command command in _commands.AsSpan()) {
+		foreach (Command command in _config.Commands) {
 			buffer.Append(command.Name.PadRight(maxCommandLength))
 				  .Append(" - ")
 				  .AppendLine(command.Description);
@@ -170,7 +166,7 @@ public sealed class CliRunner {
 
 	private int GetMaximumCommandLength() {
 		int max = 0;
-		foreach (Command command in _commands.AsSpan()) {
+		foreach (Command command in _config.Commands) {
 			if (command.Name.Length > max) {
 				max = command.Name.Length;
 			}
@@ -179,11 +175,11 @@ public sealed class CliRunner {
 	}
 
 	private int GetRequiredBufferLength() {
-		int length = (_commands.Count + 5) * 256; // default buffer for commands and possible extra text
-		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
-			length += _metaData.TotalLength;
-		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
-			length += _customerHeader.Length;
+		int length = (_config.Commands.Count + 5) * 256; // default buffer for commands and possible extra text
+		if (_config.IncludeMetadata) {
+			length += _config.MetaData.TotalLength;
+		} else if (_config.UseCustomHeader) {
+			length += _config.Header.Length;
 		}
 		return length;
 	}
