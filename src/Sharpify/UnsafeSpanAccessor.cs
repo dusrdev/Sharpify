@@ -13,7 +13,6 @@ namespace Sharpify;
 /// </remarks>
 internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
 {
-    // Should not be required in .NET 9
     private readonly void* _pointer;
     public readonly int Length;
 
@@ -94,7 +93,7 @@ internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
             return false;
         }
 
-        public T Current => _current!;
+        public readonly T Current => _current!;
 
         object? IEnumerator.Current
         {

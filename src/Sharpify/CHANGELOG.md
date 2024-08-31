@@ -3,6 +3,10 @@
 ## v2.4.0 [Unreleased]
 
 * All derived types of `PersistentDictionary` now implement `IDisposable` interface.
+* Main concurrent processing method is now `ICollection<T>.ForAllAsync()` from many, many benchmarks it became clear that for short duration tasks not involving heavy compute, it has by far the best balance of speed and memory-allocation. If you use it with a non `async function` all the tasks will be yield immediately and require virtually no allocations at all. Which is as good as `ValueTask`
+from benchmarks. This method has 2 overloads, one which accepts an `IAsyncAction` which enables users with long code and many captured variables to maintain a better structured codebase, and a `Func` alternative for quick and easy usage. The difference in memory allocation / execution time between time is nearly non-existent, this mainly for maintainability.
+* For heavier compute tasks, please revert to using `Parallel.For` or `Parallel.ForEachAsync` and their overloads, they are excellent in load balancing.
+* Due to the changes above, all other concurrent processing methods, such as `ForEachAsync`, `InvokeAsync` and all the related functionality from the `Concurrent` class have been removed. `AsAsyncLocal` entry is also removed, and users will be able to access the new `ForAllAsync` method directly from the `ICollection<T>` interface static extensions.
 
 ## v2.3.0
 

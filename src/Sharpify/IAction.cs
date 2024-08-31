@@ -17,7 +17,7 @@ public interface IAsyncAction<in T> {
     /// <summary>
     /// The main action to be performed.
     /// </summary>
-    Task InvokeAsync(T item);
+    Task InvokeAsync(T item, CancellationToken token = default);
 }
 
 /// <summary>
