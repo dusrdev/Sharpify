@@ -56,8 +56,6 @@ internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
 
     public struct UnsafeSpanAccessorEnumerator : IEnumerator<T>
     {
-        internal static IEnumerator<T>? EmptyEnumerator;
-
         private readonly UnsafeSpanAccessor<T> _source;
         private int _index;
         private T? _current;
