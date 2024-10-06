@@ -134,7 +134,7 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] bytes = [1, 2, 3, 4, 5];
         db.Database.Upsert("test", bytes);
 
         using var buffer = db.Database.TryReadToRentedBuffer("test", "", 1);
@@ -204,7 +204,7 @@ public class DatabaseTests {
         // Act
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
-        Span<Person> span = new []{ p1, p2 };
+        Span<Person> span = [p1, p2];
         db.Database.UpsertMany<Person>("1", span);
 
         // Arrange
@@ -227,7 +227,7 @@ public class DatabaseTests {
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
         var p3 = new Person("Jane", 25);
-        Span<Person> span = new []{ p1, p2 };
+        Span<Person> span = [p1, p2];
         db.Database.UpsertMany<Person>("1", span);
 
         using var buffer = db.Database.TryReadToRentedBuffer<Person>("1", "", 1);
