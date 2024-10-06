@@ -8,7 +8,7 @@ namespace Sharpify.Tests;
 public class SerializableObjectTests {
     [Fact]
     public async Task Constructor_Throws_When_Filename_Is_Invalid() {
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var dir = Path.GetDirectoryName(file)!;
         // Arrange
         var action = () => new MonitoredSerializableObject<Configuration>(dir, JsonContext.Default.Configuration); // no filename
@@ -23,7 +23,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task Constructor_Creates_File_When_File_Does_Not_Exist() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var action = () => new MonitoredSerializableObject<Configuration>(file, JsonContext.Default.Configuration);
 
         // Act
@@ -37,7 +37,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task Constructor_Deserializes_File_When_File_Exists() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         var action = () => new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
 
@@ -57,7 +57,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task Modify_SerializesProperly() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         const string newName = "Jane Doe";
@@ -75,7 +75,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task Modify_FiresEventOnce_WithProperArgs() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         const string newName = "Jane Doe";
@@ -99,7 +99,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task OnFileChanged_DoesntChangeWhenFileIsEmpty() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         int count = 0;
@@ -121,7 +121,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task OnFileChanged_DoesntChangeWhenFileIsInvalid() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         int count = 0;
@@ -149,7 +149,7 @@ public class SerializableObjectTests {
     [Fact]
     public async Task OnFileChanged_ChangesWhenFileIsValid() {
         // Arrange
-        var file = new TempFile();
+        var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         // Assert

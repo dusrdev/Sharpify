@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace Sharpify.CommandLineInterface.Tests;
 
 public class CliBuilderTests {
@@ -27,7 +30,7 @@ public class CliBuilderTests {
 	[Fact]
 	public async Task Runner_WithCustomWriter_OutputsCommandHelpToWriter() {
 		var echo = new EchoCommand();
-		var writer = new StringWriter();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
 
 		var cliRunner = CliRunner.CreateBuilder()
                            .AddCommand(echo)
@@ -42,7 +45,7 @@ public class CliBuilderTests {
 	public async Task Runner_WithCustomWriterMultipleCommands_OutputsGeneralHelpToWriter() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
-		var writer = new StringWriter();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
 
 		var cliRunner = CliRunner.CreateBuilder()
                            .AddCommand(echo)
@@ -59,7 +62,7 @@ public class CliBuilderTests {
 	public async Task Runner_WithCustomWriterAndMetadata_OutputsGeneralHelpToWriter() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
-		var writer = new StringWriter();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
 
 		var cliRunner = CliRunner.CreateBuilder()
                            .AddCommand(echo)
@@ -76,7 +79,7 @@ public class CliBuilderTests {
 	public async Task Runner_WithCustomWriterAndCustomHeader_OutputsGeneralHelpToWriter() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
-		var writer = new StringWriter();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
 
 		var cliRunner = CliRunner.CreateBuilder()
                            .AddCommand(echo)
@@ -94,7 +97,7 @@ public class CliBuilderTests {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
 		var sAdd = new SynchronousAddCommand();
-		var writer = new StringWriter();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
 
 		var cliRunner = CliRunner.CreateBuilder()
 						   .AddCommand(echo)

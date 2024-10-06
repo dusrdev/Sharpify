@@ -1,25 +1,43 @@
 namespace Sharpify.Tests;
 
 public record TempFile {
-	public string _path { get; }
-	private int _retries = 5;
+	public string Path { get; }
+	private const int Retries = 5;
 
-	public TempFile() {
-		_path = Path.GetTempFileName();
+	public static async Task<TempFile> CreateAsync() {
+		int retries = Retries;
+	create:
+		try {
+			return new TempFile();
+		} catch {
+			if (Interlocked.Decrement(ref retries) < 0) {
+				await Task.Delay(100);
+				goto create;
+			} else {
+				throw;
+			}
+		}
 	}
 
-	public static implicit operator string(TempFile file) => file._path;
+	private TempFile() {
+		Path = Utils.Env.PathInBaseDirectory(Random.Shared.Next(1000000, 9999999).ToString());
+		using var _ = File.Create(Path);
+	}
+
+	public static implicit operator string(TempFile file) => file.Path;
 
 	public async ValueTask DeleteAsync() {
-		if (!File.Exists(_path)) {
+		if (!File.Exists(Path)) {
 			return;
 		}
 
+		int retries = Retries;
+
 	delete:
 		try {
-			File.Delete(_path);
+			File.Delete(Path);
 		} catch {
-			if (_retries++ < 5) {
+			if (Interlocked.Decrement(ref retries) < 0) {
 				await Task.Delay(100);
 				goto delete;
 			} else {
