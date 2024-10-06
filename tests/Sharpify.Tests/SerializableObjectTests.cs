@@ -153,9 +153,7 @@ public class SerializableObjectTests {
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         // Assert
-        obj.OnChanged += (sender, e) => {
-            e.Value.Should().Be("Jane");
-        };
+        obj.OnChanged += (sender, e) => e.Value.Name.Should().Be("Jane");
 
         // Act
         File.WriteAllText(file, JsonSerializer.Serialize(config with { Name = "Jane" }, Options));

@@ -11,7 +11,7 @@ public class RoutineTests {
     public async Task Routine_GivenIncreaseValueFunction_IncreasesValue(int milliseconds, int expected) {
         // Arrange
         var count = 0;
-        using var routine = new Routine(100).Add(() => count++);
+        using var routine = new Routine(100).Add(() => Interlocked.Increment(ref count));
 
         // Act
         routine.Start();

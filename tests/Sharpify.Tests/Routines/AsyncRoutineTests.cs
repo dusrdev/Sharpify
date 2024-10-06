@@ -14,7 +14,10 @@ public class AsyncRoutineTests {
         var options = RoutineOptions.ExecuteInParallel;
         using var routine = new AsyncRoutine(TimeSpan.FromMilliseconds(100))
                         .ChangeOptions(options)
-                        .Add(x => Task.FromResult(count++));
+                        .Add(_ => {
+                            Interlocked.Increment(ref count);
+                            return Task.CompletedTask;
+                        });
 
         // Act
         _ = routine.Start();
