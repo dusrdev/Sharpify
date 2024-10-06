@@ -239,27 +239,30 @@ public sealed class AesProvider : IDisposable {
 
     // Helper method to convert Base64Url encoded string to byte array
     private static byte[] Base64UrlDecode(string base64Url) {
-        Span<char> buffer = stackalloc char[base64Url.Length + 2];
+        var length = base64Url.Length + 2;
+        using var memoryOwner = MemoryPool<char>.Shared.Rent(length);
+        Span<char> buffer = memoryOwner.Memory.Span.Slice(0, length);
         base64Url.AsSpan().CopyTo(buffer);
         buffer.Replace('-', '+');
         buffer.Replace('_', '/');
         int mod = base64Url.Length % 4;
-        int length = base64Url.Length;
+        int nLength = base64Url.Length;
         if (mod is 2) {
-            "==".CopyTo(buffer[length..]);
-            length += 2;
+            "==".CopyTo(buffer.Slice(nLength));
+            nLength += 2;
         } else if (mod is 3) {
-            buffer[length] = '=';
-            length += 1;
+            buffer[nLength] = '=';
+            nLength += 1;
         }
-        return Convert.FromBase64String(new string(buffer[0..length]));
+        return Convert.FromBase64String(new string(buffer.Slice(0, nLength)));
     }
 
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(ReadOnlySpan<byte> bytes) {
         string base64 = Convert.ToBase64String(bytes);
-        using var memoryOwner = MemoryPool<char>.Shared.Rent(base64.Length);
-        Span<char> buffer = memoryOwner.Memory.Span;
+        var length = base64.Length;
+        using var memoryOwner = MemoryPool<char>.Shared.Rent(length);
+        Span<char> buffer = memoryOwner.Memory.Span.Slice(0, length);
         base64.AsSpan().CopyTo(buffer);
         MemoryExtensions.Replace(buffer, '+', '-');
         MemoryExtensions.Replace(buffer, '/', '_');
