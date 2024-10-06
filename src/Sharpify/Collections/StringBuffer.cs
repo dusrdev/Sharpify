@@ -73,7 +73,6 @@ public unsafe ref struct StringBuffer {
         if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
         }
-
         Position += charsWritten;
         return ref this;
     }
