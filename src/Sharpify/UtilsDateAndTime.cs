@@ -121,7 +121,7 @@ public static partial class Utils {
         /// <remarks>
         /// Ensure capacity >= 30
         /// </remarks>
-        private static ReadOnlySpan<char> FormatTimeStamp(DateTime time, Span<char> buffer) {
+        public static ReadOnlySpan<char> FormatTimeStamp(DateTime time, Span<char> buffer) {
             return StringBuffer.Create(buffer)
                                .Append(time.Hour)
                                .Append(time.Minute)
