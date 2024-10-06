@@ -12,7 +12,10 @@ public unsafe ref struct StringBuffer {
     /// </summary>
     public readonly int Length;
 
-    private int _position;
+    /// <summary>
+    /// The current position of the buffer.
+    /// </summary>
+    public int Position { get; private set; }
 
     /// <summary>
     /// Initializes a string buffer that uses a pre-allocated buffer (potentially from the stack).
@@ -25,7 +28,7 @@ public unsafe ref struct StringBuffer {
     internal StringBuffer(Span<char> buffer) {
         _buffer = buffer;
         Length = _buffer.Length;
-        _position = 0;
+        Position = 0;
     }
 
     /// <summary>
@@ -41,8 +44,8 @@ public unsafe ref struct StringBuffer {
     /// </summary>
     /// <param name="c">The character to append.</param>
     public ref StringBuffer Append(char c) {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + 1, Length);
-        _buffer[_position++] = c;
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(Position + 1, Length);
+        _buffer[Position++] = c;
         return ref this;
     }
 
@@ -51,9 +54,9 @@ public unsafe ref struct StringBuffer {
     /// </summary>
     /// <param name="str">The string to append.</param>
     public ref StringBuffer Append(scoped ReadOnlySpan<char> str) {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
-        str.CopyTo(_buffer.Slice(_position));
-        _position += str.Length;
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(Position + str.Length, Length);
+        str.CopyTo(_buffer.Slice(Position));
+        Position += str.Length;
         return ref this;
     }
 
@@ -66,12 +69,12 @@ public unsafe ref struct StringBuffer {
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
     public ref StringBuffer Append<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
-        bool appended = value.TryFormat(_buffer.Slice(_position), out var charsWritten, format, provider);
+        bool appended = value.TryFormat(_buffer.Slice(Position), out var charsWritten, format, provider);
         if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
         }
 
-        _position += charsWritten;
+        Position += charsWritten;
         return ref this;
     }
 
@@ -118,18 +121,38 @@ public unsafe ref struct StringBuffer {
         return ref this;
     }
 
+    /// <summary>
+    /// Returns the character at the specified index.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public readonly char this[int index] => _buffer[index];
+
 #pragma warning restore CS9084 // Struct member returns 'this' or other instance members by reference
+
+    /// <summary>
+    /// Allocates a string from the internal buffer, from start to the written position.
+    /// </summary>
+    /// <returns>The allocated string.</returns>
+    public readonly string Allocate() => Allocate(true, true);
+
+    /// <summary>
+    /// Allocates a string from the internal buffer, from start
+    /// </summary>
+    /// <param name="trimIfShorter">Indicates whether to stop at the end of written segment or allocate the entire buffer</param>
+    /// <returns>The allocated string.</returns>
+    public readonly string Allocate(bool trimIfShorter) => Allocate(trimIfShorter, false);
 
     /// <summary>
     /// Allocates a string from the internal buffer.
     /// </summary>
-    /// <param name="trimIfShorter">Indicates whether to trim the string from the end.</param>
-    /// <param name="trimEndWhiteSpace">Will try to trim the end white spaces</param>
+    /// <param name="trimIfShorter">Indicates whether to stop at the end of written segment or allocate the entire buffer</param>
+    /// <param name="trimEndWhiteSpace">Will try to trim the end white spaces even from the written segment</param>
     /// <returns>The allocated string.</returns>
-    public readonly string Allocate(bool trimIfShorter = true, bool trimEndWhiteSpace = false) {
+    public readonly string Allocate(bool trimIfShorter, bool trimEndWhiteSpace) {
         ReadOnlySpan<char> span = _buffer;
         if (trimIfShorter) {
-            span = span[0.._position];
+            span = span.Slice(0, Position);
         }
         if (trimEndWhiteSpace) {
             span = span.TrimEnd();
@@ -138,26 +161,9 @@ public unsafe ref struct StringBuffer {
     }
 
     /// <summary>
-    /// Returns the character at the specified index.
-    /// </summary>
-    /// <param name="index"></param>
-    /// <returns></returns>
-    public readonly char this[int index] => _buffer[index];
-
-    /// <summary>
     /// Returns the used portion of the buffer as a readonly span.
     /// </summary>
-    public readonly ReadOnlySpan<char> WrittenSpan => _buffer.Slice(0, _position);
-
-    /// <summary>
-    /// Allocates a substring from the internal buffer using the specified range.
-    /// </summary>
-    /// <param name="range"></param>
-    private readonly string Allocate(Range range) {
-        (int offset, int length) = range.GetOffsetAndLength(Length);
-        ReadOnlySpan<char> span = _buffer.Slice(offset, length);
-        return new string(span);
-    }
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer.Slice(0, Position);
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.
