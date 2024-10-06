@@ -34,7 +34,7 @@ public class SerializableObject<T> : IDisposable {
     /// <summary>
     /// A value indicating whether the object has been disposed.
     /// </summary>
-    protected bool _disposed;
+    protected volatile bool _disposed;
 
     /// <summary>
     /// The path of the serialized object.
@@ -158,11 +158,11 @@ public class SerializableObject<T> : IDisposable {
 
     /// <inheritdoc/>
     public virtual void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
+        if (_disposed) {
             return;
         }
         _lock?.Dispose();
-        Volatile.Write(ref _disposed, true);
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 

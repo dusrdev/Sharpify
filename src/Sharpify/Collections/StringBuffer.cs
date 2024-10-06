@@ -1,14 +1,12 @@
-using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace Sharpify.Collections;
 
 /// <summary>
-/// Represents a mutable string buffer that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations.
+/// An alternative to <see cref="System.Text.StringBuilder"/> that allows efficient appending of characters, strings and other <see cref="ISpanFormattable"/> implementations. This requires you to preallocate the buffer, allowing stackalloc usage.
 /// </summary>
-public unsafe ref partial struct StringBuffer {
+public unsafe ref struct StringBuffer {
     private static readonly string NewLine = Environment.NewLine;
-    private readonly char[] _source;
     private readonly Span<char> _buffer;
 
     /// <summary>
@@ -17,30 +15,26 @@ public unsafe ref partial struct StringBuffer {
     public readonly int Length;
 
     private int _position;
-    private bool _disposed;
 
     /// <summary>
-    /// Creates a mutable string buffer with the specified capacity.
+    /// Initializes a string buffer that uses a pre-allocated buffer (potentially from the stack).
     /// </summary>
-    /// <param name="capacity">The capacity</param>
-    /// <param name="clearBuffer">Whether clearing the buffer. Has a slight performance hit</param>
-    internal StringBuffer(int capacity, bool clearBuffer = false) {
-        Length = capacity;
-        _source = ArrayPool<char>.Shared.Rent(Length);
-        if (clearBuffer) {
-            Array.Clear(_source);
-        }
-        _buffer = _source.AsSpan(0, Length);
+    public static StringBuffer Create(Span<char> buffer) => new(buffer);
+
+    /// <summary>
+    /// Represents a mutable interface over a buffer allocated in memory.
+    /// </summary>
+    internal StringBuffer(Span<char> buffer) {
+        _buffer = buffer;
+        Length = _buffer.Length;
         _position = 0;
     }
 
     /// <summary>
-    /// Creates a mutable string buffer of length 0 (empty)
+    /// This returns an empty buffer. It will throw if you try to append anything to it. use <see cref="StringBuffer(Span{char})"/> instead.
     /// </summary>
-    /// <remarks>
-    /// It will throw if you try to append anything to it. use <see cref="StringBuffer(int, bool)"/> instead.
-    /// </remarks>
-    public StringBuffer() : this(0, false) { }
+    public StringBuffer() : this(Span<char>.Empty) {
+    }
 
 #pragma warning disable CS9084 // Struct member returns 'this' or other instance members by reference
 
@@ -58,7 +52,6 @@ public unsafe ref partial struct StringBuffer {
     /// Appends the specified string to the buffer.
     /// </summary>
     /// <param name="str">The string to append.</param>
-    /// <returns>The same instance of the buffer</returns>
     public ref StringBuffer Append(scoped ReadOnlySpan<char> str) {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(_position + str.Length, Length);
         str.CopyTo(_buffer.Slice(_position));
@@ -75,10 +68,11 @@ public unsafe ref partial struct StringBuffer {
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
     public ref StringBuffer Append<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
-        var appended = value.TryFormat(_buffer.Slice(_position), out var charsWritten, format, provider);
+        bool appended = value.TryFormat(_buffer.Slice(_position), out var charsWritten, format, provider);
         if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
         }
+
         _position += charsWritten;
         return ref this;
     }
@@ -106,7 +100,7 @@ public unsafe ref partial struct StringBuffer {
     /// </summary>
     /// <param name="str">The string to append.</param>
     /// <returns>The same instance of the buffer</returns>
-    public ref StringBuffer AppendLine(scoped ReadOnlySpan<char> str) {
+    public ref StringBuffer AppendLine(ReadOnlySpan<char> str) {
         Append(str);
         Append(NewLine);
         return ref this;
@@ -137,7 +131,7 @@ public unsafe ref partial struct StringBuffer {
     public readonly string Allocate(bool trimIfShorter = true, bool trimEndWhiteSpace = false) {
         ReadOnlySpan<char> span = _buffer;
         if (trimIfShorter) {
-            span = span.Slice(0, _position);
+            span = span[0.._position];
         }
         if (trimEndWhiteSpace) {
             span = span.TrimEnd();
@@ -175,26 +169,8 @@ public unsafe ref partial struct StringBuffer {
     public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer.WrittenSpan;
 
     /// <summary>
-    /// Returns a readonly memory of the internal buffer up to the index after the last appended item.
-    /// </summary>
-    /// <param name="buffer"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlyMemory<char>(StringBuffer buffer) => new(buffer._source, 0, buffer._position);
-
-    /// <summary>
     /// Returns a string allocated from the StringBuffer.
     /// </summary>
     /// <remarks>It is identical to <see cref="Allocate(bool, bool)"/></remarks>
     public override readonly string ToString() => Allocate(true, false);
-
-    /// <summary>
-    /// Releases the resources used by the StringBuffer.
-    /// </summary>
-    public void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
-            return;
-        }
-        ArrayPool<char>.Shared.Return(_source, false);
-        Volatile.Write(ref _disposed, true);
-    }
 }

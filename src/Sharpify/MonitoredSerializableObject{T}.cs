@@ -76,12 +76,12 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
 
     /// <inheritdoc/>
     public override void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
+        if (_disposed) {
             return;
         }
         _watcher?.Dispose();
         _lock?.Dispose();
-        Volatile.Write(ref _disposed, true);
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }

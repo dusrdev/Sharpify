@@ -11,6 +11,9 @@
   * The new methods replacing these functionalities are now in `Utils.DateAndTime` namespace.
   * `FormatTimeSpan` is now replacing `Format` and `FormatNonAllocated`, `FormatTimeSpan` is hyper optimized and actually is 25 times faster than simply creating a `Guid` on my rig. The first overload requires a `Span{char}` buffer of at least 30 characters, and returns a `ReadOnlySpan{char}` of the written portion. The second doesn't require a buffer, and allocated a new `string` which is returned. `FormatTimeSpan` outputs a different format than the predecessor, as the time was formatted in decimal and is rather confusing, now it is formatted as `00:00unit` for the largest 2 units. So a minute and a half would be `01:30m` and a day and a half would be `02:30d` etc... this seems more intuitive to me.
   * `FormatTimeStamp` is now replacing `ToTimeStamp` and `ToTimeStampNonAllocated`, it is also optimized and the overloads work the same way as `FormatTimeSpan`.
+* The `StringBuffer` which previously rented arrays from the shared array pool, then used the same API's to write to it as `AllocatedStringBuffer` was removed. The previous `AllocatedStringBuffer` was now renamed to `StringBuffer` and it requires a pre-allocated `Span{char}`. You can get the same functionality by renting any buffer, and simply supplying to `StringBuffer.Create`. This allowed removal of a lot of duplicated code and made the API more consistent.
+* `IModifier{T}` was removed, use `Func<T, T>` instead.
+* `Utils.Strings.FormatBytes` was changed in the same manner as `Utils.DateAndTime.FormatTimeSpan` and `Utils.DateAndTime.FormatTimeStamp`, it now returns a `ReadOnlySpan<char>` instead of a `string` and it is optimized to use less memory.
 
 ## v2.3.0
 

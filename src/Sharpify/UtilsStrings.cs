@@ -1,3 +1,5 @@
+using System.Buffers;
+
 using Sharpify.Collections;
 
 namespace Sharpify;
@@ -24,45 +26,38 @@ public static partial class Utils {
         /// </summary>
         /// <returns>string</returns>
         public static string FormatBytes(double bytes) {
+            using var owner = MemoryPool<char>.Shared.Rent(FormatBytesRequiredLength);
+            return new string(FormatBytes(bytes, owner.Memory.Span));
+        }
+
+        /// <summary>
+        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
+        /// </summary>
+        /// <remarks>
+        /// Ensure capacity >= 10
+        /// </remarks>
+        /// <returns>string</returns>
+        public static ReadOnlySpan<char> FormatBytes(double bytes, Span<char> buffer) {
             var suffix = 0;
             while (bytes >= FormatBytesKb && suffix < FileSizeSuffix.Length) {
                 bytes *= FormatBytesDivisor;
                 suffix++;
             }
-            return StringBuffer.Create(stackalloc char[FormatBytesRequiredLength])
+            return StringBuffer.Create(buffer)
                                .Append(Math.Round(bytes, 2))
                                .Append(' ')
                                .Append(FileSizeSuffix[suffix])
-                               .Allocate(true, true);
+                               .Allocate();
         }
 
         /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into a rented buffer
+        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
         /// </summary>
-        /// <returns><see cref="StringBuffer"/></returns>
         /// <remarks>
-        /// Make sure to dispose the buffer after use (you can use it in a using statement), view the result with <see cref="StringBuffer.WrittenSpan"/>
+        /// Ensure capacity >= 10
         /// </remarks>
-        public static StringBuffer FormatBytesInRentedBuffer(long bytes)
-            => FormatBytesInRentedBuffer((double)bytes);
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into a rented buffer
-        /// </summary>
-        /// <returns><see cref="StringBuffer"/></returns>
-        /// <remarks>
-        /// Make sure to dispose the buffer after use (you can use it in a using statement), view the result with <see cref="StringBuffer.WrittenSpan"/>
-        /// </remarks>
-        public static StringBuffer FormatBytesInRentedBuffer(double bytes) {
-            var suffix = 0;
-            while (bytes >= FormatBytesKb && suffix < FileSizeSuffix.Length) {
-                bytes *= FormatBytesDivisor;
-                suffix++;
-            }
-            return StringBuffer.Rent(FormatBytesRequiredLength)
-                               .Append(Math.Round(bytes, 2))
-                               .Append(' ')
-                               .Append(FileSizeSuffix[suffix]);
-        }
+        /// <returns>string</returns>
+        public static ReadOnlySpan<char> FormatBytes(long bytes, Span<char> buffer)
+            => FormatBytes((double)bytes, buffer);
     }
 }

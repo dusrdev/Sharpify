@@ -45,15 +45,4 @@ public sealed class ThreadSafe<T> {
             return _value;
         }
     }
-
-    /// <summary>
-    /// Provides a thread-safe way to modify the value.
-    /// </summary>
-    /// <returns>The value after the modification</returns>
-    public T Modify(IModifier<T> modifier, T newValue) {
-        lock (_lock) {
-            _value = modifier.Modify(_value, newValue);
-            return _value;
-        }
-    }
 }

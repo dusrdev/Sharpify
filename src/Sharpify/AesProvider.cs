@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -73,7 +74,7 @@ public sealed class AesProvider : IDisposable {
                            .Append(iterations)
                            .Append('|')
                            .Append(hashString)
-                           .Allocate(true);
+                           .Allocate();
     }
 
     /// <summary>
@@ -257,7 +258,8 @@ public sealed class AesProvider : IDisposable {
     // Helper method to convert byte array to Base64Url encoded string
     private static string Base64UrlEncode(ReadOnlySpan<byte> bytes) {
         string base64 = Convert.ToBase64String(bytes);
-        Span<char> buffer = stackalloc char[base64.Length];
+        using var memoryOwner = MemoryPool<char>.Shared.Rent(base64.Length);
+        Span<char> buffer = memoryOwner.Memory.Span;
         base64.AsSpan().CopyTo(buffer);
         MemoryExtensions.Replace(buffer, '+', '-');
         MemoryExtensions.Replace(buffer, '/', '_');

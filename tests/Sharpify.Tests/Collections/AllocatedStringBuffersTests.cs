@@ -7,7 +7,7 @@ public class AllocatedStringBuffersTests {
     public void AllocatedStringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
-            var buffer = new AllocatedStringBuffer();
+            var buffer = new StringBuffer();
             buffer.Append('a');
         };
 

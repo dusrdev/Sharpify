@@ -56,7 +56,7 @@ internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
 
     public struct UnsafeSpanAccessorEnumerator : IEnumerator<T>
     {
-        internal static IEnumerator<T>? s_emptyEnumerator;
+        internal static IEnumerator<T>? EmptyEnumerator;
 
         private readonly UnsafeSpanAccessor<T> _source;
         private int _index;
@@ -95,13 +95,13 @@ internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
 
         public readonly T Current => _current!;
 
-        object? IEnumerator.Current
+        readonly object? IEnumerator.Current
         {
             get
             {
-                if (_index == 0 || _index == _source.Length + 1)
+                if ((uint)_index >= _source.Length + 1)
                 {
-                    throw new Exception();
+                    throw new InvalidOperationException("The enumerator has not been started or has already finished.");
                 }
                 return Current;
             }

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-using U = System.Runtime.CompilerServices.Unsafe;
+using @unsafe = System.Runtime.CompilerServices.Unsafe;
 
 namespace Sharpify;
 
@@ -20,7 +20,7 @@ public static partial class Utils {
         /// The integer return value allows to use this converted function with IEnumerable{T}.Sum which is a hardware accelerated method, but the result will be identical to calling Count(predicate).
         /// </remarks>
         public static Func<T, int> CreateIntegerPredicate<T>(Func<T, bool> predicate) =>
-            U.As<Func<T, bool>, Func<T, int>>(ref predicate);
+            @unsafe.As<Func<T, bool>, Func<T, int>>(ref predicate);
 
         /// <summary>
         /// Converts a read-only span to a mutable span.
@@ -30,7 +30,7 @@ public static partial class Utils {
         /// <returns>A mutable span.</returns>
         public static unsafe Span<T> AsMutableSpan<T>(ReadOnlySpan<T> span) {
             ref var p = ref MemoryMarshal.GetReference(span);
-            void* pointer = U.AsPointer(ref p);
+            void* pointer = @unsafe.AsPointer(ref p);
             return new Span<T>(pointer, span.Length);
         }
 
@@ -44,7 +44,7 @@ public static partial class Utils {
         /// <remarks>Copied from CommunityToolkit.HighPerformance</remarks>
         public static bool TryUnbox<T>(object obj, out T value) where T : struct {
             if (obj.GetType() == typeof(T)) {
-                value = U.Unbox<T>(obj);
+                value = @unsafe.Unbox<T>(obj);
                 return true;
             }
 
