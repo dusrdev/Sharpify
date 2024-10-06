@@ -58,13 +58,13 @@ jobs:
       # 5. Restore dependencies
       - name: Restore Dependencies
         run:  |
-          dotnet restore ${{ env.PROJECT_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet restore ${{ env.PROJECT_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet restore ${{ env.PROJECT_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
+          dotnet restore ${{ env.PROJECT_SHARPIFY }}
+          dotnet restore ${{ env.PROJECT_SHARPIFY_DATA }}
+          dotnet restore ${{ env.PROJECT_SHARPIFY_CLI }}
 
-          dotnet restore ${{ env.TEST_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet restore ${{ env.TEST_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet restore ${{ env.TEST_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
+          dotnet restore ${{ env.TEST_SHARPIFY }}
+          dotnet restore ${{ env.TEST_SHARPIFY_DATA }}
+          dotnet restore ${{ env.TEST_SHARPIFY_CLI }}
 
       # 6. Build
       - name: Build
