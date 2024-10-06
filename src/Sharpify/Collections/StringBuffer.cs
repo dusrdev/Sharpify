@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace Sharpify.Collections;
 
 /// <summary>
@@ -160,13 +158,6 @@ public unsafe ref struct StringBuffer {
         ReadOnlySpan<char> span = _buffer.Slice(offset, length);
         return new string(span);
     }
-
-    /// <summary>
-    /// Returns a readonly span of the internal buffer up to the index after the last appended item.
-    /// </summary>
-    /// <param name="buffer"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlySpan<char>(StringBuffer buffer) => buffer.WrittenSpan;
 
     /// <summary>
     /// Returns a string allocated from the StringBuffer.
