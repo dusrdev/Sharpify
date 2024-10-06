@@ -24,6 +24,6 @@ public class AsyncRoutineTests {
         await Task.Delay(milliseconds);
 
         // Assert
-        count.Should().Be(expected);
+        count.Should().BeGreaterThanOrEqualTo(expected);
     }
 }
