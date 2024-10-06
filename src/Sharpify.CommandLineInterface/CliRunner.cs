@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Buffers;
+using System.Collections.ObjectModel;
 
 using Sharpify.Collections;
 
@@ -121,33 +122,33 @@ public sealed class CliRunner {
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelp() {
-		int length = GetRequiredBufferLength();
 		// here the likely help text is larger than per command, so we use a rented buffer
-		using var buffer = StringBuffer.Rent(length);
+		using var owner = MemoryPool<char>.Shared.Rent(GetRequiredBufferLength());
+		var buffer = StringBuffer.Create(owner.Memory.Span);
 		buffer.AppendLine();
 		if (_config.IncludeMetadata) {
 			var metaData = _config.MetaData;
-			buffer.AppendLine(metaData.Name)
-		 		  .AppendLine()
-		 		  .AppendLine(metaData.Description)
-		          .AppendLine()
-		          .Append("Author: ")
-		          .AppendLine(metaData.Author)
-		          .Append("Version: ")
-		          .AppendLine(metaData.Version)
-		          .Append("License: ")
-		          .AppendLine(metaData.License)
-		          .AppendLine();
+			buffer.AppendLine(metaData.Name);
+		 	buffer.AppendLine();
+			buffer.AppendLine(metaData.Description);
+			buffer.AppendLine();
+			buffer.Append("Author: ");
+			buffer.AppendLine(metaData.Author);
+			buffer.Append("Version: ");
+			buffer.AppendLine(metaData.Version);
+			buffer.Append("License: ");
+			buffer.AppendLine(metaData.License);
+		    buffer.AppendLine();
 		} else if (_config.UseCustomHeader) {
-			buffer.AppendLine(_config.Header)
-         		  .AppendLine();
+			buffer.AppendLine(_config.Header);
+         	buffer.AppendLine();
 		}
 		buffer.AppendLine("Commands:");
-		var maxCommandLength = GetMaximumCommandLength();
+		var maxCommandLength = GetMaximumCommandLength() + 2;
 		foreach (Command command in _config.Commands) {
-			buffer.Append(command.Name.PadRight(maxCommandLength))
-				  .Append(" - ")
-				  .AppendLine(command.Description);
+			buffer.Append(command.Name.PadRight(maxCommandLength));
+			buffer.Append(" - ");
+			buffer.AppendLine(command.Description);
 		}
 		buffer.Append(
 			"""
@@ -161,20 +162,12 @@ public sealed class CliRunner {
 			"""
 		);
 
-		return buffer.Allocate(true);
+		return buffer.Allocate();
 	}
 
-	private int GetMaximumCommandLength() {
-		int max = 0;
-		foreach (Command command in _config.Commands) {
-			if (command.Name.Length > max) {
-				max = command.Name.Length;
-			}
-		}
-		return max;
-	}
+    private int GetMaximumCommandLength() => _config.Commands.Max(c => c.Name.Length);
 
-	private int GetRequiredBufferLength() {
+    private int GetRequiredBufferLength() {
 		int length = (_config.Commands.Count + 5) * 256; // default buffer for commands and possible extra text
 		if (_config.IncludeMetadata) {
 			length += _config.MetaData.TotalLength;
