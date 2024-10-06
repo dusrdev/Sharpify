@@ -26,31 +26,31 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_AddRange_Span() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 4, 5 });
+		var list = new SortedList<int>([1, 2, 3, 4, 5]);
 
 		// Act
-		list.AddRange(new ReadOnlySpan<int>(new[] { 6, 7, 8 }));
+		list.AddRange(new ReadOnlySpan<int>([6, 7, 8]));
 
 		// Assert
-		list.Span.SequenceEqual(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }).Should().BeTrue();
+		list.Span.SequenceEqual([1, 2, 3, 4, 5, 6, 7, 8]).Should().BeTrue();
 	}
 
 	[Fact]
 	public void SortedList_AddRange_IEnumerable() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 4, 5 });
+		var list = new SortedList<int>([1, 2, 3, 4, 5]);
 
 		// Act
 		list.AddRange(new List<int>() { 6, 7, 8 });
 
 		// Assert
-		list.Span.SequenceEqual(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }).Should().BeTrue();
+		list.Span.SequenceEqual([1, 2, 3, 4, 5, 6, 7, 8]).Should().BeTrue();
 	}
 
 	[Fact]
 	public void SortedList_Remove() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 4, 5 }, null, true);
+		var list = new SortedList<int>([1, 2, 3, 4, 5], null, true);
 
 		// Act
 		list.Remove(3);
@@ -72,7 +72,7 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_GetIndex_Existing() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 4, 5 });
+		var list = new SortedList<int>([1, 2, 3, 4, 5]);
 
 		// Assert
 		list.GetIndex(4).Should().Be(3);
@@ -81,7 +81,7 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_GetIndex_OrIndexOfInsertion() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
+		var list = new SortedList<int>([1, 2, 3, 5, 6]);
 
 		// Assert
 		(~list.GetIndex(4)).Should().Be(3);
@@ -90,7 +90,7 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_GetIndex_OrIndexOfInsertion_Larger() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
+		var list = new SortedList<int>([1, 2, 3, 5, 6]);
 
 		// Assert
 		(~list.GetIndex(7)).Should().BeGreaterThan(list.Count - 1);
@@ -99,7 +99,7 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_GetIndex_OrIndexOfInsertion_LargerSection() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 5, 6 });
+		var list = new SortedList<int>([1, 2, 3, 5, 6]);
 
 		// Act
 		var index = list.GetIndex(4);

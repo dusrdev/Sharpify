@@ -1,4 +1,8 @@
 
+using System.Buffers;
+
+using Sharpify.Collections;
+
 namespace Sharpify.Tests;
 
 public class ThreadSafeTests {
@@ -19,19 +23,6 @@ public class ThreadSafeTests {
         int result = wrapper.Modify(_ => newValue);
 
         result.Should().Be(newValue);
-    }
-
-    [Theory]
-    [InlineData(1, 2, 3)]
-    [InlineData(2, 3, 5)]
-    [InlineData(3, 4, 7)]
-    public void SetValue_NewValueWithModifier_UpdatesValue(int original, int addition, int expected) {
-        ThreadSafe<int> wrapper = new(original);
-        var adder = new Adder();
-
-        int result = wrapper.Modify(adder, addition);
-
-        result.Should().Be(expected);
     }
 
     [Theory]
@@ -63,47 +54,14 @@ public class ThreadSafeTests {
             });
         }
 
-        Task[] tasks = new Task[threads];
-        for (int i = 0; i < tasks.Length; i++) {
-            tasks[i] = Increment();
+        using var buffer = new RentedBufferWriter<Task>(threads);
+        for (int i = 0; i < threads; i++) {
+            buffer.WriteAndAdvance(Increment());
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(buffer.WrittenSegment);
         int result = wrapper.Value;
 
         result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData(100, 32, 3200)]
-    [InlineData(200, 64, 12800)]
-    [InlineData(300, 128, 38400)]
-    [InlineData(100, 10, 1000)]
-    [InlineData(200, 20, 4000)]
-    [InlineData(300, 30, 9000)]
-    public async Task GetValue_MultiThreadedAccess_Modifier_ThreadSafe(int iterations, int threads, int expected) {
-        var modifier = new Adder();
-        ThreadSafe<int> wrapper = new(0);
-        async Task Increment() {
-            await Task.Run(() => {
-                for (int i = 0; i < iterations; i++) {
-                    wrapper.Modify(modifier, 1);
-                }
-            });
-        }
-
-        Task[] tasks = new Task[threads];
-        for (int i = 0; i < tasks.Length; i++) {
-            tasks[i] = Increment();
-        }
-
-        await Task.WhenAll(tasks);
-        int result = wrapper.Value;
-
-        result.Should().Be(expected);
-    }
-
-    private class Adder : IModifier<int> {
-        public int Modify(int value, int newValue) => value + newValue;
     }
 }

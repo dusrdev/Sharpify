@@ -4,10 +4,10 @@ namespace Sharpify.Tests.Collections;
 
 public class StringBuffersTests {
     [Fact]
-    public void StringBuffer_NoCapacity_Throws() {
+    public void AllocatedStringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
-            using var buffer = new StringBuffer();
+            var buffer = new StringBuffer();
             buffer.Append('a');
         };
 
@@ -16,9 +16,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_AppendLine_OnElement() {
+    public void AllocatedStringBuffer_AppendLine_OnElement() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.AppendLine("Hello");
@@ -31,9 +31,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_AppendLine_NoParams() {
+    public void AllocatedStringBuffer_AppendLine_NoParams() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.Append("Hello");
@@ -47,9 +47,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_AppendLine_NoParams_Builder() {
+    public void AllocatedStringBuffer_AppendLine_NoParams_Builder() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.Append("Hello")
@@ -63,9 +63,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_NoTrimming_ReturnFullString() {
+    public void AllocatedStringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -78,9 +78,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_WithTrimming_ReturnTrimmedString() {
+    public void AllocatedStringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -93,9 +93,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
+    public void AllocatedStringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -109,9 +109,9 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_AllocateWithIndexes() {
+    public void AllocatedStringBuffer_ImplicitOperatorString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(4);
+        var buffer = StringBuffer.Create(stackalloc char[10]);
 
         // Act
         buffer.Append('a');
@@ -120,14 +120,14 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        ReadOnlySpan<char> span = buffer;
-        (span[1..^1] is "bc").Should().BeTrue();
+        string str = buffer.Allocate();
+        str.Should().Be("abcd");
     }
 
     [Fact]
-    public void StringBuffer_ImplicitOperatorString() {
+    public void AllocatedStringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
-        using var buffer = StringBuffer.Rent(4);
+        var buffer = StringBuffer.Create(stackalloc char[10]);
 
         // Act
         buffer.Append('a');
@@ -136,38 +136,6 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        buffer.Allocate().Should().Be("abcd");
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorReadOnlySpan() {
-        // Arrange
-        using var buffer = StringBuffer.Rent(10);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        ReadOnlySpan<char> span = buffer;
-        span.SequenceEqual("abcd").Should().Be(true);
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorReadOnlyMemory() {
-        // Arrange
-        using var buffer = StringBuffer.Rent(10);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        ReadOnlyMemory<char> span = buffer;
-        span.Span.SequenceEqual("abcd").Should().Be(true);
+        (buffer.WrittenSpan is "abcd").Should().Be(true);
     }
 }
