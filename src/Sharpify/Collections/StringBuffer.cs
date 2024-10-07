@@ -53,7 +53,7 @@ public unsafe ref struct StringBuffer {
     /// Appends the specified string to the buffer.
     /// </summary>
     /// <param name="str">The string to append.</param>
-    public ref StringBuffer Append(scoped ReadOnlySpan<char> str) {
+    public ref StringBuffer Append(ReadOnlySpan<char> str) {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(Position + str.Length, Length);
         str.CopyTo(_buffer.Slice(Position));
         Position += str.Length;
@@ -68,7 +68,7 @@ public unsafe ref struct StringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public ref StringBuffer Append<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+    public ref StringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         bool appended = value.TryFormat(_buffer.Slice(Position), out var charsWritten, format, provider);
         if (!appended) {
             throw new ArgumentOutOfRangeException(nameof(Length));
@@ -114,7 +114,7 @@ public unsafe ref struct StringBuffer {
     /// <param name="format">The format specifier to apply to the value.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <exception cref="InvalidOperationException">Thrown when the buffer is full.</exception>
-    public ref StringBuffer AppendLine<T>(T value, scoped ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
+    public ref StringBuffer AppendLine<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         Append(value, format, provider);
         Append(NewLine);
         return ref this;
