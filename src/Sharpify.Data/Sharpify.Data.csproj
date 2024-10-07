@@ -12,7 +12,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Sharpify.Data</Title>
     <Description>An extension of Sharpify, focused on Data</Description>
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
@@ -24,10 +23,6 @@
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <IsAotCompatible>true</IsAotCompatible>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants>ATOMIC_UPSERTS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

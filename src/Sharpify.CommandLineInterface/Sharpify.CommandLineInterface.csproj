@@ -12,7 +12,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Sharpify.CommandLineInterface</Title>
     <Description>An extension of Sharpify, focused on creating command line interfaces</Description>
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
