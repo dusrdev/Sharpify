@@ -1,3 +1,5 @@
+using System.Buffers;
+
 using Sharpify.Collections;
 
 namespace Sharpify.CommandLineInterface;
@@ -28,32 +30,19 @@ public abstract class Command {
 	/// Gets the help for the command.
 	/// </summary>
 	public virtual string GetHelp() {
-		var length = Name.Length + Description.Length + Usage.Length + 40;
-		if (length <= 1024) { // Small size is allocated on the stack
-			var buffer = StringBuffer.Create(stackalloc char[length]);
-			buffer.AppendLine();
-			buffer.Append("Command: ");
-			buffer.AppendLine(Name);
-			buffer.AppendLine();
-			buffer.Append("Description: ");
-			buffer.AppendLine(Description);
-			buffer.AppendLine();
-			buffer.Append("Usage: ");
-			buffer.AppendLine(Usage);
-			return buffer.Allocate(true);
-		} else { // Large size is rented from shared array pool
-			using var buffer = StringBuffer.Rent(length);
-			buffer.AppendLine();
-			buffer.Append("Command: ");
-			buffer.AppendLine(Name);
-			buffer.AppendLine();
-			buffer.Append("Description: ");
-			buffer.AppendLine(Description);
-			buffer.AppendLine();
-			buffer.Append("Usage: ");
-			buffer.AppendLine(Usage);
-			return buffer.Allocate(true);
-		}
+		var length = (Name.Length + Description.Length + Usage.Length) * 2;
+		using var owner = MemoryPool<char>.Shared.Rent(length);
+		var buffer = StringBuffer.Create(owner.Memory.Span);
+		buffer.AppendLine();
+		buffer.Append("Command: ");
+		buffer.AppendLine(Name);
+		buffer.AppendLine();
+		buffer.Append("Description: ");
+		buffer.AppendLine(Description);
+		buffer.AppendLine();
+		buffer.Append("Usage: ");
+		buffer.AppendLine(Usage);
+		return buffer.Allocate();
 	}
 
 	/// <summary>
