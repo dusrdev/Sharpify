@@ -47,7 +47,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         _lock.EnterWriteLock();
         try {
-            using var file = File.OpenRead(_path);
+            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             var deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
             if (deserialized is null) {
                 return;
@@ -64,11 +64,13 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         _lock.EnterWriteLock();
         try {
             _value = modifier(_value);
-            using var file = File.OpenWrite(_path);
+            _watcher.EnableRaisingEvents = false;
+            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();
+            _watcher.EnableRaisingEvents = true;
         }
     }
 

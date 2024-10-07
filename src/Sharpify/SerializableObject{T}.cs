@@ -90,7 +90,7 @@ public class SerializableObject<T> : IDisposable {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    using var file = File.OpenRead(path);
+                    using var file = File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                     _value = JsonSerializer.Deserialize(file, _jsonTypeInfo)!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
@@ -105,7 +105,7 @@ public class SerializableObject<T> : IDisposable {
         try {
             _lock.EnterWriteLock();
             _value = value;
-            using var file = File.OpenWrite(_path);
+            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
         } finally {
             _lock.ExitWriteLock();
@@ -148,7 +148,7 @@ public class SerializableObject<T> : IDisposable {
         try {
             _lock.EnterWriteLock();
             _value = modifier(_value);
-            using var file = File.OpenWrite(_path);
+            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
             InvokeOnChangedEvent(_value);
         } finally {
