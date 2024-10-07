@@ -7,13 +7,12 @@ A collection of high performance language extensions for C#
 * ⚡ Fully Native AOT compatible
 * 🤷 `Either<T0, T1>` - Discriminated union object that forces handling of both cases
 * 🦾 Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
-* 🚀 Extremely efficient concurrency with `Concurrent` collection wrapper and `IAction`/`IAsyncAction` interfaces, and even more efficient with `AsyncLocal` optimized APIs.
 * 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
 * `Routine` and `AsyncRoutine` bring the user easily usable and configurable interval based background job execution.
 * `PersistentDictionary` and derived types are super lightweight and efficient serializable dictionaries that are thread-safe and work amazingly for things like configuration files.
 * `SortedList{T}` bridges the performance of `List` and order assurance of `SortedSet`
 * `SerializableObject` and the `Monitored` variant allow persisting an object to the disk, and elegantly synchronizing modifications.
-* 💿 `StringBuffer` and `AllocatedStringBuffer` enable zero allocation, easy to use appending buffer for creation of string in hot paths.
+* 💿 `StringBuffer` enable zero allocation, easy to use appending buffer for creation of string in hot paths.
 * `RentedBufferWriter{T}` is an alternative to `ArrayBufferWriter{T}` that requires upfront estimation of the capacity, to use an array rented from the shared array pool, reducing memory allocations and garbage collection.
 * A 🚣🏻 boat load of extension functions for all common types, bridging ease of use and performance.
 * `Utils.Env`, `Utils.Math`, `Utils.Strings` and `Utils.Unsafe` provide uncanny convenience at maximal performance.
@@ -46,6 +45,16 @@ For more information check [inner directory](Sharpify.Data/README.md).
 
 For more information check [inner directory](Sharpify.CommandLineInterface/README.md)
 
+## Methodology
+
+As the name suggests - `Sharpify` is a package mainly intended to extend the core language using high performance implementations. `Sharpify` will never be guaranteed to be backwards compatible, and each release may contain breaking changes as it tries to adapt to the latest language features. `.NET` has a very active community and many features will be added to the core language that will perform at some point better than what `Sharpify` currently offers, at which point these features will be removed from `Sharpify` to encourage user to use the base language instead.
+
+One such example could be the planed addition of union types in C# 14, which if goes as planned will trigger the removal of `Either<T0, T1>` and `Result<T>` from `Sharpify` as they are not needed anymore.
+
+Even though backwards compatibility is not guaranteed, at the latest version, `Sharpify` is made to be very stable and reliable, there are many-many tests made to ensure that. And if something breaks, make sure to report it as it will be considered high priority.
+
+If your packages / libraries use `Sharpify`, I recommend locking the dependency to a specific version which you test.
+
 ## Contribution
 
 This packages was made public so that the entire community could benefit from it. If you experience issues, want to suggest new features or improve existing ones, please use the [issues](https://github.com/dusrdev/Sharpify/issues) section.
@@ -53,3 +62,5 @@ This packages was made public so that the entire community could benefit from it
 ## Contact
 
 For bug reports, feature requests or offers of support/sponsorship contact <dusrdev@gmail.com>
+
+This project is proudly made in Israel 🇮🇱, for the benefit of human kind.
