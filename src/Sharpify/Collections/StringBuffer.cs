@@ -25,7 +25,7 @@ public unsafe ref struct StringBuffer {
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
     /// </summary>
-    internal StringBuffer(Span<char> buffer) {
+    private StringBuffer(Span<char> buffer) {
         _buffer = buffer;
         Length = _buffer.Length;
         Position = 0;
