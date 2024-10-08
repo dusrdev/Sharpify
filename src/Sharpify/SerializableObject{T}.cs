@@ -162,8 +162,8 @@ public class SerializableObject<T> : IDisposable {
             return;
         }
         _lock?.Dispose();
-        GC.SuppressFinalize(this);
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

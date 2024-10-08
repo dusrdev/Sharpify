@@ -45,8 +45,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         if (!File.Exists(_path)) {
             return;
         }
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             var res = await ReadFromFileAsync();
             if (res.IsFail) {
                 return;
@@ -64,10 +64,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
             try {
                 using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 T? deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
-                if (deserialized is null) {
-                    return Result.Fail();
-                }
-                return Result.Ok(deserialized);
+                return deserialized is null ? Result.Fail() : Result.Ok(deserialized);
             } catch (JsonException) { // Handles invalid files
                 return Result.Fail();
             } catch (IOException) {
@@ -81,8 +78,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
 
     /// <inheritdoc/>
     public override void Modify(Func<T, T> modifier) {
-        _lock.EnterWriteLock();
         try {
+            _lock.EnterWriteLock();
             _value = modifier(_value);
             _watcher.EnableRaisingEvents = false;
             using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);

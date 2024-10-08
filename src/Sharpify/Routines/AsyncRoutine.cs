@@ -11,7 +11,7 @@ public class AsyncRoutine : IDisposable {
     private bool _isRunning;
     private RoutineOptions _options;
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>
     /// List of asynchronous actions to be executed.
@@ -134,7 +134,7 @@ public class AsyncRoutine : IDisposable {
     /// </para>
     /// </remarks>
     public void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
+        if (_disposed) {
             return;
         }
         if (!_cancellationTokenSource.IsCancellationRequested) {
@@ -142,7 +142,7 @@ public class AsyncRoutine : IDisposable {
             _cancellationTokenSource.Dispose();
         }
         _timer?.Dispose();
-        Volatile.Write(ref _disposed, true);
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }

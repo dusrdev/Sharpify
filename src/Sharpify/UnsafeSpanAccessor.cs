@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -11,37 +12,62 @@ namespace Sharpify;
 /// <remarks>
 /// Only use it where you can guarantee the scope of the span, it is named "Unsafe" for a reason.
 /// </remarks>
-internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
+public unsafe readonly struct UnsafeSpanIterator<T> : IEnumerable<T>
 {
     private readonly void* _pointer;
+
+    /// <summary>
+    /// The length of the span
+    /// </summary>
     public readonly int Length;
 
-    public UnsafeSpanAccessor(ReadOnlySpan<T> span)
+    /// <summary>
+    /// Creates a new instance of <see cref="UnsafeSpanIterator{T}"/> over the specified span.
+    /// </summary>
+    /// <param name="span"></param>
+    public UnsafeSpanIterator(ReadOnlySpan<T> span)
     {
         _pointer = Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
         Length = span.Length;
     }
 
-    private UnsafeSpanAccessor(void* start, int length)
+    private UnsafeSpanIterator(void* start, int length)
     {
         _pointer = start;
         Length = length;
     }
 
-    public UnsafeSpanAccessor<T> Slice(int start, int length)
+    /// <summary>
+    /// Returns a slice of the span
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="length"></param>
+    /// <returns></returns>
+    public UnsafeSpanIterator<T> Slice(int start, int length)
     {
-        return new UnsafeSpanAccessor<T>(Unsafe.Add<T>(_pointer, start), length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + length, Length);
+        return new UnsafeSpanIterator<T>(Unsafe.Add<T>(_pointer, start), length);
     }
 
+    /// <summary>
+    /// Returns the element at the given index
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
     public ref readonly T this[int index]
     {
         get
         {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(index, Length);
             void* item = Unsafe.Add<T>(_pointer, index);
             return ref Unsafe.AsRef<T>(item);
         }
     }
 
+    /// <summary>
+    /// Generates an IEnumerable of the elements in the span
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<T> ToEnumerable()
     {
         for (var i = 0; i < Length; i++)
@@ -50,30 +76,32 @@ internal unsafe readonly struct UnsafeSpanAccessor<T> : IEnumerable<T>
         }
     }
 
-    public IEnumerator<T> GetEnumerator() => new UnsafeSpanAccessorEnumerator(this);
+    /// <summary>
+    /// Gets the enumerator for the span
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerator<T> GetEnumerator() => new UnsafeSpanIteratorEnumerator(this);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct UnsafeSpanAccessorEnumerator : IEnumerator<T>
+    internal struct UnsafeSpanIteratorEnumerator : IEnumerator<T>
     {
-        private readonly UnsafeSpanAccessor<T> _source;
+        private readonly UnsafeSpanIterator<T> _source;
         private int _index;
         private T? _current;
 
-        internal UnsafeSpanAccessorEnumerator(UnsafeSpanAccessor<T> source)
+        internal UnsafeSpanIteratorEnumerator(UnsafeSpanIterator<T> source)
         {
             _source = source;
             _index = 0;
             _current = default;
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() {}
 
         public bool MoveNext()
         {
-            UnsafeSpanAccessor<T> local = _source;
+            UnsafeSpanIterator<T> local = _source;
 
             if ((uint)_index < (uint)local.Length)
             {

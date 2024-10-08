@@ -17,7 +17,7 @@ public abstract class PersistentDictionary : IDisposable{
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>
     /// Gets the number of key-value pairs contained in the PersistentDictionary.
@@ -106,19 +106,20 @@ public abstract class PersistentDictionary : IDisposable{
         // We check after the release if anything left is in the queue and repeat the process.
         // In perfect conditions with truly concurrent writes, it will cause the serialization to happen only once.
         // Improving performance and reducing resource usage for writes.
-        await _semaphore.WaitAsync();
+        try {
+            await _semaphore.WaitAsync();
 
-        if (_queue.IsEmpty) {
+            if (_queue.IsEmpty) {
+                return;
+            }
+
+            while (_queue.TryDequeue(out var item)) {
+                SetKeyAndValue(item.Key, item.Value);
+            }
+            await SerializeDictionaryAsync();
+        } finally {
             _semaphore.Release();
-            return;
         }
-
-        while (_queue.TryDequeue(out var item)) {
-            SetKeyAndValue(item.Key, item.Value);
-        }
-        await SerializeDictionaryAsync();
-
-        _semaphore.Release();
 
         static bool Equals(ReadOnlySpan<char> left, ReadOnlySpan<char> right, StringComparison comparison) {
             return left.Equals(right, comparison);
@@ -172,11 +173,11 @@ public abstract class PersistentDictionary : IDisposable{
     /// Disposes of the resources used by the persistent dictionary.
     /// </summary>
     public void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
+        if (_disposed) {
             return;
         }
-        _semaphore.Dispose();
-        Volatile.Write(ref _disposed, true);
+        _semaphore?.Dispose();
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }
