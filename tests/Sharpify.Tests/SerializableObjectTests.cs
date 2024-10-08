@@ -156,7 +156,7 @@ public class SerializableObjectTests {
         obj.OnChanged += (sender, e) => e.Value.Name.Should().Be("Jane");
 
         // Act
-        File.WriteAllText(file, JsonSerializer.Serialize(config with { Name = "Jane" }, Options));
+        File.WriteAllText(file, JsonSerializer.Serialize(config with { Name = "Jane" }, JsonContext.Default.Configuration));
 
         // Cleanup
         await file.DeleteAsync();
