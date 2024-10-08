@@ -45,21 +45,9 @@ jobs:
           dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
           dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
-      # 5. Restore dependencies
-      - name: Restore Dependencies
-        run:  |
-          dotnet restore ${{ env.PROJECT }}
-          dotnet restore ${{ env.TEST_PROJECT }}
-
-      # 6. Build
-      - name: Build
-        run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
-
-      # 7. Run Unit Tests
+      # 5. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
   test-sharpify-data:
     runs-on: ${{ matrix.os }}
@@ -100,21 +88,9 @@ jobs:
           dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
           dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
-      # 5. Restore dependencies
-      - name: Restore Dependencies
-        run:  |
-          dotnet restore ${{ env.PROJECT }}
-          dotnet restore ${{ env.TEST_PROJECT }}
-
-      # 6. Build
-      - name: Build
-        run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
-
-      # 7. Run Unit Tests
+      # 5. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
   test-sharpify-cli:
     runs-on: ${{ matrix.os }}
@@ -155,18 +131,6 @@ jobs:
           dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
           dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
-      # 5. Restore dependencies
-      - name: Restore Dependencies
-        run:  |
-          dotnet restore ${{ env.PROJECT }}
-          dotnet restore ${{ env.TEST_PROJECT }}
-
-      # 6. Build
-      - name: Build
-        run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
-
-      # 7. Run Unit Tests
+      # 5. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
