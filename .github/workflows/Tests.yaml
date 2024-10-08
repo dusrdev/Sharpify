@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-tests:
+  test-sharpify:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -16,13 +16,8 @@ jobs:
 
     env:
       # Define the path to project and test project
-      PROJECT_SHARPIFY: src/Sharpify/Sharpify.csproj
-      PROJECT_SHARPIFY_DATA: src/Sharpify.Data/Sharpify.Data.csproj
-      PROJECT_SHARPIFY_CLI: src/Sharpify.CommandLineInterface/Sharpify.CommandLineInterface.csproj
-
-      TEST_SHARPIFY: tests/Sharpify.Tests/Sharpify.Tests.csproj
-      TEST_SHARPIFY_DATA: tests/Sharpify.Data.Tests/Sharpify.Data.Tests.csproj
-      TEST_SHARPIFY_CLI: tests/Sharpify.CommandLineInterface.Tests/Sharpify.CommandLineInterface.Tests.csproj
+      PROJECT: src/Sharpify/Sharpify.csproj
+      TEST_PROJECT: tests/Sharpify.Tests/Sharpify.Tests.csproj
 
     steps:
       # 1. Checkout the repository code
@@ -47,39 +42,131 @@ jobs:
       # 4. Clean
       - name: Clean
         run: |
-          dotnet clean ${{ env.PROJECT_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet clean ${{ env.PROJECT_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet clean ${{ env.PROJECT_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
-
-          dotnet clean ${{ env.TEST_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet clean ${{ env.TEST_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet clean ${{ env.TEST_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
       # 5. Restore dependencies
       - name: Restore Dependencies
         run:  |
-          dotnet restore ${{ env.PROJECT_SHARPIFY }}
-          dotnet restore ${{ env.PROJECT_SHARPIFY_DATA }}
-          dotnet restore ${{ env.PROJECT_SHARPIFY_CLI }}
-
-          dotnet restore ${{ env.TEST_SHARPIFY }}
-          dotnet restore ${{ env.TEST_SHARPIFY_DATA }}
-          dotnet restore ${{ env.TEST_SHARPIFY_CLI }}
+          dotnet restore ${{ env.PROJECT }}
+          dotnet restore ${{ env.TEST_PROJECT }}
 
       # 6. Build
       - name: Build
         run: |
-          dotnet build ${{ env.PROJECT_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.PROJECT_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.PROJECT_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
-
-          dotnet build ${{ env.TEST_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.TEST_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.TEST_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
 
       # 7. Run Unit Tests
       - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+  test-sharpify-data:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+
+    env:
+      # Define the path to project and test project
+      PROJECT: src/Sharpify.Data/Sharpify.Data.csproj
+      TEST_PROJECT: tests/Sharpify.Data.Tests/Sharpify.Data.Tests.csproj
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Cache NuGet packages
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 3. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 4. Clean
+      - name: Clean
         run: |
-          dotnet test ${{ env.TEST_SHARPIFY }} -c ${{ matrix.configuration }}
-          dotnet test ${{ env.TEST_SHARPIFY_DATA }} -c ${{ matrix.configuration }}
-          dotnet test ${{ env.TEST_SHARPIFY_CLI }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 5. Restore dependencies
+      - name: Restore Dependencies
+        run:  |
+          dotnet restore ${{ env.PROJECT }}
+          dotnet restore ${{ env.TEST_PROJECT }}
+
+      # 6. Build
+      - name: Build
+        run: |
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 7. Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+  test-sharpify-cli:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+
+    env:
+      # Define the path to project and test project
+      PROJECT: src/Sharpify.CommandLineInterface/Sharpify.CommandLineInterface.csproj
+      TEST_PROJECT: tests/Sharpify.CommandLineInterface.Tests/Sharpify.CommandLineInterface.Tests.csproj
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Cache NuGet packages
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 3. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 4. Clean
+      - name: Clean
+        run: |
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 5. Restore dependencies
+      - name: Restore Dependencies
+        run:  |
+          dotnet restore ${{ env.PROJECT }}
+          dotnet restore ${{ env.TEST_PROJECT }}
+
+      # 6. Build
+      - name: Build
+        run: |
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 7. Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
