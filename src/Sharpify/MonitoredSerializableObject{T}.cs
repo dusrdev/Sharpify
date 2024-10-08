@@ -38,7 +38,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         _watcher.Changed += OnFileChanged;
     }
 
-    private void OnFileChanged(object sender, FileSystemEventArgs e) {
+    private async void OnFileChanged(object sender, FileSystemEventArgs e) {
         if (e.ChangeType is not WatcherChangeTypes.Changed) {
             return;
         }
@@ -47,16 +47,36 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         _lock.EnterWriteLock();
         try {
-            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            var deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
-            if (deserialized is null) {
+            var res = await ReadFromFileAsync();
+            if (res.IsFail) {
                 return;
             }
-            _value = deserialized;
+            _value = res.Value!;
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();
         }
+    }
+
+    private async Task<Result<T>> ReadFromFileAsync() {
+        int retries = 5;
+        do {
+            try {
+                using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                T? deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
+                if (deserialized is null) {
+                    return Result.Fail();
+                }
+                return Result.Ok(deserialized);
+            } catch (JsonException) { // Handles invalid files
+                return Result.Fail();
+            } catch (IOException) {
+                await Task.Delay(100);
+                continue;
+            }
+        } while (Interlocked.Decrement(ref retries) >= 0);
+
+        return Result.Fail();
     }
 
     /// <inheritdoc/>
