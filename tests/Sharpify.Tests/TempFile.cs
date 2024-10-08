@@ -26,23 +26,27 @@ public record TempFile {
 
 	public static implicit operator string(TempFile file) => file.Path;
 
-	public async ValueTask DeleteAsync() {
+	public async Task DeleteAsync() {
 		if (!File.Exists(Path)) {
 			return;
 		}
 
 		int retries = Retries;
+		int delayInMs = 100;
 
-	delete:
-		try {
-			File.Delete(Path);
-		} catch {
-			if (Interlocked.Decrement(ref retries) < 0) {
-				await Task.Delay(100);
-				goto delete;
-			} else {
-				throw;
+		bool wasDeleted = false;
+		do {
+			try {
+				File.Delete(Path);
+				wasDeleted = true;
+			} catch {
+				if (Interlocked.Decrement(ref retries) >= 0) {
+					delayInMs *= 2;
+					await Task.Delay(delayInMs);
+				} else {
+					throw;
+				}
 			}
-		}
+		} while (!wasDeleted);
 	}
 }
