@@ -54,12 +54,12 @@ jobs:
       # 6. Build
       - name: Build
         run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
 
       # 7. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
 
   test-sharpify-data:
     runs-on: ${{ matrix.os }}
@@ -109,12 +109,12 @@ jobs:
       # 6. Build
       - name: Build
         run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
 
       # 7. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
 
   test-sharpify-cli:
     runs-on: ${{ matrix.os }}
@@ -164,9 +164,9 @@ jobs:
       # 6. Build
       - name: Build
         run: |
-          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }}
-          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+          dotnet build ${{ env.PROJECT }} -c ${{ matrix.configuration }} --no-restore
+          dotnet build ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-restore
 
       # 7. Run Unit Tests
       - name: Run Unit Tests
-        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }} --no-build
