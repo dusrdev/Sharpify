@@ -63,4 +63,4 @@ This packages was made public so that the entire community could benefit from it
 
 For bug reports, feature requests or offers of support/sponsorship contact <dusrdev@gmail.com>
 
-This project is proudly made in Israel 🇮🇱, for the benefit of human kind.
+> This project is proudly made in Israel 🇮🇱 for the benefit of mankind.

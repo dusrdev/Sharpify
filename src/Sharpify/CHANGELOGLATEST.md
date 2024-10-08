@@ -1,23 +1,19 @@
 # CHANGELOG
 
-## v2.3.0
+## v2.4.0 - Alpha
 
-This release contains multiple **BREAKING CHANGES**, please read the following list carefully to see if and where you need to make changes to your code.
+* All derived types of `PersistentDictionary` now implement `IDisposable` interface.
+* Main concurrent processing method is now `ICollection<T>.ForAllAsync()` from many, many benchmarks it became clear that for short duration tasks not involving heavy compute, it has by far the best compromise of speed and memory-allocation. If you use it with a non `async function` all the tasks will yield immediately and require virtually no allocations at all. Which is as good as `ValueTask` from benchmarks. This method has 2 overloads, one which accepts an `IAsyncAction` which enables users with long code and many captured variables to maintain a better structured codebase, and a `Func` alternative for quick and easy usage. The difference in memory allocation / execution time between time is nearly non-existent, this mainly for maintainability.
+* For heavier compute tasks, please revert to using `Parallel.For` or `Parallel.ForEachAsync` and their overloads, they are excellent in load balancing.
+* Due to the changes above, all other concurrent processing methods, such as `ForEachAsync`, `InvokeAsync` and all the related functionality from the `Concurrent` class have been removed. `AsAsyncLocal` entry is also removed, and users will be able to access the new `ForAllAsync` method directly from the `ICollection<T>` interface static extensions.
+* Changes to `TimeSpan` related functions:
+  * `Format`, `FormatNonAllocated`, `ToRemainingDuration`, `ToRemainingDurationNonAllocated`, `ToTimeStamp`, `ToTimeStampNonAllocated`, were all removed due to duplication and suboptimal implementations.
+  * The new methods replacing these functionalities are now in `Utils.DateAndTime` namespace.
+  * `FormatTimeSpan` is now replacing `Format` and `FormatNonAllocated`, `FormatTimeSpan` is hyper optimized. The first overload requires a `Span{char}` buffer of at least 30 characters, and returns a `ReadOnlySpan{char}` of the written portion. The second doesn't require a buffer, and allocated a new `string` which is returned. `FormatTimeSpan` outputs a different format than the predecessor, as the time was formatted in decimal and is rather confusing, now it is formatted as `00:00unit` for the largest 2 units. So a minute and a half would be `01:30m` and a day and a half would be `02:30d` etc... this seems more intuitive to me.
+  * `FormatTimeStamp` is now replacing `ToTimeStamp` and `ToTimeStampNonAllocated`, it is also optimized and the overloads work the same way as `FormatTimeSpan`.
+* The `StringBuffer` which previously rented arrays from the shared array pool, then used the same API's to write to it as `AllocatedStringBuffer` was removed. The previous `AllocatedStringBuffer` was now renamed to `StringBuffer` and it requires a pre-allocated `Span{char}`. You can get the same functionality by renting any buffer, and simply supplying to `StringBuffer.Create`. This allowed removal of a lot of duplicated code and made the API more consistent. `StringBuffer` now doesn't have an implicit converter to `ReadOnlySpan{char}` anymore, use `StringBuffer.WrittenSpan` instead.
+* `IModifier{T}` was removed, use `Func<T, T>` instead.
+* `Utils.Strings.FormatBytes` was changed in the same manner as `Utils.DateAndTime.FormatTimeSpan` and `Utils.DateAndTime.FormatTimeStamp`, it now returns a `ReadOnlySpan<char>` instead of a `string` and it is optimized to use less memory.
+* `ThreadSafe<T>` now implements `IEquatable<T>` and `IEquatable<ThreadSafe<T>>` to allow comparisons.
 
-* `AllocatedStringBuffer` now longer contains a reference to the original array as it defeated its main purpose of being a purely stack based abstraction, you can still use on a pre-allocated array but you would have to maintain the reference yourself. If you don't want to allocate an array, use the `StringBuffer` which rents one from the pool.
-  * The removal of the array, now means that the method which returned a `ReadOnlyMemory<char>` from the buffer was also removed, as it is no longer possible to ensure that the buffer even existed on the heap (it could have been stack allocated), disallowing the use of `ReadOnlyMemory<char>`.
-* Both `AllocatedStringBuffer` and `StringBuffer` contain new things:
-  * `this[int]` is now an indexer which returns the character at a given index. As with `this[Range]` be careful with the bounds as it will throw an exception if you go out of bounds.
-  * `WrittenSpan` is a computed property which returns a `ReadOnlySpan<char>` from the start of the buffer to the current position.
-  * `Length` is now a `public readonly` field which returns the length of the buffer. This could help users debug or understand the buffers better.
-* `Utils.FormatBytesNonAllocated` was removed as the api was confusing and there are no better ways to handle all of its use cases:
-  * `FormatBytes` which previously used it, now uses stack space to format the bytes.
-  * `FormatBytesInRentedBuffer` is a replacement which rents a buffer for you with the help of `StringBuffer`, writes the data to it, and returns the buffer, you can view the internals with `StringBuffer.WrittenSpan` which can prevent any string allocation if unnecessary. You either use a `using statement` or call `.Dispose()` on the return buffer to make sure the pooled array is returned after use.
-* Same changes were also made to:
-  * elapsed time: `TimeSpan.Format` and now `TimeSpan.FormatInRentedBuffer`
-  * remaining duration: `TimeSpan.ToRemainingDuration` and now `TimeSpan.ToRemainingDurationInRentedBuffer`
-  * time stamps: `DateTime.ToTimeStamp` and now `DateTime.ToTimeStampInRentedBuffer`
-* `RentedBufferWriter{T}` now has a static factory method `Create`, it does exactly the same as the constructor and was mainly added for users who prefer those.
-* `RentedBufferWriter{T}` now has a computed property `CurrentPosition` which returns the current position in the buffer. Which means `GetMemorySlice` and `GetSpanSlice` are now usable in more scenarios.
-* `AesProvider` now uses internally uses `RentedBufferWriter` which allows should increase stability.
-* `LazyLocalPersistentDictionary` now also uses `RentedBufferWriter`.
+This alpha version has an almost complete feature set as the stable version which will be released with support and optimizations from .NET 9, this one is supported fully on .NET 8, for the large part, this release is complete except for minor tweaks that would be made possible by .NET 9.

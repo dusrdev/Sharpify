@@ -4,7 +4,7 @@ namespace Sharpify.Tests.Collections;
 
 public class StringBuffersTests {
     [Fact]
-    public void AllocatedStringBuffer_NoCapacity_Throws() {
+    public void StringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
             var buffer = new StringBuffer();
@@ -16,7 +16,66 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_AppendLine_OnElement() {
+    public void StringBuffer_Append_ToFullCapacity() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+        Action act = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+        };
+
+        // Assert
+        act.Should().NotThrow<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_Append_BeyondCapacity() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+        Action act = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length - 1]);
+            buffer.Append(text);
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_Append_BeyondToCapacityAndBeyond() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+
+        Action act1 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append(text);
+        };
+        Action act2 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append(1);
+        };
+        Action act3 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append('a');
+        };
+
+        // Assert
+        act1.Should().Throw<ArgumentOutOfRangeException>();
+        act2.Should().Throw<ArgumentOutOfRangeException>();
+        act3.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_AppendLine_OnElement() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[20]);
 
@@ -31,7 +90,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_AppendLine_NoParams() {
+    public void StringBuffer_AppendLine_NoParams() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[20]);
 
@@ -47,7 +106,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_AppendLine_NoParams_Builder() {
+    public void StringBuffer_AppendLine_NoParams_Builder() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[20]);
 
@@ -63,7 +122,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_NoTrimming_ReturnFullString() {
+    public void StringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[5]);
 
@@ -78,7 +137,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_WithTrimming_ReturnTrimmedString() {
+    public void StringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[5]);
 
@@ -93,7 +152,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
+    public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[5]);
 
@@ -109,7 +168,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_ImplicitOperatorString() {
+    public void StringBuffer_ImplicitOperatorString() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[10]);
 
@@ -125,7 +184,7 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void AllocatedStringBuffer_ImplicitOperatorReadOnlySpan() {
+    public void StringBuffer_ImplicitOperatorReadOnlySpan() {
         // Arrange
         var buffer = StringBuffer.Create(stackalloc char[10]);
 
