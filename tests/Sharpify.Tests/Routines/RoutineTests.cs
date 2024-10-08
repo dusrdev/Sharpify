@@ -11,11 +11,18 @@ public class RoutineTests {
     public async Task Routine_GivenIncreaseValueFunction_IncreasesValue(int milliseconds, int expected) {
         // Arrange
         var count = 0;
-        using var routine = new Routine(100).Add(() => Interlocked.Increment(ref count));
+        var tcs = new TaskCompletionSource<bool>();
+        using var routine = new Routine(100).Add(() => {
+            Interlocked.Increment(ref count);
+            if (count >= expected) {
+                tcs.TrySetResult(true);
+            }
+        });
 
         // Act
         routine.Start();
-        await Task.Delay(milliseconds);
+        var delayTask = Task.Delay(milliseconds);
+        var completedTask = await Task.WhenAny(tcs.Task, delayTask);
 
         // Assert
         count.Should().BeGreaterThanOrEqualTo(expected);
