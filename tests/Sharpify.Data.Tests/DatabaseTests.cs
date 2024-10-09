@@ -139,8 +139,7 @@ public class DatabaseTests {
 
         using var buffer = db.Database.TryReadToRentedBuffer("test", "", 1);
         buffer.WriteAndAdvance(6);
-        scoped ReadOnlySpan<byte> span = buffer.WrittenSpan;
-        db.Database.Upsert("test", in span);
+        db.Database.Upsert("test", buffer.WrittenSpan);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -304,7 +303,7 @@ public class DatabaseTests {
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
         var test = new ConcurrentTest(db.Database);
-        await items.Concurrent().ForEachAsync(test);
+        await items.ForAllAsync(test);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -433,7 +432,7 @@ public class DatabaseTests {
             _database = database;
         }
 
-        public Task InvokeAsync(int item) {
+        public Task InvokeAsync(int item, CancellationToken token = default) {
             var rnd = Random.Shared.Next(10_000, 200_000);
             _database.Upsert(item.ToString(), rnd.ToString());
             return Task.CompletedTask;
