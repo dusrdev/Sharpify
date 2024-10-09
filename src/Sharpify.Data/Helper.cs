@@ -1,5 +1,8 @@
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
+
+using MemoryPack;
 
 namespace Sharpify.Data;
 
@@ -82,6 +85,26 @@ internal sealed class Helper : IDisposable {
         var newProvider = new AesProvider(key);
         _cachedProviders.TryAdd(key, newProvider);
         return newProvider.CreateDecryptor();
+    }
+
+    /// <summary>
+    /// Returns the size of the serialized collection from the header
+    /// </summary>
+    /// <param name="data"></param>
+    /// <remarks>
+    /// Only use with MemoryPack
+    /// </remarks>
+    internal static int GetRequiredLength(ReadOnlySpan<byte> data) {
+        const int lengthSize = 4; // 4 bytes for the length
+
+        if (data.Length < lengthSize) {
+            return 0;
+        }
+
+        var length = BinaryPrimitives.ReadInt32LittleEndian(data.Slice(0, lengthSize));
+        length = length == -1 ? 0 : length;
+
+        return Math.Min(length, data.Length);
     }
 
     public void Dispose() {
