@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -205,11 +206,16 @@ public sealed partial class Database : IDisposable {
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
     public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, string encryptionKey = "", int reservedCapacity = 0) where T : IMemoryPackable<T> {
-        if (!TryGetValues(key, encryptionKey, out T[]? values)) {
+        if (!TryGetValue(key, encryptionKey, out ReadOnlyMemory<byte> data)) {
             return new RentedBufferWriter<T>(0);
         }
-        var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);
-        buffer.WriteAndAdvance(values);
+        int dataLength = Helper.GetRequiredLength(data.Span);
+        int bufferLength = dataLength + reservedCapacity;
+        var buffer = new RentedBufferWriter<T>(bufferLength);
+        var backingMem = buffer.GetMemory().Slice(0, dataLength);
+        ref object? val = ref Unsafe.As<Memory<T>, object?>(ref backingMem);
+        int written = MemoryPackSerializer.Deserialize(typeof(T[]), data.Span, ref val);
+        buffer.Advance(written);
         return buffer;
     }
 
