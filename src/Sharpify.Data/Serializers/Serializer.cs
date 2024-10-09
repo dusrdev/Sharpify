@@ -2,12 +2,12 @@ using MemoryPack;
 
 using Sharpify.Collections;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
 /// A serializer for a database without encryption and case sensitive keys
 /// </summary>
-internal class Serializer : DatabaseSerializer {
+internal class Serializer : AbstractSerializer {
     internal Serializer(string path, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
     }
 

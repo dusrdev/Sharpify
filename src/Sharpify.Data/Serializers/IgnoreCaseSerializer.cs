@@ -2,7 +2,7 @@ using MemoryPack;
 
 using Sharpify.Collections;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
 /// A serializer for a database without encryption and case sensitive keys

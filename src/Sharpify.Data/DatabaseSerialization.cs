@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Sharpify.Data;
 
 public sealed partial class Database : IDisposable {
@@ -19,7 +21,7 @@ public sealed partial class Database : IDisposable {
     private bool IsSerializationNecessary() {
         long updateCount = Interlocked.Read(ref _updatesCount);
         long prevReference = Interlocked.CompareExchange(ref _serializationReference, updateCount, _serializationReference);
-        return prevReference != updateCount;
+        return !_isInMemory && prevReference != updateCount;
     }
 
     /// <summary>
@@ -31,6 +33,8 @@ public sealed partial class Database : IDisposable {
         if (!IsSerializationNecessary()) {
             return;
         }
+
+        Debug.Assert(!_isInMemory);
 
         int estimatedSize = GetOverestimatedSize();
         _serializer.Serialize(_data, estimatedSize);
@@ -45,6 +49,8 @@ public sealed partial class Database : IDisposable {
         if (!IsSerializationNecessary()) {
             return ValueTask.CompletedTask;
         }
+
+        Debug.Assert(!_isInMemory);
 
         int estimatedSize = GetOverestimatedSize();
         return _serializer.SerializeAsync(_data, estimatedSize, cancellationToken);

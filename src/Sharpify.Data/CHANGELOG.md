@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v2.6.0 [Unreleased]
+## v2.6.0 - Alpha
 
 * All `byte[]` value returning reads from the database, now return `ReadOnlyMemory<byte>` instead, previously, to maintain the integrity of the value, a copy was made and returned, because there wasn't any guarantee against modification, `ReadOnlyMemory<byte>` enforced this guarantee without creating a copy, if you just reading the data this is much more performant, and if you want to modify it, you can always create a copy at your own discretion.
 * Decreased memory allocations for the `Func` based `Remove` method.

@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 
 using MemoryPack;
 
+using Sharpify.Data.Serializers;
+
 namespace Sharpify.Data;
 
 /// <summary>
@@ -29,7 +31,7 @@ public sealed partial class Database : IDisposable {
     private long _serializationReference = 0;
 
     private readonly ReaderWriterLockSlim _lock = new();
-    private readonly DatabaseSerializer _serializer;
+    private readonly AbstractSerializer _serializer;
     private volatile int _estimatedSize;
 
     private const int BufferMultiple = 4096;
@@ -69,7 +71,7 @@ public sealed partial class Database : IDisposable {
     /// Creates a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static Database CreateOrLoad(DatabaseConfiguration config) {
-        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+        AbstractSerializer serializer = AbstractSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
@@ -88,7 +90,7 @@ public sealed partial class Database : IDisposable {
     /// Creates asynchronously a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static async ValueTask<Database> CreateOrLoadAsync(DatabaseConfiguration config, CancellationToken token = default) {
-        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+        AbstractSerializer serializer = AbstractSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
@@ -103,10 +105,11 @@ public sealed partial class Database : IDisposable {
         return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
+    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, AbstractSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
+        _isInMemory = config.Path.Length == 0;
         Interlocked.Exchange(ref _estimatedSize, estimatedSize);
     }
 

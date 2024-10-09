@@ -205,7 +205,7 @@ public sealed partial class Database : IDisposable {
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
     public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, string encryptionKey = "", int reservedCapacity = 0) where T : IMemoryPackable<T> {
-        if (!TryGetValues<T>(key, encryptionKey, out T[]? values)) {
+        if (!TryGetValues(key, encryptionKey, out T[]? values)) {
             return new RentedBufferWriter<T>(0);
         }
         var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);

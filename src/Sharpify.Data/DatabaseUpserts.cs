@@ -17,7 +17,7 @@ public sealed partial class Database : IDisposable {
     /// This pure method which accepts the value as ReadOnlySpan{byte} allows you to use more complex but also more efficient serializers.
     /// </para>
     /// </remarks>
-    public void Upsert(string key, scoped ref readonly ReadOnlySpan<byte> value, string encryptionKey = "") {
+    public void Upsert(string key, ReadOnlySpan<byte> value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
             _queue.Enqueue(new(key, value.ToArray()));
         } else {
@@ -47,7 +47,7 @@ public sealed partial class Database : IDisposable {
     /// This method directly inserts the array reference in to the database to reduce copying.
     /// </para>
     /// <para>
-    /// If you cannot ensure that this reference doesn't change, for example if using a pooled array, use the <see cref="Upsert(string, ref readonly ReadOnlySpan{byte}, string)"/> method instead.
+    /// If you cannot ensure that this reference doesn't change, for example if using a pooled array, use the <see cref="Upsert(string, ReadOnlySpan{byte}, string)"/> method instead.
     /// </para>
     /// </remarks>
     public void Upsert(string key, byte[] value, string encryptionKey = "") {

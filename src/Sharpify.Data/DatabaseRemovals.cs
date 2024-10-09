@@ -104,6 +104,7 @@ public sealed partial class Database : IDisposable {
             _lock.EnterWriteLock();
             _data.Clear();
             Interlocked.Exchange(ref _estimatedSize, 0);
+            Interlocked.Increment(ref _updatesCount);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }
