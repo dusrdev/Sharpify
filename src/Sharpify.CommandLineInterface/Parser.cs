@@ -163,19 +163,18 @@ public static class Parser {
     // Checks whether a string starts with "-"
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool IsParameterName(ReadOnlySpan<char> str) {
-        if (!str.StartsWith("-")) {
-            return false;
-        }
-        while (str.Length > 0 && str[0] is '-') {
-            str = str.Slice(1);
-        }
         if (str.Length is 0) {
             return false;
         }
         if (char.IsDigit(str[0])) {
             return false;
         }
+        if (!str.StartsWith("-")) {
+            return false;
+        }
+        while (str.Length > 0 && str[0] is '-') {
+            str = str.Slice(1);
+        }
         return true;
     }
-
 }
