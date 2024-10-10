@@ -2,9 +2,6 @@ using System.Globalization;
 
 namespace Sharpify.CommandLineInterface;
 
-/// <summary>
-/// A wrapper class over a dictionary of string : string with additional features
-/// </summary>
 public sealed partial class Arguments {
     /// <summary>
     /// Checks if the specified key exists in the arguments.
@@ -28,7 +25,7 @@ public sealed partial class Arguments {
     /// <remarks>
     /// This is not the same as <see cref="Contains(string)"/> as this also checks that the value is empty, which is not the case for named arguments that can also be detected by <see cref="Contains(string)"/>
     /// </remarks>
-    public bool HasFlag(string flag) => _arguments.ContainsKey(flag) && _arguments[flag].Length is 0;
+    public bool HasFlag(string flag) => _arguments.TryGetValue(flag, out string? val) && val.Length is 0;
 
     /// <summary>
     /// Tries to retrieve the value of a positional argument.

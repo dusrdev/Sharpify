@@ -5,6 +5,9 @@ namespace Sharpify.CommandLineInterface;
 /// <summary>
 /// A wrapper class over a dictionary of string : string with additional features
 /// </summary>
+/// <remarks>
+/// Arguments instances are created via <see cref="Parser"/>
+/// </remarks>
 public sealed partial class Arguments {
     private readonly string[] _args;
     private readonly Dictionary<string, string> _arguments;

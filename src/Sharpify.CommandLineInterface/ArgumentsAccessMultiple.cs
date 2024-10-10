@@ -2,9 +2,6 @@ using System.Globalization;
 
 namespace Sharpify.CommandLineInterface;
 
-/// <summary>
-/// A wrapper class over a dictionary of string : string with additional features
-/// </summary>
 public sealed partial class Arguments {
     /// <summary>
     /// Tries to retrieve the value of a positional argument.
@@ -25,7 +22,7 @@ public sealed partial class Arguments {
     /// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValues(string key, string? separator, out string[] values) {
         if (!_arguments.TryGetValue(key, out var res)) {
-            values = Array.Empty<string>();
+            values = [];
             return false;
         }
         values = res.Split(separator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -41,7 +38,7 @@ public sealed partial class Arguments {
     /// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValues(ReadOnlySpan<string> keys, string? separator, out string[] values) {
         if (!_arguments.TryGetValue(keys, out var res)) {
-            values = Array.Empty<string>();
+            values = [];
             return false;
         }
         values = res.Split(separator, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -77,7 +74,7 @@ public sealed partial class Arguments {
     /// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValues<T>(string key, string? separator, out T[] values) where T : IParsable<T> {
         if (!TryGetValue(key, out string val)) {
-            values = Array.Empty<T>();
+            values = [];
             return false;
         }
 
@@ -87,7 +84,7 @@ public sealed partial class Arguments {
 
         foreach (var part in parts) {
             if (!T.TryParse(part, CultureInfo.CurrentCulture, out T? parsed)) {
-                values = Array.Empty<T>();
+                values = [];
                 return false;
             }
             result[i++] = parsed!;
@@ -111,7 +108,7 @@ public sealed partial class Arguments {
     /// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValues<T>(ReadOnlySpan<string> keys, string? separator, out T[] values) where T : IParsable<T> {
         if (!TryGetValue(keys, out string val)) {
-            values = Array.Empty<T>();
+            values = [];
             return false;
         }
 
@@ -121,7 +118,7 @@ public sealed partial class Arguments {
 
         foreach (var part in parts) {
             if (!T.TryParse(part, CultureInfo.CurrentCulture, out T? parsed)) {
-                values = Array.Empty<T>();
+                values = [];
                 return false;
             }
             result[i++] = parsed!;
