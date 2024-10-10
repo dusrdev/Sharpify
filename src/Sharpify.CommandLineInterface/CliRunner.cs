@@ -33,7 +33,6 @@ public sealed class CliRunner {
 	}
 
 	private readonly CliRunnerConfiguration _config;
-	private readonly bool _isSingleCommand;
 
 	/// <summary>
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
@@ -41,9 +40,8 @@ public sealed class CliRunner {
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
 	internal CliRunner(CliRunnerConfiguration config) {
 		_config = config;
-		_isSingleCommand = _config.Commands.Count is 1;
 		// If there is only one command, sorting is not necessary
-		if (_config.SortCommandsAlphabetically && !_isSingleCommand) {
+		if (_config.SortCommandsAlphabetically && _config.Commands.Count is not 1) {
 			_config.Commands.Sort(Command.ByNameComparer);
 		}
 	}
@@ -52,9 +50,9 @@ public sealed class CliRunner {
 	/// Handles the case where no input was provided.
 	/// </summary>
 	/// <returns></returns>
-	private ValueTask<int> HandleNoInput() =>
+	private ValueTask<int> HandleNoInput(bool commandNameRequired) =>
 			_config.OutputHelpTextForEmptyInput
-			? OutputHelper.Return(GenerateHelpText(isSingleCommand: _isSingleCommand), 0)
+			? OutputHelper.Return(GenerateHelpText(commandNameRequired), 0)
 			: OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
 
 	/// <summary>
@@ -62,7 +60,7 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return HandleNoInput();
+			return HandleNoInput(commandNameRequired);
 		}
 		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
@@ -73,7 +71,7 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
 		if (args.Length is 0) {
-			return HandleNoInput();
+			return HandleNoInput(commandNameRequired);
 		}
 		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
@@ -87,37 +85,28 @@ public sealed class CliRunner {
 			return OutputHelper.Return("Input could not be parsed", 400, _config.ShowErrorCodes);
 		}
 
+		string version = $"Version: {_config.MetaData.Version}"; // cache version
+
+		// general help text
+		if (arguments.IsFirstOrFlag("help")) {
+			return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+		}
+		if (arguments.IsFirstOrFlag("version")) {
+			return OutputHelper.Return(version, 0);
+		}
+
 		// Only for single command CLIs
 		if (!commandNameRequired) {
 			// If there is more than one command, the command name is required
-			if (!_isSingleCommand) {
+			if (_config.Commands.Count is not 1) {
 				return OutputHelper.Return("Command name is required when using more than one command", 405, _config.ShowErrorCodes);
 			}
-			// Special kind of help text for single command CLIs
-			if (arguments.Contains("help") || arguments.HasFlag("help")) {
-				return OutputHelper.Return(GenerateHelpText(isSingleCommand: _isSingleCommand), 0);
-			} else if (arguments.Contains("version") || arguments.HasFlag("version")) {
-				return OutputHelper.Return($"Version: {_config.MetaData.Version}", 0);
-			} else {
-				// Execute the command
-				return _config.Commands[0].ExecuteAsync(arguments);
-			}
+			// Execute the command
+			return _config.Commands[0].ExecuteAsync(arguments);
 		}
 
 		if (!arguments.TryGetValue(0, out string commandName)) {
-			if (arguments.HasFlag("help")) {
-				return OutputHelper.Return(GenerateHelpText(isSingleCommand: _isSingleCommand), 0);
-			} else if (arguments.HasFlag("version")) {
-				return OutputHelper.Return($"Version: {_config.MetaData.Version}", 0);
-			} else {
-				return OutputHelper.Return("Command name is required", 405, _config.ShowErrorCodes);
-			}
-		}
-
-		if (commandName.Equals("help", StringComparison.OrdinalIgnoreCase)) {
-			return OutputHelper.Return(GenerateHelpText(isSingleCommand: _isSingleCommand), 0);
-		} else if (commandName.Equals("version", StringComparison.OrdinalIgnoreCase)) {
-			return OutputHelper.Return($"Version: {_config.MetaData.Version}", 0);
+			return OutputHelper.Return("Command name is required", 405, _config.ShowErrorCodes);
 		}
 
 		Command? command = _config.Commands.FirstOrDefault(c => c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase));
@@ -127,13 +116,12 @@ public sealed class CliRunner {
 
 		if (arguments.Contains("help") || arguments.HasFlag("help")) {
 			return OutputHelper.Return(command.GetHelp(), 0);
-		} else {
-			return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 		}
+		return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 	}
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
-	private string GenerateHelpText(bool isSingleCommand) {
+	private string GenerateHelpText(bool commandNameRequired) {
 		// here the likely help text is larger than per command, so we use a rented buffer
 		using var owner = MemoryPool<char>.Shared.Rent(GetRequiredBufferLength());
 		var buffer = StringBuffer.Create(owner.Memory.Span);
@@ -155,11 +143,7 @@ public sealed class CliRunner {
 			buffer.AppendLine(_config.Header);
 			buffer.AppendLine();
 		}
-		if (isSingleCommand) {
-			var command = _config.Commands[0];
-			buffer.AppendLine("Usage:");
-			buffer.AppendLine(command.Usage);
-		} else {
+		if (commandNameRequired) {
 			buffer.AppendLine("Commands:");
 			var maxCommandLength = GetMaximumCommandLength() + 2;
 			foreach (Command command in _config.Commands) {
@@ -178,6 +162,10 @@ public sealed class CliRunner {
 
 				"""
 			);
+		} else {
+			var command = _config.Commands[0];
+			buffer.AppendLine("Usage:");
+			buffer.AppendLine(command.Usage);
 		}
 
 		return buffer.Allocate();
