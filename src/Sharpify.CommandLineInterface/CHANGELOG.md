@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Version 1.4.0 [Unreleased]
+## Version 1.4.0 - Alpha
 
 * Optimized `Parser`:
   * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.
@@ -12,6 +12,8 @@
   * This is a change in behavior, as previously by default an error showing that no command was found was displayed, but seems that showing the help text in those situations is the more common approach in modern CLIs.
 * Updated parsing to detect cases where arguments start with `-` and are not names of arguments, for example if you required a positional argument of type `int` and the input was a negative number (also starts with `-`), it would've been interpreted as a named argument, now it will be correctly interpreted as a positional argument.
   * The rule now also checks if the first character following a `-` is a digit, if it is, it will not be marked as named argument. Which means - don't use argument names that start with digits (this is a bad practice in general).
+* Help text no contains a special case for "version" and "--version" that will just display the version from metadata.
+  * Help text (from main) now has specialized structure for cases where you only have one command, instead of printing commands and descriptions, it will print the single command usage - the rest will of the whole cli (metadata)
 
 ## Version 1.3.0
 

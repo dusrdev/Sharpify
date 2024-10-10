@@ -1,9 +1,19 @@
 # CHANGELOG
 
-## Version 1.3.0
+## Version 1.4.0 - Alpha
 
-* `Arguments` now contains new methods `TryGetValues` and `TryGetValues{T}` to get arrays from values, there are overloads for regular and positional arguments, each overload requires a `string? separator` that is used to split the value, as with te regular values, `T` needs to implement `IParsable{T}`.
-* `CliBuilder` now has a method `ShowErrorCodes` that will enable the error codes next to `CliRunner` error outputs, that was previously enabled by default, now it will hide them by default to provide a cleaner experience for users, but the builder now can easily configure this for testing, or if you still want the user to see them.
+* Optimized `Parser`:
+  * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.
+  * Changed lower level array allocation code to use generalized api to optimize on more platforms.
+* `Arguments.TryGetValue` and `Arguments.TryGetValues` now have overloads that accept a `ReadOnlySpan<string> keys`, this overload enables much simpler retrieval of parameters that have aliases, for example you might want something like `--name` and `-n` to map to the same value.
+  * If you specify the aliases using the collections expression (i.e `["one", "two"]`), since .NET 8, the compiler will generate an inline array for that, which is very efficient, you don't need to create an array yourself. but if you wanted to to you could for example create a `static readonly ReadOnlySpan<string> aliases => new[] { "one", "two" };` and pass that instead, the compiler optimizes such case by writing the values directly in the assembly.
+* `CliBuilder` now has an option `WithCaseSensitiveParameters` that will make the parser case sensitive, this is useful if you want to have parameters that are case sensitive, by default the parser is case insensitive. the decision to default to ignore case is centered around making it easier for users to use the cli. But for cases where you need more short flags like `grep` you can opt in for this feature.
+* `CliBuilder` now has an option `WithoutHelpTextForEmptyInput` that will prevent the general help text from being displayed when no input is given, this is useful for cases where you want to have a more silent cli, by default the general help text is displayed when no input is given.
+  * This is a change in behavior, as previously by default an error showing that no command was found was displayed, but seems that showing the help text in those situations is the more common approach in modern CLIs.
+* Updated parsing to detect cases where arguments start with `-` and are not names of arguments, for example if you required a positional argument of type `int` and the input was a negative number (also starts with `-`), it would've been interpreted as a named argument, now it will be correctly interpreted as a positional argument.
+  * The rule now also checks if the first character following a `-` is a digit, if it is, it will not be marked as named argument. Which means - don't use argument names that start with digits (this is a bad practice in general).
+* Help text no contains a special case for "version" and "--version" that will just display the version from metadata.
+  * Help text (from main) now has specialized structure for cases where you only have one command, instead of printing commands and descriptions, it will print the single command usage - the rest will of the whole cli (metadata)
 
 ### Usage Note
 
