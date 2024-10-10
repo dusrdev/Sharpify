@@ -19,7 +19,7 @@ public class ParserArgumentsTests {
 
 	[Fact]
 	public void MapArguments_Valid() {
-		var argss = new string[][] {
+		var args = new string[][] {
 			["command", "--message", "hello world", "--code", "404", "--force"], // combined
 			["command", "--m", "hello world", "--c", "404", "--force"], // named + switch
 			["command", "-m", "hello world", "-c", "404", "--force"], // short + switch
@@ -28,7 +28,7 @@ public class ParserArgumentsTests {
 			["do-this", "--n", "name", "--f", "file1.txt file2.txt"], // named
 			["test", "one", "--param", "value", "two"], // positional after named
 		};
-		var expecteds = new Dictionary<string, string>[] {
+		var expected = new Dictionary<string, string>[] {
 			Helper.GetMapped(("0", "command"), ("message", "hello world"), ("code", "404"), ("force", "")),
 			Helper.GetMapped(("0", "command"), ("m", "hello world"), ("c", "404"), ("force", "")),
 			Helper.GetMapped(("0", "command"), ("m", "hello world"), ("c", "404"), ("force", "")),
@@ -37,10 +37,10 @@ public class ParserArgumentsTests {
 			Helper.GetMapped(("0", "do-this"), ("n", "name"), ("f", "file1.txt file2.txt")),
 			Helper.GetMapped(("0", "test"), ("1", "one"), ("param", "value"), ("2", "two")),
 		};
-		for (var i = 0; i < argss.Length; i++) {
-			var args = argss[i];
-			var arguments = Parser.MapArguments(args, StringComparer.CurrentCultureIgnoreCase);
-			arguments.Should().BeEquivalentTo(expecteds[i]);
+		for (var i = 0; i < args.Length; i++) {
+			var localArgs = args[i];
+			var localArguments = Parser.MapArguments(localArgs, StringComparer.CurrentCultureIgnoreCase);
+			localArguments.Should().BeEquivalentTo(expected[i]);
 		}
 	}
 
