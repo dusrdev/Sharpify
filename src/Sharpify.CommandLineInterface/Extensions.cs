@@ -1,6 +1,6 @@
 namespace Sharpify.CommandLineInterface;
 
-internal static class Extensions {
+internal static class Helper {
 	/// <summary>
 	/// Tries to retrieve the value of the first specified key that exists in the dictionary.
 	/// </summary>
@@ -17,6 +17,19 @@ internal static class Extensions {
 		}
 		value = "";
 		return false;
+	}
+
+	/// <summary>
+	/// Checks if the first argument is the specified value or if it is a flag.
+	/// </summary>
+	/// <param name="args"></param>
+	/// <param name="value"></param>
+	/// <returns></returns>
+	internal static bool IsFirstOrFlag(this Arguments args, string value) {
+		if (args.TryGetValue(0, out string? first) && first == value) {
+			return true;
+		}
+		return args.Count is 1 && args.HasFlag(value);
 	}
 
 	internal static StringComparer GetComparer(this CliRunnerConfiguration config)
