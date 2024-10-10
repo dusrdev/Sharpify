@@ -164,7 +164,7 @@ public sealed class CliRunner {
 			);
 		} else {
 			var command = _config.Commands[0];
-			buffer.AppendLine("Usage:");
+			buffer.Append("Usage: ");
 			buffer.AppendLine(command.Usage);
 		}
 
