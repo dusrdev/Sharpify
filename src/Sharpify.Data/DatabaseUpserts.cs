@@ -222,7 +222,7 @@ public sealed partial class Database : IDisposable {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
-                int estimatedSize = kvp.GetEstimatedSize();
+                int estimatedSize = Helper.GetEstimatedSize(kvp);
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
                 Interlocked.Increment(ref _updatesCount);
             }

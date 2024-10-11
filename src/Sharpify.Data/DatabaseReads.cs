@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
+using MemoryPack.Formatters;
 
 using Sharpify.Collections;
 
@@ -212,10 +213,7 @@ public sealed partial class Database : IDisposable {
         int dataLength = Helper.GetRequiredLength(data.Span);
         int bufferLength = dataLength + reservedCapacity;
         var buffer = new RentedBufferWriter<T>(bufferLength);
-        var backingMem = buffer.GetMemory().Slice(0, dataLength);
-        ref object? val = ref Unsafe.As<Memory<T>, object?>(ref backingMem);
-        int written = MemoryPackSerializer.Deserialize(typeof(T[]), data.Span, ref val);
-        buffer.Advance(written);
+        Helper.ReadToRenterBufferWriter(ref buffer, data.Span, dataLength);
         return buffer;
     }
 

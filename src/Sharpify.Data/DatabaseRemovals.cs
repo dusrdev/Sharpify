@@ -12,7 +12,7 @@ public sealed partial class Database : IDisposable {
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
-            var estimatedSize = Extensions.GetEstimatedSize(key, val);
+            var estimatedSize = Helper.GetEstimatedSize(key, val);
             Interlocked.Add(ref _estimatedSize, -estimatedSize);
             Interlocked.Increment(ref _updatesCount);
             if (Config.SerializeOnUpdate) {
@@ -74,7 +74,7 @@ public sealed partial class Database : IDisposable {
 
             foreach (var key in matches) {
                 _data.Remove(key, out var val);
-                var estimatedSize = Extensions.GetEstimatedSize(key, val);
+                var estimatedSize = Helper.GetEstimatedSize(key, val);
                 Interlocked.Add(ref _estimatedSize, -estimatedSize);
                 Interlocked.Increment(ref _updatesCount);
 

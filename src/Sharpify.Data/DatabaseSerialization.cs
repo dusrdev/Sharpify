@@ -7,7 +7,7 @@ public sealed partial class Database : IDisposable {
         if (!Config.SerializeOnUpdate) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
-                int estimatedSize = kvp.GetEstimatedSize();
+                int estimatedSize = Helper.GetEstimatedSize(kvp);
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
                 Interlocked.Increment(ref _updatesCount);
             }

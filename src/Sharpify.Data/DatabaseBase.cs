@@ -79,7 +79,7 @@ public sealed partial class Database : IDisposable {
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        int estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Helper.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
 
@@ -98,7 +98,7 @@ public sealed partial class Database : IDisposable {
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        int estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Helper.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
 
