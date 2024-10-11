@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 using MemoryPack;
@@ -156,7 +157,7 @@ internal sealed class Helper : IDisposable {
     /// <param name="buffer"></param>
     /// <param name="data"></param>
     /// <param name="length"></param>
-	public static void ReadToRenterBufferWriter<T>(ref RentedBufferWriter<T> buffer, ReadOnlySpan<byte> data, int length) where T : IMemoryPackable<T> {
+	public static void ReadToRenterBufferWriter<T>(ref RentedBufferWriter<T> buffer, ReadOnlySpan<byte> data, int length) {
 		var state = MemoryPackReaderOptionalStatePool.Rent(null);
 		var reader = new MemoryPackReader(data, state);
 		ref var arr = ref buffer.GetReferenceUnsafe();
