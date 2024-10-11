@@ -37,6 +37,13 @@ public unsafe ref struct StringBuffer {
     public StringBuffer() : this(Span<char>.Empty) {
     }
 
+    /// <summary>
+    /// Resets the buffer to the beginning.
+    /// </summary>
+    public void Reset() {
+        Position = 0;
+    }
+
 #pragma warning disable CS9084 // Struct member returns 'this' or other instance members by reference
 
     /// <summary>
