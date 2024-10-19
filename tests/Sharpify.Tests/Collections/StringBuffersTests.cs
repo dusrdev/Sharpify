@@ -168,33 +168,16 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_ImplicitOperatorString() {
+    public void StringBuffer_Reset() {
         // Arrange
-        var buffer = StringBuffer.Create(stackalloc char[10]);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
+        buffer.Append("Hello world!");
+        buffer.Reset();
+        buffer.Append("David");
 
         // Assert
-        string str = buffer.Allocate();
-        str.Should().Be("abcd");
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorReadOnlySpan() {
-        // Arrange
-        var buffer = StringBuffer.Create(stackalloc char[10]);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        (buffer.WrittenSpan is "abcd").Should().Be(true);
+        buffer.WrittenSpan.SequenceEqual("David").Should().BeTrue();
     }
 }
