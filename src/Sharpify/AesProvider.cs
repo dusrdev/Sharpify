@@ -282,5 +282,6 @@ public sealed class AesProvider : IDisposable {
         }
         _aes?.Dispose();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
