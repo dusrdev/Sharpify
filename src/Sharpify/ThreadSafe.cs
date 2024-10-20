@@ -61,10 +61,9 @@ public sealed class ThreadSafe<T> : IEquatable<T>, IEquatable<ThreadSafe<T>> {
         if (other is null) {
             return false;
         }
-        if (_value is null) {
-            return false;
+        lock (_lock) {
+            return _value is not null && _value.Equals(other);
         }
-        return _value.Equals(other);
     }
 
     /// <summary>
