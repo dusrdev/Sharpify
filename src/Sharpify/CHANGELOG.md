@@ -1,11 +1,13 @@
 # CHANGELOG
 
-## v2.4.0 - Alpha
+## v2.4.0
 
 * All derived types of `PersistentDictionary` now implement `IDisposable` interface.
-* Main concurrent processing method is now `ICollection<T>.ForAllAsync()` from many, many benchmarks it became clear that for short duration tasks not involving heavy compute, it has by far the best compromise of speed and memory-allocation. If you use it with a non `async function` all the tasks will yield immediately and require virtually no allocations at all. Which is as good as `ValueTask` from benchmarks. This method has 2 overloads, one which accepts an `IAsyncAction` which enables users with long code and many captured variables to maintain a better structured codebase, and a `Func` alternative for quick and easy usage. The difference in memory allocation / execution time between time is nearly non-existent, this mainly for maintainability.
+* Main concurrent processing methods are now `ICollection<T>.ForAll()` and `ICollection<T>.ForAllAsync()` from many, many benchmarks it became clear that for short duration tasks not involving heavy compute, it has by far the best compromise of speed and memory-allocation. If you use it with a non `async function` all the tasks will yield immediately and require virtually no allocations at all. Which is as good as `ValueTask` from benchmarks. This method has 2 overloads, one which accepts an `IAsyncAction` which enables users with long code and many captured variables to maintain a better structured codebase, and a `Func` alternative for quick and easy usage. The difference in memory allocation / execution time between time is nearly non-existent, this mainly for maintainability.
 * For heavier compute tasks, please revert to using `Parallel.For` or `Parallel.ForEachAsync` and their overloads, they are excellent in load balancing.
-* Due to the changes above, all other concurrent processing methods, such as `ForEachAsync`, `InvokeAsync` and all the related functionality from the `Concurrent` class have been removed. `AsAsyncLocal` entry is also removed, and users will be able to access the new `ForAllAsync` method directly from the `ICollection<T>` interface static extensions.
+* Due to the changes above, all other concurrent processing methods, such as `ForEachAsync`, `InvokeAsync` and all the related functionality from the `Concurrent` class have been removed. `AsAsyncLocal` entry is also removed, and users will be able to access the new `ForAll` and `ForAllAsync` methods directly from the `ICollection<T>` interface static extensions.
+* `ForAll` and `ForAllAsync` methods have identical parameters, the only difference is that the implementation for `ForAll` is optimized for synchronous lambdas that don't need to allocate an AsyncStateMachine, while the `ForAllAsync` is optimized for increased concurrency for asynchronous lambdas. Choosing `ForAll` for synchronous lambdas massively decreases memory allocation and execution time.
+* `IAsyncAction<T>`'s `InvokeAsync` method now has a `CancellationToken` parameter.
 * Changes to `TimeSpan` related functions:
   * `Format`, `FormatNonAllocated`, `ToRemainingDuration`, `ToRemainingDurationNonAllocated`, `ToTimeStamp`, `ToTimeStampNonAllocated`, were all removed due to duplication and suboptimal implementations.
   * The new methods replacing these functionalities are now in `Utils.DateAndTime` namespace.
@@ -16,7 +18,7 @@
 * `Utils.Strings.FormatBytes` was changed in the same manner as `Utils.DateAndTime.FormatTimeSpan` and `Utils.DateAndTime.FormatTimeStamp`, it now returns a `ReadOnlySpan<char>` instead of a `string` and it is optimized to use less memory.
 * `ThreadSafe<T>` now implements `IEquatable<T>` and `IEquatable<ThreadSafe<T>>` to allow comparisons.
 
-This alpha version has an almost complete feature set as the stable version which will be released with support and optimizations from .NET 9, this one is supported fully on .NET 8, for the large part, this release is complete except for minor tweaks that would be made possible by .NET 9.
+Upon the release of .NET 9, another version will be released utilizing certain optimizations specifically for .NET 9, but the feature set should be the same.
 
 ## v2.3.0
 
