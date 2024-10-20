@@ -4,6 +4,30 @@ namespace Sharpify.Tests;
 
 public class CollectionExtensionsTests {
     [Fact]
+    public void IsNullOrEmpty_GivenNullList() {
+        // Arrange
+        List<int>? list = null;
+
+        // Act
+        var result = list.IsNullOrEmpty();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsNullOrEmpty_GivenEmptyList() {
+        // Arrange
+        var list = new List<int>();
+
+        // Act
+        var result = list.IsNullOrEmpty();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
         // Arrange
         var list = new List<int> { 1, 2, 3, 4, 5 };

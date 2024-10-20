@@ -6,7 +6,7 @@ public class SortedListTests {
 	[Fact]
 	public void SortedList_Add() {
 		// Arrange
-		var list = new SortedList<int>(new[] { 1, 2, 3, 4, 5 });
+		var list = new SortedList<int>([1, 2, 3, 4, 5]);
 
 		// Act
 		list.Add(6);
