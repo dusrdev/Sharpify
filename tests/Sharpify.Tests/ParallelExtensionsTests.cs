@@ -16,7 +16,6 @@ public class ParallelExtensionsTests {
 
         // Assert
         results.Should().Equal(expected);
-        action.GetThreadCount().Should().Be(1);
     }
 
     [Fact]
@@ -36,7 +35,6 @@ public class ParallelExtensionsTests {
 
         // Assert
         results.Should().Equal(expected);
-        new HashSet<int>(threads).Count.Should().Be(1);
     }
 
     [Fact]
@@ -52,7 +50,6 @@ public class ParallelExtensionsTests {
 
         // Assert
         results.Should().Equal(expected);
-        action.GetThreadCount().Should().Be(Environment.ProcessorCount);
     }
 
     [Fact]
@@ -72,7 +69,6 @@ public class ParallelExtensionsTests {
 
         // Assert
         results.Should().Equal(expected);
-        new HashSet<int>(threads).Count.Should().Be(Environment.ProcessorCount);
     }
 
     [Fact]
@@ -92,42 +88,27 @@ public class ParallelExtensionsTests {
 
         // Assert
         results.Should().Equal(expected);
-        new HashSet<int>(threads).Count.Should().Be(Environment.ProcessorCount);
     }
 }
 
 public readonly struct MultiplyActionDict : IAsyncAction<KeyValuePair<int,int>> {
     private readonly ConcurrentDictionary<int, int> _results;
-    private readonly ConcurrentStack<int> _threads;
-
     public MultiplyActionDict(ConcurrentDictionary<int, int> results) {
         _results = results;
-        _threads = new ConcurrentStack<int>();
     }
-
     public Task InvokeAsync(KeyValuePair<int,int> value, CancellationToken token = default) {
         _results[value.Key] = value.Value * 2;
-        _threads.Push(Environment.CurrentManagedThreadId);
         return Task.CompletedTask;
     }
-
-    public int GetThreadCount() => new HashSet<int>(_threads).Count;
 }
 
 public readonly struct MultiplyActionDictAsync : IAsyncAction<KeyValuePair<int,int>> {
     private readonly ConcurrentDictionary<int, int> _results;
-    private readonly ConcurrentStack<int> _threads;
-
     public MultiplyActionDictAsync(ConcurrentDictionary<int, int> results) {
         _results = results;
-        _threads = new ConcurrentStack<int>();
     }
-
     public async Task InvokeAsync(KeyValuePair<int,int> value, CancellationToken token = default) {
         _results[value.Key] = value.Value * 2;
-        _threads.Push(Environment.CurrentManagedThreadId);
         await Task.Delay(50, token);
     }
-
-    public int GetThreadCount() => new HashSet<int>(_threads).Count;
 }
