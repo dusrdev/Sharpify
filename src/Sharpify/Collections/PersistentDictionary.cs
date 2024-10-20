@@ -178,6 +178,5 @@ public abstract class PersistentDictionary : IDisposable{
         }
         _semaphore?.Dispose();
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }
