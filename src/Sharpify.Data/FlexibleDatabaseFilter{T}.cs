@@ -45,8 +45,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
             value = default!;
             return false;
         }
-        var span = data.Span;
-        value = T.Deserialize(in span)!;
+        value = T.Deserialize(data.Span)!;
         return true;
     }
 
@@ -56,8 +55,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
             values = default!;
             return false;
         }
-        var span = data.Span;
-        values = T.DeserializeMany(in span)!;
+        values = T.DeserializeMany(data.Span)!;
         return true;
     }
 
@@ -66,8 +64,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
         if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out ReadOnlyMemory<byte> data)) {
             return new RentedBufferWriter<T>(0);
         }
-        var span = data.Span;
-        T[] values = T.DeserializeMany(in span)!;
+        T[] values = T.DeserializeMany(data.Span)!;
         var buffer = new RentedBufferWriter<T>(values.Length + reservedCapacity);
         buffer.WriteAndAdvance(values);
         return buffer;

@@ -1,45 +1,23 @@
 # CHANGELOG
 
-## v2.5.0
+## v2.6.0 - Alpha
 
-* Updated to use version 2.2.0 of `Sharpify` and later, and `MemoryPack` 1.21.1 and later.
-* Removed apis that were previously marked as `Obsolete`
-* An overload with `ReadOnlySpan{byte}` was added to `Upsert`, enables using `Upsert` on other types, such as lists or even pooled arrays. Be careful when using the `byte[]` overload, as now it doesn't create copies and instead inserts the reference instead to improve performance where needed. **DO NOT USE** this overload with buffers which you only temporarily own, for those use the new `ReadOnlySpan{byte}` overload.
-* `UpsertMany<T>` now also has a `ReadOnlySpan{T}` accepting overload, it will not improve performance, but still adds flexibility, it doesn't replace the original `T[]` overload, it is an alternative. If the main `T[]` suits your context, as in you already have a fixed size array, it will actually be more performant.
-* New method `Database.TryReadToRentedBuffer` now rents an appropriately sized `RentedBufferWriter{T}` and attempts to write the value to it, then return it. If it is successful, the result can be viewed with `RentedBufferWriter{T}.WrittenSpan` and other apis, if not successful (i.e key not found), a disabled `RentedBufferWriter{T}` will be returned, it can be checked with the `RentedBufferWriter{T}.IsDisabled` property.
-  * There is also an optional parameter for `reservedCapacity`, this will make sure the buffer has a matching amount free capacity after writing the data, an explanation of why this is useful will be lower down the page.
-  * There are overloads in `Database` for both `byte` and `T : IMemoryPackable{T}`, as well as methods in `MemoryPackableDatabaseFilter{T}` and `FlexibleDatabaseFilter{T}`.
-* **POSSIBLY BREAKING** for those who use the `JSON` serialized `T` overloads, in the previous versions, the `JsonSerializer` was used to generate a `string`, which then passed to `MemoryPack` for secondary serialization. To improve performance, now `JsonSerializer` directly serializes to `byte[]` which means using these types is now both faster and more memory efficient than before. But if you try to read values with the new version which were serialized in the old version, there may be inconsistencies which may cause errors.
-  * If you encounter such issues, you may want to synchronize manually as follows:
-  * Read the values with `TryGetString`, then use `JsonSerializer.Deserialize` on the strings to get the actual values, you can then proceed to upsert those values with the `JSON` overloads on the same keys.
-* Some of the new changes were also leveraged internally to improve performance/memory allocations in various places.
-
-### New APIs: Purposely Built For Performance
-
-Upserting a `ReadOnlySpan` instead of `[]`, or reading data into a `RentedBufferWriter` may seem unnecessary by themselves, but using both together can unlock the next level of performance in some scenarios.
-
-Consider the following example:
-
-you have a server which manages some items of different categories, and you use a collection to hold items of type `book` for example, and a request comes in to add a new book.
-
-#### Before this change
-
-1. Retrieve allocated `Book[]`
-2. Allocate a new `List<Book>`
-3. Copy said `Book[]` to `List<Book>`
-4. Add new book at the end of said `List<Book>`
-5. Copy `List<Book>` to a new `Book[]`
-6. Upsert said `Book[]`
-
-This means for `N` books, we allocate `3N` items, this is a big waste...
-
-### After this change
-
-1. Retrieve `RentedBufferWriter{T}` using `TryReadToRentedBuffer` with `reservedCapacity=1` to add 1 `Book`
-2. Insert new `Book` with `RentedBufferWriter.WriteAndAdvance(Book)`
-3. Upsert with `RentedBufferWriter.WrittenSpan`
-
-Firstly this is so much simpler, secondly, the performance gains are huge, `RentedBufferWriter` as per the name uses array pooling, in this scenario you don't need the actual array, so this is the perfect place for them, so we write to a pooled array, which has enough reserved capacity, which we use to add the book, upsert the written portion, and after this usage `RentedBufferWriter` which implements `IDisposable` automatically returns the array to the array pool.
+* All `byte[]` value returning reads from the database, now return `ReadOnlyMemory<byte>` instead, previously, to maintain the integrity of the value, a copy was made and returned, because there wasn't any guarantee against modification, `ReadOnlyMemory<byte>` enforced this guarantee without creating a copy, if you just reading the data this is much more performant, and if you want to modify it, you can always create a copy at your own discretion.
+* Decreased memory allocations for the `Func` based `Remove` method.
+* Removed compiler directions that potentially could not allow the JIT compiler to perform Dynamic and regular PGO.
+* Added accessability modifiers to `ReadOnlySpan` based parameters.
+* `Upsert{T}` overloads now have a `Func<T, bool> updateCondition` parameter that can be used to ensure that the previously stored value passes a condition before being updated, this is a feature of NoSQL databases that protects against concurrent writes overwriting each other. Now you can use this feature in `Sharpify.Data` as well.
+  * Of course this feature is also available in `UpsertMany{T}` overloads, and also in the overloads of the `JsonTypeInfo T`.
+  * To make it easier to see the result, these `Upsert` methods now return `bool`.
+  * `False` will only be returned if all of the next conditions are met:
+    1. Previous value was stored under this key
+    2. The previous value was successfully deserialized
+    3. The `updateCondition` was not met
+* `Database` now tracks changes (additions, updates, removals) and compares them serialization events, to avoid serialization if no updates occurred since the previous serialization.
+  * This means that you can automate serialization without worrying about potential waste of resources, for example you could omit `SerializeOnUpdate` from the `DatabaseConfiguration`, then create a background task that serializes on a given interval for example with `Sharpify.Routines.Routine` or `Sharpify.Routines.AsyncRoutine`, and it will only actually serialize if updates occurred. This can significantly improve performance in cases where there are write peaks, but the database is mostly read from.
+* You can now set the `Path` in the `DatabaseConfiguration` to an empty string `""` to receive an in-memory version of the database.
+It still has serialization methods, they don't perform any operations, they are essentially duds.
+* `TryReadToRentedBuffer<T> where T : IMemoryPackable<T>` will now be able to retrieve the price amount of needed space, so the size of the rented buffer will more accurately reflect the size of the data, this should help with performance drastically with large objects. Before the buffer would've rented a capacity according to the length of the serialized object, meaning that the buffer was x times larger than needed where x is size(object) / size(byte). So the larger the object here, the more noticeable the memory efficiency after the change.
 
 ### Reminder: Workaround for broken NativeAot support from MemoryPack
 
