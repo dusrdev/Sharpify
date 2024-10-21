@@ -28,6 +28,16 @@ public sealed partial class Arguments {
     public int Count => _arguments.Count;
 
     /// <summary>
+    /// Checks if the arguments are empty.
+    /// </summary>
+    public bool AreEmpty => _arguments.Count is 0;
+
+    /// <summary>
+    /// Returns an empty arguments object.
+    /// </summary>
+    public static readonly Arguments Empty = new([], []);
+
+    /// <summary>
     /// Returns a <see cref="ReadOnlyMemory{String}"/> of the arguments as they were before processing, but after splitting (if it was required)
     /// </summary>
     /// <remarks>
