@@ -41,18 +41,12 @@ internal sealed class CliRunnerConfiguration {
 	public bool ShowErrorCodes { get; set; }
 
 	/// <summary>
-	/// Whether to ignore the case of the command name.
+	/// Configures the case sensitivity of arguments parsing
 	/// </summary>
-	/// <remarks>
-	/// It is set to true by default to improve user experience
-	/// </remarks>
-	public bool IgnoreParameterCase { get; set; } = true;
+	public ArgumentCaseHandling ArgumentCaseHandling { get; set; } = ArgumentCaseHandling.IgnoreCase;
 
 	/// <summary>
-	/// Whether to output help text for empty input or print no input message.
+	/// Configures the behavior of the CLI runner when empty input is provided.
 	/// </summary>
-	/// <remarks>
-	/// It is set to true by default to improve user experience
-	/// </remarks>
-	public bool OutputHelpTextForEmptyInput { get; set; } = true;
+	public EmptyInputBehavior EmptyInputBehavior { get; set; } = EmptyInputBehavior.DisplayHelpText;
 }
