@@ -30,7 +30,7 @@ Sharpify is a collection of commonly used language extensions, that usually peop
 
 ## Installation
 
-Nuget:
+[![Nuget](https://img.shields.io/nuget/dt/Sharpify?label=Sharpify%20Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify/)
 > dotnet add package Sharpify
 
 ## Usage
@@ -53,28 +53,6 @@ void RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T>? comparer = nul
 void RemoveDuplicates<T>(this List<T> list, out HashSet<T> hSet, IEqualityComparer<T>? comparer = null, bool isSorted = false);
 List<ArraySegment<T>> ChunkToSegments<T>(this T[] arr, int sizeOfChunk);
 int CopyToArray<T>(this HashSet<T> hashSet, T[] destination, int index);
-```
-
-### DateTime Extensions
-
-```csharp
-// Formats the TimeSpan to show the largest unit with 2 decimal places and the unit name
-// i.e 5.15 ms
-string Format(this TimeSpan elapsed);
-ReadOnlySpan<char> FormatNonAllocated(this TimeSpan elapsed, Span<char> buffer);
-ReadOnlyMemory<char> FormatNonAllocated(this TimeSpan elapsed, char[] buffer);
-AllocatedStringBuffer FormatNonAllocated(this TimeSpan elapsed, char[] buffer, Span<char> sBuffer);
-// Formats the TimeSpan to show each of the units as whole numbers with the corresponding unit names
-// i.e 4d 3h 1m 57s
-string ToRemainingDuration(this TimeSpan time);
-ReadOnlySpan<char> ToRemainingDurationNonAllocated(this TimeSpan time, Span<char> buffer);
-ReadOnlyMemory<char> ToRemainingDurationNonAllocated(this TimeSpan time, char[] buffer);
-AllocatedStringBuffer ToRemainingDurationNonAllocated(this TimeSpan time, char[] buffer, Span<char> sBuffer);
-// Formats the string to HHMM-dd-mmm-yy
-string ToTimeStamp(this DateTime time);
-ReadOnlySpan<char> ToTimeStampNonAllocated(this DateTime time, Span<char> buffer);
-ReadOnlyMemory<char> ToTimeStampNonAllocated(this DateTime time, char[] buffer);
-AllocatedStringBuffer ToTimeStampNonAllocated(this DateTime time, char[] buffer, Span<char> sBuffer);
 ```
 
 ### Unmanaged Extensions
