@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
+using Sharpify.Collections;
+
 namespace Sharpify;
 
 /// <summary>
@@ -57,6 +59,11 @@ public class SerializableObject<T> : IDisposable {
     protected readonly ReaderWriterLockSlim _lock = new();
 
     /// <summary>
+    /// The buffer size to use for writing and reading the value
+    /// </summary>
+    protected readonly int _bufferSize;
+
+    /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
     /// </summary>
     /// <param name="path">The path to the file. validated on creation</param>
@@ -70,8 +77,9 @@ public class SerializableObject<T> : IDisposable {
     /// <param name="path">The path to the file. validated on creation</param>
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
     /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
+    /// <param name="requiredBufferSize">An overestimated size that will be required for the serialized value</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public SerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo) {
+    public SerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo, int requiredBufferSize = 4096) {
         _jsonTypeInfo = jsonTypeInfo;
         var dir = Path.GetDirectoryName(path);
         var fileName = Path.GetFileName(path);
@@ -81,6 +89,7 @@ public class SerializableObject<T> : IDisposable {
         if (string.IsNullOrWhiteSpace(fileName)) {
             throw new IOException("Filename is invalid");
         }
+        _bufferSize = requiredBufferSize;
         _segmentedPath = new(dir, fileName);
         _path = path;
         if (Path.Exists(path)) {
@@ -90,8 +99,12 @@ public class SerializableObject<T> : IDisposable {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    using var file = File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                    _value = JsonSerializer.Deserialize(file, _jsonTypeInfo)!;
+                    using var file = File.OpenRead(path);
+                    using var buffer = new RentedBufferWriter<byte>(_bufferSize);
+                    int written = file.Read(buffer.GetSpan());
+                    buffer.Advance(written);
+                    var reader = new Utf8JsonReader(buffer.WrittenSpan);
+                    _value = JsonSerializer.Deserialize(ref reader, _jsonTypeInfo)!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }
@@ -105,8 +118,11 @@ public class SerializableObject<T> : IDisposable {
         try {
             _lock.EnterWriteLock();
             _value = value;
-            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
+            using var buffer = new RentedBufferWriter<byte>(_bufferSize);
+            using var writer = new Utf8JsonWriter(buffer);
+            JsonSerializer.Serialize(writer, _value, _jsonTypeInfo);
+            using var file = File.OpenWrite(_path);
+            file.Write(buffer.WrittenSpan);
         } finally {
             _lock.ExitWriteLock();
         }
@@ -145,15 +161,8 @@ public class SerializableObject<T> : IDisposable {
     /// </para>
     /// </remarks>
     public virtual void Modify(Func<T, T> modifier) {
-        try {
-            _lock.EnterWriteLock();
-            _value = modifier(_value);
-            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-        }
+        SetValueAndSerialize(modifier(_value));
+        InvokeOnChangedEvent(_value);
     }
 
     /// <inheritdoc/>

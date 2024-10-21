@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v2.4.1
+
+* Updated `SerializableObject` and `MonitoredSerializableObject` to use `RentedBufferWriter` with `Utf8JsonWriter` and `Utf8JsonReader` to reduce memory allocations and minimize file handle collisions since writes and reads would now be atomic.
+
 ## v2.4.0
 
 * All derived types of `PersistentDictionary` now implement `IDisposable` interface.

@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
+using Sharpify.Collections;
+
 namespace Sharpify;
 
 /// <summary>
@@ -38,7 +40,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         _watcher.Changed += OnFileChanged;
     }
 
-    private async void OnFileChanged(object sender, FileSystemEventArgs e) {
+    private void OnFileChanged(object sender, FileSystemEventArgs e) {
         if (e.ChangeType is not WatcherChangeTypes.Changed) {
             return;
         }
@@ -47,48 +49,23 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         try {
             _lock.EnterWriteLock();
-            var res = await ReadFromFileAsync();
-            if (res.IsFail) {
-                return;
-            }
-            _value = res.Value!;
+            using var file = File.OpenRead(_path);
+            using var buffer = new RentedBufferWriter<byte>(_bufferSize);
+            int written = file.Read(buffer.GetSpan());
+            buffer.Advance(written);
+            var reader = new Utf8JsonReader(buffer.WrittenSpan);
+            _value = JsonSerializer.Deserialize(ref reader, _jsonTypeInfo)!;
             InvokeOnChangedEvent(_value);
         } finally {
             _lock.ExitWriteLock();
         }
-    }
-
-    private async Task<Result<T>> ReadFromFileAsync() {
-        int retries = 5;
-        do {
-            try {
-                using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                T? deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
-                return deserialized is null ? Result.Fail() : Result.Ok(deserialized);
-            } catch (JsonException) { // Handles invalid files
-                return Result.Fail();
-            } catch (IOException) {
-                await Task.Delay(100);
-                continue;
-            }
-        } while (Interlocked.Decrement(ref retries) >= 0);
-
-        return Result.Fail();
     }
 
     /// <inheritdoc/>
     public override void Modify(Func<T, T> modifier) {
-        try {
-            _lock.EnterWriteLock();
-            _value = modifier(_value);
-            _watcher.EnableRaisingEvents = false;
-            using var file = File.Open(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-            _watcher.EnableRaisingEvents = true;
-        }
+        _watcher.EnableRaisingEvents = false;
+        base.Modify(modifier);
+        _watcher.EnableRaisingEvents = true;
     }
 
     /// <inheritdoc/>
