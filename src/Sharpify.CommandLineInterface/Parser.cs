@@ -65,7 +65,7 @@ public static class Parser {
     /// Parses a string into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="str"></param>
-    public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.CurrentCultureIgnoreCase);
+    public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Parses a string into an <see cref="Arguments"/> object
