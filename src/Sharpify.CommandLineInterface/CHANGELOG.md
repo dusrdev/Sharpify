@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Version 1.4.0 - Alpha
+## Version 1.4.0
 
 * Optimized `Parser`:
   * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.

@@ -126,7 +126,7 @@ public sealed class CliRunner {
 		using var owner = MemoryPool<char>.Shared.Rent(GetRequiredBufferLength());
 		var buffer = StringBuffer.Create(owner.Memory.Span);
 		buffer.AppendLine();
-		if (_config.IncludeMetadata) {
+		if (_config.HelpTextSource is HelpTextSource.Metadata) {
 			var metaData = _config.MetaData;
 			buffer.AppendLine(metaData.Name);
 			buffer.AppendLine();
@@ -139,8 +139,8 @@ public sealed class CliRunner {
 			buffer.Append("License: ");
 			buffer.AppendLine(metaData.License);
 			buffer.AppendLine();
-		} else if (_config.UseCustomHeader) {
-			buffer.AppendLine(_config.Header);
+		} else if (_config.HelpTextSource is HelpTextSource.CustomHeader) {
+			buffer.AppendLine(_config.CustomHeader);
 			buffer.AppendLine();
 		}
 		if (commandNameRequired) {
@@ -154,11 +154,8 @@ public sealed class CliRunner {
 			buffer.Append(
 				"""
 
-				To get help for a command, use the following syntax:
-				<command> --help
-
-				To get help for the application, use the following syntax:
-				--help
+				To get help for a command, use: "<command> --help"
+				To get help for the application, use: "--help"
 
 				"""
 			);
@@ -175,11 +172,10 @@ public sealed class CliRunner {
 
 	private int GetRequiredBufferLength() {
 		int length = (_config.Commands.Count + 5) * 256; // default buffer for commands and possible extra text
-		if (_config.IncludeMetadata) {
-			length += _config.MetaData.TotalLength;
-		} else if (_config.UseCustomHeader) {
-			length += _config.Header.Length;
-		}
-		return length;
+		return _config.HelpTextSource switch {
+			HelpTextSource.Metadata => length + _config.MetaData.TotalLength,
+			HelpTextSource.CustomHeader => length +_config.CustomHeader.Length,
+			_ => length
+		};
 	}
 }

@@ -15,9 +15,14 @@ internal sealed class CliRunnerConfiguration {
 	public CliMetadata MetaData { get; set; } = CliMetadata.Default;
 
 	/// <summary>
-	/// Whether to include Metadata in the help text.
+	/// The header to use in the help text.
 	/// </summary>
-	public bool IncludeMetadata { get; set; }
+	public string CustomHeader { get; set; } = "";
+
+	/// <summary>
+	/// The source of the help text.
+	/// </summary>
+	public HelpTextSource HelpTextSource { get; set; } = HelpTextSource.Metadata;
 
 	/// <summary>
 	/// Whether to sort commands alphabetically.
@@ -26,16 +31,6 @@ internal sealed class CliRunnerConfiguration {
 	/// It is set to false by default
 	/// </remarks>
 	public bool SortCommandsAlphabetically { get; set; }
-
-	/// <summary>
-	/// The header to use in the help text.
-	/// </summary>
-	public string Header { get; set; } = "";
-
-	/// <summary>
-	/// Whether to use a custom header for the help text.
-	/// </summary>
-	public bool UseCustomHeader { get; set; }
 
 	/// <summary>
 	/// Whether to show error codes in the help text.

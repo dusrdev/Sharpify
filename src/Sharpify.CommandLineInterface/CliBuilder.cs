@@ -62,28 +62,36 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
-	/// Use metadata in the help text of the CLI runner.
+	/// Add metadata - can be used to generate the general help text (Is the default source)
 	/// </summary>
 	/// <remarks>
-	/// Has priority over the custom header, and only one is used, so including a custom header as well will not do anything.
+	/// Configure the help text source with <see cref="SetHelpTextSource(HelpTextSource)"/>
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder WithMetadata(Action<CliMetadata> options) {
 		options(_config.MetaData);
-		_config.IncludeMetadata = true;
 		return this;
 	}
 
 	/// <summary>
-	/// Use a custom header instead of Metadata in the header of the help text
+	/// Add a custom header - can be used instead of Metadata in the header of the help text
 	/// </summary>
 	/// <remarks>
-	/// <see cref="CliMetadata"/> as priority over the custom header, and only one is used, so make sure not to include it if you want the custom header to show.
+	/// Configure the help text source with <see cref="SetHelpTextSource(HelpTextSource)"/>
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder WithCustomHeader(string header) {
-		_config.Header = header;
-		_config.UseCustomHeader = true;
+		_config.CustomHeader = header;
+		return this;
+	}
+
+	/// <summary>
+	/// Sets the source of the general help text.
+	/// </summary>
+	/// <param name="source">Requested source of the help text.</param>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder SetHelpTextSource(HelpTextSource source) {
+		_config.HelpTextSource = source;
 		return this;
 	}
 

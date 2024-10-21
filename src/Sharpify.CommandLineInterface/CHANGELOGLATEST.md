@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Version 1.4.0 - Alpha
+## Version 1.4.0
 
 * Optimized `Parser`:
   * `Split` now rents a buffer the array pool by itself and returns a `RentedBufferWriter<string>`, this enables greater flexibility in usage, and simplifies the code.
@@ -14,6 +14,8 @@
   * The rule now also checks if the first character following a `-` is a digit, if it is, it will not be marked as named argument. Which means - don't use argument names that start with digits (this is a bad practice in general).
 * Help text no contains a special case for "version" and "--version" that will just display the version from metadata.
   * Help text (from main) now has specialized structure for cases where you only have one command, instead of printing commands and descriptions, it will print the single command usage - the rest will of the whole cli (metadata)
+* To support `--version` and add more customization options, now `Metadata` and `CustomHeader` are independent, and you can configure which is used for help text with `SetHelpTextSource(HelpTextSource)`. `Metadata` will be used by default.
+* The help text portion that used to display instruction to get help text is now shorter and more concise.
 
 ### Usage Note
 
