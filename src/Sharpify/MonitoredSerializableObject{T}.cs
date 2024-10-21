@@ -56,6 +56,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
             var reader = new Utf8JsonReader(buffer.WrittenSpan);
             _value = JsonSerializer.Deserialize(ref reader, _jsonTypeInfo)!;
             InvokeOnChangedEvent(_value);
+        } catch {
+            // ignore
         } finally {
             _lock.ExitWriteLock();
         }
