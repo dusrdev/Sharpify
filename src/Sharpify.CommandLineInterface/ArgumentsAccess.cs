@@ -106,30 +106,6 @@ public sealed partial class Arguments {
     }
 
     /// <summary>
-    /// Returns the value of the argument, or default if it fails to parse or key didn't exist.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="key">The key of the argument to check</param>
-    /// <param name="defaultValue">The default value to return if the argument doesn't exist or can't be parsed</param>
-    /// <returns>The value of the argument</returns>
-    public T GetValue<T>(string key, T defaultValue) where T : IParsable<T> {
-        _ = TryGetValue(key, defaultValue, out var value);
-        return value;
-    }
-
-    /// <summary>
-    /// Returns the value of the positional argument, or default if it fails to parse or key didn't exist.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="position">The position of the argument to check</param>
-    /// <param name="defaultValue">The default value to return if the argument doesn't exist or can't be parsed</param>
-    /// <returns>Value of the argument</returns>
-    public T GetValue<T>(int position, T defaultValue) where T : IParsable<T> {
-        _ = TryGetValue(position, defaultValue, out var value);
-        return value;
-    }
-
-    /// <summary>
     /// Tries to retrieve the value of a either of specified key's aliases in the arguments.
     /// </summary>
 	/// <param name="keys">A collection of aliases for a parameter name</param>
@@ -156,6 +132,30 @@ public sealed partial class Arguments {
         }
         value = result!;
         return true;
+    }
+
+    /// <summary>
+    /// Returns the value of the argument, or default if it fails to parse or key didn't exist.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="key">The key of the argument to check</param>
+    /// <param name="defaultValue">The default value to return if the argument doesn't exist or can't be parsed</param>
+    /// <returns>The value of the argument</returns>
+    public T GetValue<T>(string key, T defaultValue) where T : IParsable<T> {
+        _ = TryGetValue(key, defaultValue, out var value);
+        return value;
+    }
+
+    /// <summary>
+    /// Returns the value of the positional argument, or default if it fails to parse or key didn't exist.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="position">The position of the argument to check</param>
+    /// <param name="defaultValue">The default value to return if the argument doesn't exist or can't be parsed</param>
+    /// <returns>Value of the argument</returns>
+    public T GetValue<T>(int position, T defaultValue) where T : IParsable<T> {
+        _ = TryGetValue(position, defaultValue, out var value);
+        return value;
     }
 
     /// <summary>
