@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Sharpify.CommandLineInterface.Tests;
@@ -119,6 +120,20 @@ public class CliBuilderTests {
 	}
 
 	[Fact]
+	public async Task Runner_WithCustomWriterAddCommand_ReadOnlySpanInput() {
+		var add = new AddCommand();
+		var writer = new StringWriter(new StringBuilder(), CultureInfo.CurrentCulture);
+
+		var cliRunner = CliRunner.CreateBuilder()
+						   .AddCommand(add)
+						   .SetOutputWriter(writer)
+                           .Build();
+		await cliRunner.RunAsync(["add", "1", "2"]);
+
+		writer.ToString().Should().Contain("3");
+	}
+
+	[Fact]
 	public async Task Runner_WithCustomWriterAndMetadata_HelpCommand_OutputsGeneralHelpToWriter() {
 		var echo = new EchoCommand();
 		var add = new AddCommand();
@@ -203,6 +218,7 @@ public class CliBuilderTests {
 						   .AddCommand(add)
 						   .SetOutputWriter(writer)
 						   .WithCustomHeader("Dave")
+						   .SetHelpTextSource(HelpTextSource.CustomHeader)
                            .Build();
 		await cliRunner.RunAsync("--help");
 
@@ -227,5 +243,31 @@ public class CliBuilderTests {
 		copy[0].Should().Be(add);
 		copy[1].Should().Be(echo);
 		copy[2].Should().Be(sAdd);
+	}
+
+	[Fact]
+	public async Task Runner_WithSingleCommand_NoParams() {
+		StrongBox<bool> value = new(false);
+
+		var cliRunner = CliRunner.CreateBuilder()
+						   .AddCommand(new SingleCommandNoParams(value))
+						   .ConfigureEmptyInputBehavior(EmptyInputBehavior.AttemptToProceed)
+						   .Build();
+		var exitCode = await cliRunner.RunAsync("", false);
+
+		exitCode.Should().Be(0);
+		value.Value.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Runner_WithMultipleCommands_CaseSensitive() {
+		var cliRunner = CliRunner.CreateBuilder()
+						   .AddCommand(new AddCommand())
+						   .AddCommand(new EchoCommand())
+						   .ConfigureArgumentCaseHandling(ArgumentCaseHandling.CaseSensitive)
+						   .Build();
+		var exitCode = await cliRunner.RunAsync("aDD 1 2");
+
+		exitCode.Should().NotBe(0);
 	}
 }

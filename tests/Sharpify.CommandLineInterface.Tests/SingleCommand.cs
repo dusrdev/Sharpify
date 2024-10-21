@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Sharpify.CommandLineInterface.Tests;
 
 public sealed class SingleCommand : Command {
@@ -13,4 +15,23 @@ public sealed class SingleCommand : Command {
 		}
 		return OutputHelper.Return(message, 0);
 	}
+}
+
+public sealed class SingleCommandNoParams : SynchronousCommand {
+	public override string Name => "";
+
+	public override string Description => "Changes the inner boxed value to true.";
+
+	public override string Usage => "";
+
+	private readonly StrongBox<bool> _value;
+
+	public SingleCommandNoParams(StrongBox<bool> value) {
+		_value = value;
+	}
+
+    public override int Execute(Arguments args) {
+		_value.Value = true;
+		return 0;
+    }
 }
