@@ -96,14 +96,14 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
-	/// Configures the arguments to be case sensitive.
+	/// Configures how the parser handles argument casing.
 	/// </summary>
-	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	/// <remarks>
-	/// This can be useful if you have many short flags, like grep
+	/// By default it is set to <see cref="ArgumentCaseHandling.IgnoreCase"/> to improve user experience
 	/// </remarks>
-	public CliBuilder WithCaseSensitiveParameters() {
-		_config.IgnoreParameterCase = false;
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder ConfigureArgumentCaseHandling(ArgumentCaseHandling caseHandling) {
+		_config.ArgumentCaseHandling = caseHandling;
 		return this;
 	}
 
@@ -117,11 +117,11 @@ public sealed class CliBuilder {
 	}
 
 	/// <summary>
-	/// Disables automatic defaulting to help text when no input is provided. Instead an error indicating that no command was found will be shown.
+	/// Configures how the CLI runner handles empty input.
 	/// </summary>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder WithoutHelpTextForEmptyInput() {
-		_config.OutputHelpTextForEmptyInput = false;
+	public CliBuilder ConfigureEmptyInputBehavior(EmptyInputBehavior behavior) {
+		_config.EmptyInputBehavior = behavior;
 		return this;
 	}
 
