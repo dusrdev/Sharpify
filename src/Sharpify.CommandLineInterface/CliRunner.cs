@@ -47,20 +47,21 @@ public sealed class CliRunner {
 	}
 
 	/// <summary>
-	/// Handles the case where no input was provided.
-	/// </summary>
-	/// <returns></returns>
-	private ValueTask<int> HandleNoInput(bool commandNameRequired) =>
-			_config.OutputHelpTextForEmptyInput
-			? OutputHelper.Return(GenerateHelpText(commandNameRequired), 0)
-			: OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
-
-	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
+		// Handle no input
 		if (args.Length is 0) {
-			return HandleNoInput(commandNameRequired);
+			// If display help text is used, always display the help text
+			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
+				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+			}
+			// We assume the need to attempt to proceed
+			if (commandNameRequired || _config.Commands.Count is not 1) {
+				// In this case, input is required
+				return OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
+			}
+			return _config.Commands[0].ExecuteAsync(Arguments.Empty);
 		}
 		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
@@ -70,8 +71,18 @@ public sealed class CliRunner {
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
+		// Handle no input
 		if (args.Length is 0) {
-			return HandleNoInput(commandNameRequired);
+			// If display help text is used, always display the help text
+			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
+				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+			}
+			// We assume the need to attempt to proceed
+			if (commandNameRequired || _config.Commands.Count is not 1) {
+				// In this case, input is required
+				return OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
+			}
+			return _config.Commands[0].ExecuteAsync(Arguments.Empty);
 		}
 		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
@@ -109,7 +120,7 @@ public sealed class CliRunner {
 			return OutputHelper.Return("Command name is required", 405, _config.ShowErrorCodes);
 		}
 
-		Command? command = _config.Commands.FirstOrDefault(c => c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase));
+		Command? command = _config.Commands.FirstOrDefault(c => _config.GetComparer().Equals(c.Name, commandName));
 		if (command == default) {
 			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _config.ShowErrorCodes);
 		}
@@ -174,7 +185,7 @@ public sealed class CliRunner {
 		int length = (_config.Commands.Count + 5) * 256; // default buffer for commands and possible extra text
 		return _config.HelpTextSource switch {
 			HelpTextSource.Metadata => length + _config.MetaData.TotalLength,
-			HelpTextSource.CustomHeader => length +_config.CustomHeader.Length,
+			HelpTextSource.CustomHeader => length + _config.CustomHeader.Length,
 			_ => length
 		};
 	}
