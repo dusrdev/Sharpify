@@ -33,7 +33,9 @@ internal static class Helper {
 	}
 
 	internal static StringComparer GetComparer(this CliRunnerConfiguration config)
-		=> config.IgnoreParameterCase
-		? StringComparer.OrdinalIgnoreCase
-		: StringComparer.Ordinal;
+		=> config.ArgumentCaseHandling switch {
+			ArgumentCaseHandling.IgnoreCase => StringComparer.OrdinalIgnoreCase,
+			ArgumentCaseHandling.CaseSensitive => StringComparer.Ordinal,
+			_ => throw new ArgumentOutOfRangeException(nameof(config.ArgumentCaseHandling), config.ArgumentCaseHandling, null)
+		};
 }
