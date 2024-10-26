@@ -5,6 +5,7 @@ public partial class UtilsTests {
     [InlineData(0.0, "0 B")]
     [InlineData(1023.0, "1023 B")]
     [InlineData(1024.0, "1 KB")]
+    [InlineData(1057.393, "1.03 KB")]
     [InlineData(1048576.0, "1 MB")]
     [InlineData(1073741824.0, "1 GB")]
     [InlineData(1099511627776.0, "1 TB")]
