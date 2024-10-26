@@ -10,7 +10,14 @@ public static partial class Utils {
     /// </summary>
     public static class Strings {
         private static ReadOnlySpan<string> FileSizeSuffix => new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
-        private const int FormatBytesRequiredLength = 10;
+
+        /// <summary>
+        /// The required length of the buffer to format bytes
+        /// </summary>
+        /// <remarks>
+        /// This is required to handle <see cref="double.MaxValue"/>, usual cases are much smaller, and this internal uses are pooled.
+        /// </remarks>
+        public const int FormatBytesRequiredLength = 512;
         private const double FormatBytesKb = 1024d;
         private const double FormatBytesDivisor = 1 / FormatBytesKb;
 
@@ -34,17 +41,17 @@ public static partial class Utils {
         /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
         /// </summary>
         /// <remarks>
-        /// Ensure capacity >= 10
+        /// Ensure capacity >= <see cref="FormatBytesRequiredLength"/>
         /// </remarks>
         /// <returns>string</returns>
         public static ReadOnlySpan<char> FormatBytes(double bytes, Span<char> buffer) {
             var suffix = 0;
-            while (bytes >= FormatBytesKb && suffix < FileSizeSuffix.Length) {
+            while (suffix < FileSizeSuffix.Length - 1 && bytes >= FormatBytesKb) {
                 bytes *= FormatBytesDivisor;
                 suffix++;
             }
             return StringBuffer.Create(buffer)
-                               .Append(Math.Round(bytes, 2))
+                               .Append(bytes, "#,##0.##")
                                .Append(' ')
                                .Append(FileSizeSuffix[suffix])
                                .Allocate();
@@ -54,7 +61,7 @@ public static partial class Utils {
         /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
         /// </summary>
         /// <remarks>
-        /// Ensure capacity >= 10
+        /// Ensure capacity >= <see cref="FormatBytesRequiredLength"/>
         /// </remarks>
         /// <returns>string</returns>
         public static ReadOnlySpan<char> FormatBytes(long bytes, Span<char> buffer)

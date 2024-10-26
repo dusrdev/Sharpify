@@ -3,7 +3,7 @@ namespace Sharpify.Tests;
 public partial class UtilsTests {
     [Theory]
     [InlineData(0.0, "0 B")]
-    [InlineData(1023.0, "1023 B")]
+    [InlineData(1023.0, "1,023 B")]
     [InlineData(1024.0, "1 KB")]
     [InlineData(1057.393, "1.03 KB")]
     [InlineData(1048576.0, "1 MB")]
@@ -21,7 +21,7 @@ public partial class UtilsTests {
 
     [Theory]
     [InlineData(0L, "0 B")]
-    [InlineData(1023L, "1023 B")]
+    [InlineData(1023L, "1,023 B")]
     [InlineData(1024L, "1 KB")]
     [InlineData(1048576L, "1 MB")]
     [InlineData(1073741824L, "1 GB")]
@@ -60,5 +60,23 @@ public partial class UtilsTests {
 
         // Assert
         result.Should().Be(expectedResult);
+    }
+
+    [Fact]
+    public void FormatBytes_Double_HasEnoughCapacity() {
+        // Arrange
+        Action act = () => _ = Utils.Strings.FormatBytes(double.MaxValue);
+
+        // Assert
+        act.Should().NotThrow<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void FormatBytes_Long_HasEnoughCapacity() {
+        // Arrange
+        Action act = () => _ = Utils.Strings.FormatBytes(long.MaxValue);
+
+        // Assert
+        act.Should().NotThrow<ArgumentOutOfRangeException>();
     }
 }

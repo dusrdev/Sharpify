@@ -3,6 +3,9 @@
 ## v2.4.1
 
 * Updated `SerializableObject` and `MonitoredSerializableObject` to use `RentedBufferWriter` with `Utf8JsonWriter` and `Utf8JsonReader` to reduce memory allocations and minimize file handle collisions since writes and reads would now be atomic.
+  * By default a buffer size of 4096 bytes will be used, you can now override this by passing a custom size to the constructor's optional parameter `requiredBufferSize`.
+* `Utils.String.FormatBytes` now uses a much larger buffer size of 512 chars by default, to handle the edge case of `double.MaxValue` which would previously cause an `ArgumentOutOfRangeException` to be thrown or similarly any number of bytes that would be bigger than 1024 petabytes. The result will now also include thousands separators to improve readability.
+  * The inner implementation that uses this buffer size is pooled so this should not have any impact on performance.
 
 ## v2.4.0
 
