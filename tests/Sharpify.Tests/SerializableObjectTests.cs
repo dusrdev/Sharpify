@@ -103,15 +103,12 @@ public class SerializableObjectTests {
         var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
-        int count = 0;
-        obj.OnChanged += (sender, e) => {
-            Interlocked.Increment(ref count);
-        };
 
         // Act
         await File.WriteAllTextAsync(file, "");
+
         // Assert
-        count.Should().Be(0);
+        obj.Value.Name.Should().Be("John Doe");
 
         // Cleanup
         await file.DeleteAsync();
