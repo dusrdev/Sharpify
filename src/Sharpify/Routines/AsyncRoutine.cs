@@ -1,6 +1,8 @@
 using System.Buffers;
 using System.Diagnostics;
 
+using Sharpify.Collections;
+
 namespace Sharpify.Routines;
 
 /// <summary>
@@ -88,16 +90,16 @@ public class AsyncRoutine : IDisposable {
                 }
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    var buffer = ArrayPool<Task>.Shared.Rent(Actions.Count);
-                    ArraySegment<Task> tasks = new(buffer, 0, Actions.Count);
-                    for (int i = 0; i < tasks.Count; i++) {
-                        tasks[i] = Actions[i](_cancellationTokenSource.Token);
+                    using var buffer = new RentedBufferWriter<Task>(Actions.Count);
+                    foreach (var action in Actions) {
+                        buffer.WriteAndAdvance(Task.Run(() => action(_cancellationTokenSource.Token)
+                        , _cancellationTokenSource.Token));
                     }
-                    try {
-                        await Task.WhenAll(tasks).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                    } finally {
-                        ArrayPool<Task>.Shared.Return(buffer);
-                    }
+#if NET9_0_OR_GREATER
+                    await Task.WhenAll(buffer.WrittenSpan).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+#else
+                    await Task.WhenAll(buffer.WrittenSegment).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+#endif
                     // Execute sequentially
                 } else {
                     foreach (var action in Actions) {

@@ -31,7 +31,11 @@ public static partial class Extensions {
             taskBuffer.WriteAndAdvance(body.Invoke(item, token));
         }
 
+#if NET9_0_OR_GREATER
+        await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
+#else
         await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
+#endif
     }
 
     /// <summary>
@@ -79,7 +83,11 @@ public static partial class Extensions {
             taskBuffer.WriteAndAdvance(Task.Run(() => body.Invoke(item, token), token));
         }
 
+#if NET9_0_OR_GREATER
+        await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
+#else
         await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
+#endif
     }
 
     /// <summary>

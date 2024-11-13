@@ -5,7 +5,11 @@ namespace Sharpify;
 /// </summary>
 public sealed class ThreadSafe<T> : IEquatable<T>, IEquatable<ThreadSafe<T>> {
     //TODO: Switch to NET9 new Lock type
+#if NET9_0_OR_GREATER
+    private readonly Lock _lock = new();
+#elif NET8_0
     private readonly object _lock = new();
+#endif
     private T _value;
 
     /// <summary>

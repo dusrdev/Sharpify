@@ -164,7 +164,6 @@ public static class ResultExtensions {
     /// </para>
     /// </remarks>
     public static Result<T> WithValue<T>(this in Result result, in T value) {
-        ArgumentNullException.ThrowIfNull(result);
         return new(result.IsOk, result.Message, value);
     }
 }

@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-using Sharpify.Collections;
-
 namespace Sharpify;
 
 /// <summary>
@@ -30,9 +28,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
     /// <param name="path">The path to the file. validated on creation</param>
     /// <param name="defaultValue">the default value of T, will be used if the file doesn't exist or can't be deserialized</param>
     /// <param name="jsonTypeInfo">The json type info that can be used to serialize T without reflection</param>
-    /// <param name="requiredBufferSize">An overestimated size that will be required for the serialized value</param>
     /// <exception cref="IOException">Thrown when the directory of the path does not exist or when the filename is invalid.</exception>
-    public MonitoredSerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo, int requiredBufferSize = 4096) : base(path, defaultValue, jsonTypeInfo, requiredBufferSize) {
+    public MonitoredSerializableObject(string path, T defaultValue, JsonTypeInfo<T> jsonTypeInfo) : base(path, defaultValue, jsonTypeInfo) {
         _watcher = new FileSystemWatcher(_segmentedPath.Directory, _segmentedPath.FileName) {
             NotifyFilter = NotifyFilters.LastWrite,
             EnableRaisingEvents = true
@@ -50,12 +47,8 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         try {
             _lock.EnterWriteLock();
-            using var file = File.OpenRead(_path);
-            using var buffer = new RentedBufferWriter<byte>(_bufferSize);
-            int written = file.Read(buffer.GetSpan());
-            buffer.Advance(written);
-            var reader = new Utf8JsonReader(buffer.WrittenSpan);
-            _value = JsonSerializer.Deserialize(ref reader, _jsonTypeInfo)!;
+            var json = File.ReadAllText(_path);
+            _value = JsonSerializer.Deserialize(json, _jsonTypeInfo)!;
             InvokeOnChangedEvent(_value);
         } catch {
             // ignore
