@@ -5,7 +5,7 @@ using MemoryPack;
 
 namespace Sharpify.Data;
 
-public sealed partial class Database : IDisposable {
+public sealed partial class Database {
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
     /// </summary>
@@ -19,10 +19,10 @@ public sealed partial class Database : IDisposable {
     /// </remarks>
     public void Upsert(string key, ReadOnlySpan<byte> value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new(key, value.ToArray()));
+            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, value.ToArray()));
         } else {
-            byte[] encrypted = Helper.Instance.Encrypt(in value, encryptionKey);
-            _queue.Enqueue(new(key, encrypted));
+            byte[] encrypted = Helper.Instance.Encrypt(value, encryptionKey);
+            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, encrypted));
         }
 
         if (Config.TriggerUpdateEvents) {
@@ -52,11 +52,11 @@ public sealed partial class Database : IDisposable {
     /// </remarks>
     public void Upsert(string key, byte[] value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new(key, value));
+            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, value));
         } else {
-            scoped ReadOnlySpan<byte> valueSpan = value;
-            byte[] encrypted = Helper.Instance.Encrypt(in valueSpan, encryptionKey);
-            _queue.Enqueue(new(key, encrypted));
+            ReadOnlySpan<byte> valueSpan = value;
+            byte[] encrypted = Helper.Instance.Encrypt(valueSpan, encryptionKey);
+            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, encrypted));
         }
 
         if (Config.TriggerUpdateEvents) {
@@ -88,11 +88,7 @@ public sealed partial class Database : IDisposable {
     /// <returns>
 	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool Upsert<T>(string key,
-                          T value,
-                          string encryptionKey = "",
-                          Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
-        ArgumentNullException.ThrowIfNull(value, nameof(value));
+    public bool Upsert<T>(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
         if (updateCondition is not null) {
             if (TryGetValue<T>(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
@@ -121,10 +117,7 @@ public sealed partial class Database : IDisposable {
     /// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool UpsertMany<T>(string key,
-                              T[] values,
-                              string encryptionKey = "",
-                              Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
+    public bool UpsertMany<T>(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
             if (TryGetValues<T>(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
@@ -154,11 +147,10 @@ public sealed partial class Database : IDisposable {
     /// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool UpsertMany<T>(string key,
-                              ReadOnlySpan<T> values,
-                              string encryptionKey = "",
-                              Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T>
-        => UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
+    public bool UpsertMany<T>(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
+        return UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
+    }
+
 
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
@@ -172,9 +164,8 @@ public sealed partial class Database : IDisposable {
     /// </para>
     /// </remarks>
     public void Upsert(string key, string value, string encryptionKey = "") {
-        ArgumentNullException.ThrowIfNull(value, nameof(value));
-        byte[] bytes = value.Length is 0 ?
-                    Array.Empty<byte>()
+        byte[] bytes = value.Length is 0
+                    ? Array.Empty<byte>()
                     : MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
 
         Upsert(key, bytes, encryptionKey);
@@ -196,11 +187,7 @@ public sealed partial class Database : IDisposable {
     /// <returns>
 	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool Upsert<T>(string key,
-                          T value,
-                          JsonTypeInfo<T> jsonTypeInfo,
-                          string encryptionKey = "",
-                          Func<T, bool>? updateCondition = null) where T : notnull {
+    public bool Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
         if (updateCondition is not null) {
             if (!TryGetValue(key, encryptionKey, jsonTypeInfo, out var existingValue) || !updateCondition(existingValue)) {
                 return false;

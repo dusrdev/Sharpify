@@ -21,8 +21,7 @@ internal sealed class Helper : IDisposable {
     /// </summary>
     /// <param name="value"></param>
     /// <param name="key"></param>
-    /// <returns></returns>
-    public byte[] Encrypt(scoped ref readonly ReadOnlySpan<byte> value, string key) {
+    public byte[] Encrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.EncryptBytes(value);
         }
@@ -35,7 +34,6 @@ internal sealed class Helper : IDisposable {
     /// Gets the encryptor for the specified key.
     /// </summary>
     /// <param name="key"></param>
-    /// <returns></returns>
     public ICryptoTransform GetEncryptor(string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.CreateEncryptor();
@@ -50,8 +48,7 @@ internal sealed class Helper : IDisposable {
     /// </summary>
     /// <param name="value"></param>
     /// <param name="key"></param>
-    /// <returns></returns>
-    public byte[] Decrypt(scoped ref readonly ReadOnlySpan<byte> value, string key) {
+    public byte[] Decrypt(ReadOnlySpan<byte> value, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.DecryptBytes(value);
         }
@@ -66,8 +63,7 @@ internal sealed class Helper : IDisposable {
     /// <param name="value"></param>
     /// <param name="destination"></param>
     /// <param name="key"></param>
-    /// <returns></returns>
-    public int Decrypt(scoped ref readonly ReadOnlySpan<byte> value, scoped Span<byte> destination, string key) {
+    public int Decrypt(ReadOnlySpan<byte> value, Span<byte> destination, string key) {
         if (_cachedProviders.TryGetValue(key, out AesProvider? provider)) {
             return provider!.DecryptBytes(value, destination);
         }

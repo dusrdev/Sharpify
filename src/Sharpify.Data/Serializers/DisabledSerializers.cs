@@ -10,7 +10,7 @@ internal class DisabledSerializer : AbstractSerializer {
     }
 
     /// <inheritdoc />
-    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new Dictionary<string, byte[]?>();
+    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new();
 
     /// <inheritdoc />
     internal override ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new Dictionary<string, byte[]?>());
@@ -19,7 +19,7 @@ internal class DisabledSerializer : AbstractSerializer {
     internal override void Serialize(Dictionary<string, byte[]?> dict, int estimatedSize) { }
 
 /// <inheritdoc />
-    internal override ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    internal override ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -30,7 +30,7 @@ internal class DisabledIgnoreCaseSerializer : DisabledSerializer {
     }
 
     /// <inheritdoc />
-    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
+    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new(StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc />
     internal override ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase));

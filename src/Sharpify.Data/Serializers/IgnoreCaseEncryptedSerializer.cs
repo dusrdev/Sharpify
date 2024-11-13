@@ -22,12 +22,12 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        scoped ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
+        ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        int decryptedRead = Helper.Instance.Decrypt(in rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        scoped ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(in decrypted);
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
         return dict;
     }
 

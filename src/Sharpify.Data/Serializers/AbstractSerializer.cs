@@ -29,10 +29,9 @@ internal abstract class AbstractSerializer {
     /// Serializes the given dictionary asynchronously
     /// </summary>
     /// <param name="dict"></param>
-    /// <param name="estimatedSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default);
+    internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deserializes the path to a dictionary

@@ -26,11 +26,11 @@ internal class EncryptedSerializer : AbstractSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        scoped ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
+        ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        int decryptedRead = Helper.Instance.Decrypt(in rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        scoped ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
         var dict = MemoryPackSerializer.Deserialize<Dictionary<string, byte[]?>>(decrypted, SerializerOptions);
         return dict ?? new Dictionary<string, byte[]?>();
     }
@@ -58,7 +58,7 @@ internal class EncryptedSerializer : AbstractSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         using ICryptoTransform transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);

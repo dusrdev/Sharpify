@@ -22,7 +22,7 @@ public sealed partial class Database : IDisposable {
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
-    private bool _disposed;
+    private volatile bool _disposed;
 
     // The updates count increments every time a value is updated, added or removed.
     private long _updatesCount = 0;
@@ -30,6 +30,11 @@ public sealed partial class Database : IDisposable {
     // The serialization reference is checking against the updates to reduce redundant serialization.
     private long _serializationReference = 0;
 
+#if NET9_0_OR_GREATER
+    private readonly Lock _sLock = new();
+#else
+    private readonly object _sLock = new();
+#endif
     private readonly ReaderWriterLockSlim _lock = new();
     private readonly AbstractSerializer _serializer;
     private volatile int _estimatedSize;
@@ -75,7 +80,7 @@ public sealed partial class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
@@ -94,7 +99,7 @@ public sealed partial class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
@@ -152,11 +157,10 @@ public sealed partial class Database : IDisposable {
     /// Frees the resources used by the database.
     /// </summary>
     public void Dispose() {
-        if (Volatile.Read(ref _disposed)) {
+        if (_disposed) {
             return;
         }
         _lock.Dispose();
-        Volatile.Write(ref _disposed, true);
-        GC.SuppressFinalize(this);
+        _disposed = true;
     }
 }

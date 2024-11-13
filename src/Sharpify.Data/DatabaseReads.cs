@@ -1,15 +1,13 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
 using MemoryPack;
-using MemoryPack.Formatters;
 
 using Sharpify.Collections;
 
 namespace Sharpify.Data;
 
-public sealed partial class Database : IDisposable {
+public sealed partial class Database {
     /// <summary>
     /// Checked whether the inner dictionary contains the <paramref name="key"/>.
     /// </summary>
@@ -45,7 +43,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             ReadOnlySpan<byte> valSpan = val ?? ReadOnlySpan<byte>.Empty;
-            value = Helper.Instance.Decrypt(in valSpan, encryptionKey);
+            value = Helper.Instance.Decrypt(valSpan, encryptionKey);
             return true;
         } finally {
             _lock.ExitReadLock();
@@ -60,8 +58,10 @@ public sealed partial class Database : IDisposable {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, int reservedCapacity = 0)
-        => TryReadToRentedBuffer(key, "", reservedCapacity);
+    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, int reservedCapacity = 0) {
+        return TryReadToRentedBuffer(key, string.Empty, reservedCapacity);
+    }
+
 
     /// <summary>
     /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
@@ -86,7 +86,7 @@ public sealed partial class Database : IDisposable {
             } else {
                 ReadOnlySpan<byte> valSpan = val;
                 var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize + reservedCapacity);
-                int numWritten = Helper.Instance.Decrypt(in valSpan, buffer.Buffer, encryptionKey);
+                int numWritten = Helper.Instance.Decrypt(valSpan, buffer.Buffer, encryptionKey);
                 buffer.Advance(numWritten);
                 return buffer;
             }
@@ -102,7 +102,10 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> => TryGetValue(key, "", out value);
+    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> {
+        return TryGetValue(key, string.Empty, out value);
+    }
+
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -127,7 +130,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 value = default!;
@@ -148,7 +151,10 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> => TryGetValues(key, "", out value);
+    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> {
+        return TryGetValues(key, string.Empty, out value);
+    }
+
 
     /// <summary>
     /// Tries to get the value array stored in <paramref name="key"/>.
@@ -173,7 +179,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 values = default!;
@@ -195,7 +201,10 @@ public sealed partial class Database : IDisposable {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, int reservedCapacity = 0) where T : IMemoryPackable<T> => TryReadToRentedBuffer<T>(key, "", reservedCapacity);
+    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, int reservedCapacity = 0) where T : IMemoryPackable<T> {
+        return TryReadToRentedBuffer<T>(key, string.Empty, reservedCapacity);
+    }
+
 
     /// <summary>
     /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
@@ -223,7 +232,10 @@ public sealed partial class Database : IDisposable {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetString(string key, out string value) => TryGetString(key, "", out value);
+    public bool TryGetString(string key, out string value) {
+        return TryGetString(key, string.Empty, out value);
+    }
+
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -247,7 +259,7 @@ public sealed partial class Database : IDisposable {
             }
             // Encrypted -> Decrypt
             using var buffer = new RentedBufferWriter<byte>(valSpan.Length + AesProvider.ReservedBufferSize);
-            int length = Helper.Instance.Decrypt(in valSpan, buffer.GetSpan(), encryptionKey);
+            int length = Helper.Instance.Decrypt(valSpan, buffer.GetSpan(), encryptionKey);
             buffer.Advance(length);
             if (length is 0) {
                 value = "";
@@ -268,7 +280,10 @@ public sealed partial class Database : IDisposable {
     /// <param name="jsonTypeInfo"></param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, JsonTypeInfo<T> jsonTypeInfo, out T value) => TryGetValue(key, "", jsonTypeInfo, out value);
+    public bool TryGetValue<T>(string key, JsonTypeInfo<T> jsonTypeInfo, out T value) {
+        return TryGetValue(key, string.Empty, jsonTypeInfo, out value);
+    }
+
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.

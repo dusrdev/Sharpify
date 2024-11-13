@@ -21,12 +21,14 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     /// Creates a combined key (filter) for the specified key.
     /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual string AcquireKey(ReadOnlySpan<char> key) => string.Intern(KeyFilter.Concat(key));
+    protected string AcquireKey(ReadOnlySpan<char> key) {
+        return string.Intern(KeyFilter.Concat(key));
+    }
 
     /// <summary>
     /// The database.
     /// </summary>
-	protected readonly Database _database;
+    protected readonly Database _database;
 
     /// <summary>
     /// Creates a new database filter.
@@ -37,7 +39,10 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(string key) => _database.ContainsKey(AcquireKey(key));
+    public bool ContainsKey(string key) {
+        return _database.ContainsKey(AcquireKey(key));
+    }
+
 
     /// <inheritdoc />
     public bool TryGetValue(string key, string encryptionKey, out T value) {
@@ -71,11 +76,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool Upsert(string key,
-                       T value,
-                       string encryptionKey = "",
-                       Func<T, bool>? updateCondition = null) {
-        ArgumentNullException.ThrowIfNull(value, nameof(value));
+    public bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
         if (updateCondition is not null) {
             if (TryGetValue(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
@@ -87,10 +88,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key,
-                           T[] values,
-                           string encryptionKey = "",
-                           Func<T[], bool>? updateCondition = null) {
+    public bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
             if (TryGetValues(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
@@ -103,21 +101,30 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key,
-                           ReadOnlySpan<T> values,
-                           string encryptionKey = "",
-                           Func<T[], bool>? updateCondition = null)
-                           => UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
+    public bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        return UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
+    }
 
     /// <inheritdoc />
-    public bool Remove(string key) => _database.Remove(AcquireKey(key));
+    public bool Remove(string key) {
+        return _database.Remove(AcquireKey(key));
+    }
+
 
     /// <inheritdoc />
-    public void Remove(Func<string, bool> keySelector) => _database.Remove(keySelector, KeyFilter);
+    public void Remove(Func<string, bool> keySelector) {
+        _database.Remove(keySelector, KeyFilter);
+    }
+
 
     /// <inheritdoc />
-    public void Serialize() => _database.Serialize();
+    public void Serialize() {
+        _database.Serialize();
+    }
+
 
     /// <inheritdoc />
-    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) => _database.SerializeAsync(cancellationToken);
+    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
+        return _database.SerializeAsync(cancellationToken);
+    }
 }

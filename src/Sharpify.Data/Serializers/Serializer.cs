@@ -45,7 +45,7 @@ internal class Serializer : AbstractSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         await MemoryPackSerializer.SerializeAsync(file, dict, SerializerOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
     }

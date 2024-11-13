@@ -12,11 +12,11 @@ internal class IgnoreCaseSerializer : Serializer {
     }
 
     internal static Dictionary<string, byte[]?> FromSpan(ReadOnlyMemory<byte> bin) {
-        scoped ReadOnlySpan<byte> data = bin.Span;
-        return FromSpan(in data);
+        ReadOnlySpan<byte> data = bin.Span;
+        return FromSpan(data);
     }
 
-    internal static Dictionary<string, byte[]?> FromSpan(scoped ref readonly ReadOnlySpan<byte> bin) {
+    internal static Dictionary<string, byte[]?> FromSpan(ReadOnlySpan<byte> bin) {
         if (bin.Length is 0) {
             return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
@@ -37,8 +37,8 @@ internal class IgnoreCaseSerializer : Serializer {
         using var file = new FileStream(_path, FileMode.Open);
         int numRead = file.Read(buffer.Buffer, 0, estimatedSize);
         buffer.Advance(numRead);
-        scoped ReadOnlySpan<byte> deserialized = buffer.WrittenSpan;
-        Dictionary<string, byte[]?> dict = FromSpan(in deserialized);
+        ReadOnlySpan<byte> deserialized = buffer.WrittenSpan;
+        Dictionary<string, byte[]?> dict = FromSpan(deserialized);
         return dict;
     }
 

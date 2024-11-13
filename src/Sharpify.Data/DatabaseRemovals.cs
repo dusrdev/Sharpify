@@ -1,6 +1,6 @@
 namespace Sharpify.Data;
 
-public sealed partial class Database : IDisposable {
+public sealed partial class Database {
     /// <summary>
     /// Removes the <paramref name="key"/> and its value from the inner dictionary.
     /// </summary>
@@ -67,10 +67,6 @@ public sealed partial class Database : IDisposable {
                 : key => key.StartsWith(keyPrefix) && keySelector(key.Substring(keyPrefix.Length));
 
             var matches = _data.Keys.Where(predicate);
-
-            if (!matches.Any()) {
-                return;
-            }
 
             foreach (var key in matches) {
                 _data.Remove(key, out var val);
