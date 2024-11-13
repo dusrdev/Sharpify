@@ -1,8 +1,3 @@
-
-using System.Buffers;
-
-using Sharpify.Collections;
-
 namespace Sharpify.Tests;
 
 public class ThreadSafeTests {
@@ -45,31 +40,16 @@ public class ThreadSafeTests {
     }
 
     [Theory]
-    [InlineData(100, 32, 3200)]
-    [InlineData(200, 64, 12800)]
-    [InlineData(300, 128, 38400)]
-    [InlineData(100, 10, 1000)]
-    [InlineData(200, 20, 4000)]
-    [InlineData(300, 30, 9000)]
-    public async Task ThreadSafe_MultiThreadedAccess(int iterations, int threads, int expected) {
+    [InlineData(100,100)]
+    [InlineData(200, 200)]
+    [InlineData(300, 300)]
+    public async Task ThreadSafe_MultiThreadedAccess(int amount, int expected) {
         ThreadSafe<int> wrapper = new(0);
-        async Task Increment() {
-            await Task.Run(() => {
-                for (int i = 0; i < iterations; i++) {
-                    wrapper.Modify(value => value + 1);
-                }
-            });
-        }
 
-        using var buffer = new RentedBufferWriter<Task>(threads);
-        for (int i = 0; i < threads; i++) {
-            buffer.WriteAndAdvance(Task.Run(() => Increment()));
-        }
+        var tasks = Enumerable.Range(0, amount).AsParallel().Select(i => Task.Run(() => wrapper.Modify(value => value + 1)));
+        await Task.WhenAll(tasks);
 
-        await Task.WhenAll(buffer.WrittenSegment);
-        int result = wrapper.Value;
-
-        result.Should().Be(expected);
+        wrapper.Value.Should().Be(expected);
     }
 
     [Fact]

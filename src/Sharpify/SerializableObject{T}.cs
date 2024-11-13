@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-using Sharpify.Collections;
-
 namespace Sharpify;
 
 /// <summary>
@@ -83,22 +81,27 @@ public class SerializableObject<T> : IDisposable {
         if (string.IsNullOrWhiteSpace(fileName)) {
             throw new IOException("Filename is invalid");
         }
-        _segmentedPath = new(dir, fileName);
+        _segmentedPath = new SegmentedPath(dir, fileName);
         _path = path;
-        if (Path.Exists(path)) {
-            var length = checked((int)new FileInfo(path).Length);
-            var textLength = length / sizeof(char);
-            if (textLength is 0) {
+        if (File.Exists(path)) {
+            var fileContent = File.ReadAllText(path);
+            if (fileContent.Length is 0) {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    var json = JsonSerializer.Serialize(_value, _jsonTypeInfo);
-                    File.WriteAllText(path, json);
+                    var val = JsonSerializer.Deserialize(fileContent, _jsonTypeInfo);
+                    if (val is null) {
+                        SetValueAndSerialize(defaultValue);
+                    }
+                    _value = val!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }
             }
         } else {
+            if (File.GetAttributes(path).HasFlag(FileAttributes.Directory)) {
+                throw new ArgumentException("The provided path is an existing directory.");
+            }
             SetValueAndSerialize(defaultValue);
         }
     }
@@ -156,7 +159,7 @@ public class SerializableObject<T> : IDisposable {
         if (_disposed) {
             return;
         }
-        _lock?.Dispose();
+        _lock.Dispose();
         _disposed = true;
     }
 
