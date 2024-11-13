@@ -2,9 +2,7 @@
 
 `Sharpify.CommandLineInterface` is a high performance, reflection free and AOT-ready framework for creating command line interfaces, with a configurable output writer and no direct dependency to `System.Console` enabling it to be embedded, used with inputs from any source and output to any source.
 
-Most other command line frameworks in c# use `reflection` to provide their "magic" such as generating help text, and providing input validation, `Sharpify.CommandLineInterface` instead uses compile time implemented metadata and static resolve of said metadata for this. each command, must implement the `Command` abstract class, part of which will be to set the command metadata, the main entry `CliRunner` also has an application level metadata object that can be customized in the `CliBuilder` process, using those, `Sharpify.CommandLineInterface` can resolve and format that metadata to generate an output similar to the other frameworks.
-
-* `Sharpify.CommandLineInterface` although released starting at version `1.0.0`, should still be considered a beta, tools as flexible as this are very hard to test for edge cases.
+Most other command line frameworks in c# use `reflection` to provide their "magic" such as generating help text, and providing input validation, `Sharpify.CommandLineInterface` instead uses compile time implemented metadata and user guided validation. each command, must implement the `Command` abstract class, part of which will be to set the command metadata, the main entry `CliRunner` also has an application level metadata object that can be customized in the `CliBuilder` process, using those, `Sharpify.CommandLineInterface` can resolve and format that metadata to generate an output similar to the other frameworks. Each command's entry point is either `ExecuteAsync` or `Execute` which receive an input of type `Arguments` that can be used to retrieve, validate and parse arguments.
 
 ## Usage
 
@@ -94,18 +92,112 @@ Then we use the fluent api to add the commands, set the output to the console (w
 
 Running the app with `RunAsync` parses the `args`, and handles `help` requests, both global and per command, delegates and forwards the arguments to the requested command by name, and executes.
 
-### Notes
+### Validation
 
-* Validation:
-  * Argument validation per command should be done inside `ExecuteAsync` with the help of `Arguments`
-  * You are trusted with the responsibility of not creating more than 1 `Command` with the same `Name`, failure to do so won't throw any exception, rather it will just execute on the first `Command` that matches the name from the `Arguments`
-  * Any internal validation issue, will either be responded by returning `false` in any variant of `Arguments.TryGetValue`, or by outputting and returning error status code to the selected `TextWriter`, none cause critical failure, and this is on purpose to give the programmer maximum control on handling issues.
-* `Arguments` also supports **positional** parameters, and they are parsed such that their key is their position, so position 0 is at key "0", you can get the parameter either by `TryGetValue("0"...)` or using the `int` overload.
-* In order to make it more convenient, it is possible to advance the positional parameters so that each `Command` perhaps could be developed without thinking about the previous possible positional arguments, this is done using `Arguments.ForwardPositionalArguments()` which will return a new instance with the parameters advanced. This happens already inside `CliRunner.RunAsync` when after it delegates the arguments to a `Command` so that the positional argument 0 (which is the command name) is removed.
-* `Arguments` also has overloads to get any `IParsable<T>` value, or `enum`, both of those overloads require a default value, that will be returned if the `key` wasn't found or value unable to be parsed.
-* `Arguments` also handles optional `bool` type parameters that just require specifying to be regarded as true, it does this by creating a key for them, with the value set to `""`, using `Arguments.TryGetValue` to get these types of parameters will give confusing results as the `output` will be set to `""` if the key doesn't exist anyway. To get accurate results, you can use `Arguments.Contains(key)`.
-* `Parser` is a static class that provides the functionality of parsing inputs to `Arguments`, it also has a function of parsing an input such as string (or `ReadOnlySpan<char>`) to a `List<string>`, it is efficient and different than `string.Split()` since it splits both on space and quotes, giving quotes priority, so that whatever is within quotes, will remain a single string, regardless of how many spaces there are inside. This can be especially important if you need perhaps file names that could contain spaces, or any other text.
-* `Parser` also has overloads for parsing arguments that configure a `StringComparer`, by default a `CurrentCultureIgnoreCase` is used, but whatever you prefer can be used instead.
-* `CliRunner.RunAsync` has overloads for `ReadOnlySpan<char>` (string), `ReadOnlySpan<string>` (array), and `Arguments` giving you full control over your input, and even custom parsing.
-* `Command` help text is resolves using the virtual `GetHelp` method, it can be overridden to suit you needs, you can use `CliRunner.StrBuilder` instance to modify anything virtually allocation free (just remember to clear the `StringBuilder` first)
-* The only place an exception can be thrown is when a `CliRunner` is trying to be created without any commands loaded in the `CliBuilder`, this should not "surprise" anyone as it should never happen after design time.
+Validation is performed at runtime depending on the actual logic inside the `ExecuteAsync` or `Execute` methods in each command. You choose how to interpret or handle each argument.
+
+```csharp
+public override int Execute(Arguments args) {
+  if (!args.TryGetValue<int>("x", 20, out int x)) {
+    // This examples checks if arguments has a named argument by name "x" (-x or --x)
+    // And the value of this argument can be parsed as an integer.
+    // A default value of 20 is also supplied
+    // If the value is not found or can't be parsed, it will be set to the default value (20)
+    // otherwise the parsed value.
+    Console.WriteLine("X was not found or had an invalid format, setting it to default (20)");
+  }
+  Console.WriteLine(x);
+  return 0;
+}
+```
+
+Because you provide the actual type (no inference is needed), reflection is also not needed which maintains the Native Aot compatibility and removes the possibility of trimming. With the consolidated APIs of `Arguments` you can parse of validate concisely without verbose code filled with your own parsing logic.
+
+### Arguments Key Logic
+
+`Arguments` is a key-value-pair wrapper around `Dictionary<string, string>` and before validation maintains these types. To ensure a wide variety of applications it parses arguments in the following way:
+
+* Positional arguments are parsed as such, if `int x` is their position, the key is essentially `x.ToString()`. Positions start with 0.
+* Named arguments are parsed as regular key and value, dashes are removed from the key. So "--n" or "-n", key is "n". (But without dashes "n" will be registered as value of positional argument)
+  * If a number is following a dash, it will be considered a numeric value, so don't use numbers as keys.
+* Flags are like named arguments but whose value is empty
+
+To handle the above there are the following overload resolutions in `Arguments`:
+
+* `TryGetValue(int position, out string value)` - Will `.ToString()` the position and check the arguments.
+* `TryGetValue(string key, out string value)` - Will check the arguments for the key.
+* `HasFlag(string flag)` - Will check the arguments for the flag, so it will check both named key and that value is empty.
+* `TryGetValue(ReadOnlySpan<string> keys, out string value)` - Will check the arguments for the keys, so the first matching key will be returned.
+* `ContainsKey(string key)` - Will check the arguments for the key. The argument in this case can be a named argument or flag, this overload doesn't distinguish between them.
+* `ContainsKey(int position)` - Will `.ToString()` the position and check if a positional argument exists.
+
+### Arguments - All methods
+
+```csharp
+// CORE FUNCTIONS:
+int Count;
+bool AreEmpty;
+static readonly Arguments Empty;
+ReadOnlyMemory<string> ArgsAsMemory(); // inner input - after parsing and before mapping
+ReadOnlySpan<string> ArgsAsSpan(); // same but as span
+Arguments ForwardPositionalArguments(); // returns a new instance with the positional arguments forwarded
+// So position 0 is deleted, and what was 1 becomes new 0, and so on.
+// Non positional arguments are not affected.
+ReadOnlyDictionary<string, string> GetInnerDictionary(); // returns the inner dictionary (advanced, useful mostly for debugging)
+
+// SINGLE VALUE CHECKS:
+bool Contains(string key);
+bool Contains(int position);
+bool HasFlag(string flag);
+bool TryGetValue(int position, out string value);
+bool TryGetValue(string key, out string value);
+bool TryGetValue(ReadOnlySpan<string> keys, out string value);
+/// T : IParsable<T>
+bool TryGetValue<T>(int position, T defaultValue, out T value);
+bool TryGetValue<T>(string key, T defaultValue, out T value);
+bool TryGetValue<T>(ReadOnlySpan<string> keys, T defaultValue, out T value);
+T GetValue<T>(string key, T defaultValue);
+T GetValue<T>(int position, T defaultValue);
+T GetValue<T>(ReadOnlySpan<string> keys, T defaultValue);
+/// TEnum : struct, Enum
+bool TryGetEnum<TEnum>(int position, out TEnum value);
+bool TryGetEnum<TEnum>(int position, bool ignoreCase, out TEnum value);
+bool TryGetEnum<TEnum>(int position, TEnum defaultValue, bool ignoreCase, out TEnum value);
+bool TryGetEnum<TEnum>(string key, out TEnum value);
+bool TryGetEnum<TEnum>(string key, bool ignoreCase, out TEnum value);
+bool TryGetEnum<TEnum>(string key, TEnum defaultValue, bool ignoreCase, out TEnum value);
+bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, out TEnum value);
+bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, bool ignoreCase, out TEnum value);
+bool TryGetEnum<TEnum>(ReadOnlySpan<string> keys, TEnum defaultValue, bool ignoreCase, out TEnum value);
+TEnum GetEnum<TEnum>(int position, TEnum defaultValue);
+TEnum GetEnum<TEnum>(int position, TEnum defaultValue, bool ignoreCase);
+TEnum GetEnum<TEnum>(string key, TEnum defaultValue);
+TEnum GetEnum<TEnum>(string key, TEnum defaultValue, bool ignoreCase);
+TEnum GetEnum<TEnum>(ReadOnlySpan<string> keys, TEnum defaultValue);
+TEnum GetEnum<TEnum>(ReadOnlySpan<string> keys, TEnum defaultValue, bool ignoreCase);
+
+/// Multiple values (i.e. Arrays of values for single key)
+bool TryGetValues(int position, string? separator, out string[] values);
+bool TryGetValues(string key, string? separator, out string[] values);
+bool TryGetValues(ReadOnlySpan<string> keys, string? separator, out string[] values);
+/// T : IParsable<T> - Ensure to set the type for the out parameter
+bool TryGetValues<T>(int position, string? separator, out T[] values);
+bool TryGetValues<T>(string key, string? separator, out T[] values);
+bool TryGetValues<T>(ReadOnlySpan<string> keys, string? separator, out T[] values);
+```
+
+### Custom Parsing
+
+`Parser` is a static class that provides the functionality of parsing inputs to `Arguments`, it also has a function of parsing an input such as string (or `ReadOnlySpan<char>`) to a `List<string>`, it is efficient and different than `string.Split()` since it splits both on space and quotes, giving quotes priority, so that whatever is within quotes, will remain a single string, regardless of how many spaces there are inside. This can be especially important if you need perhaps file names that could contain spaces, or any other text.
+
+`Parser` also has overloads for parsing arguments that configure a `StringComparer`, by default a `CurrentCultureIgnoreCase` is used, but whatever you prefer can be used instead.
+
+### Overloads of `CliRunner.RunAsync`
+
+`CliRunner.RunAsync` has overloads for `ReadOnlySpan<char>` (string), `ReadOnlySpan<string>` (array), and `Arguments` giving you full control over your input, and even custom parsing.
+
+## Contact
+
+For bug reports, feature requests or offers of support/sponsorship contact <dusrdev@gmail.com>
+
+> This project is proudly made in Israel 🇮🇱 for the benefit of mankind.

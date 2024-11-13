@@ -7,7 +7,7 @@ public class StringBuffersTests {
     public void StringBuffer_NoCapacity_Throws() {
         // Arrange
         Action act = () => {
-            using var buffer = new StringBuffer();
+            var buffer = new StringBuffer();
             buffer.Append('a');
         };
 
@@ -16,9 +16,68 @@ public class StringBuffersTests {
     }
 
     [Fact]
+    public void StringBuffer_Append_ToFullCapacity() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+        Action act = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+        };
+
+        // Assert
+        act.Should().NotThrow<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_Append_BeyondCapacity() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+        Action act = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length - 1]);
+            buffer.Append(text);
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void StringBuffer_Append_BeyondToCapacityAndBeyond() {
+        // Arrange
+        string text = "Hello world!";
+
+        // Act
+
+        Action act1 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append(text);
+        };
+        Action act2 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append(1);
+        };
+        Action act3 = () => {
+            var buffer = StringBuffer.Create(stackalloc char[text.Length]);
+            buffer.Append(text);
+            buffer.Append('a');
+        };
+
+        // Assert
+        act1.Should().Throw<ArgumentOutOfRangeException>();
+        act2.Should().Throw<ArgumentOutOfRangeException>();
+        act3.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
     public void StringBuffer_AppendLine_OnElement() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.AppendLine("Hello");
@@ -33,7 +92,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_AppendLine_NoParams() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.Append("Hello");
@@ -49,7 +108,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_AppendLine_NoParams_Builder() {
         // Arrange
-        using var buffer = StringBuffer.Rent(20);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
         buffer.Append("Hello")
@@ -65,7 +124,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_NoTrimming_ReturnFullString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -80,7 +139,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_WithTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -95,7 +154,7 @@ public class StringBuffersTests {
     [Fact]
     public void StringBuffer_WithWhiteSpaceTrimming_ReturnTrimmedString() {
         // Arrange
-        using var buffer = StringBuffer.Rent(5, true);
+        var buffer = StringBuffer.Create(stackalloc char[5]);
 
         // Act
         buffer.Append('a');
@@ -109,65 +168,16 @@ public class StringBuffersTests {
     }
 
     [Fact]
-    public void StringBuffer_AllocateWithIndexes() {
+    public void StringBuffer_Reset() {
         // Arrange
-        using var buffer = StringBuffer.Rent(4);
+        var buffer = StringBuffer.Create(stackalloc char[20]);
 
         // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
+        buffer.Append("Hello world!");
+        buffer.Reset();
+        buffer.Append("David");
 
         // Assert
-        buffer[1..^1].Should().Be("bc");
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorString() {
-        // Arrange
-        using var buffer = StringBuffer.Rent(4);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        string str = buffer;
-        str.Should().Be("abcd");
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorReadOnlySpan() {
-        // Arrange
-        using var buffer = StringBuffer.Rent(4);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        ReadOnlySpan<char> span = buffer;
-        span.SequenceEqual("abcd").Should().Be(true);
-    }
-
-    [Fact]
-    public void StringBuffer_ImplicitOperatorReadOnlyMemory() {
-        // Arrange
-        using var buffer = StringBuffer.Rent(4);
-
-        // Act
-        buffer.Append('a');
-        buffer.Append('b');
-        buffer.Append('c');
-        buffer.Append('d');
-
-        // Assert
-        ReadOnlyMemory<char> span = buffer;
-        span.Span.SequenceEqual("abcd").Should().Be(true);
+        buffer.WrittenSpan.SequenceEqual("David").Should().BeTrue();
     }
 }

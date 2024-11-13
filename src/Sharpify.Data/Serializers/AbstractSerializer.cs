@@ -1,15 +1,15 @@
 using MemoryPack;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
 /// Provides an abstraction for creating a readonly serializer
 /// </summary>
-internal abstract class DatabaseSerializer {
+internal abstract class AbstractSerializer {
     protected readonly string _path;
     internal readonly MemoryPackSerializerOptions SerializerOptions;
 
-    protected DatabaseSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) {
+    protected AbstractSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) {
         _path = path;
         SerializerOptions = encoding switch {
             StringEncoding.Utf8 => MemoryPackSerializerOptions.Utf8,
@@ -29,10 +29,9 @@ internal abstract class DatabaseSerializer {
     /// Serializes the given dictionary asynchronously
     /// </summary>
     /// <param name="dict"></param>
-    /// <param name="estimatedSize"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default);
+    internal abstract ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deserializes the path to a dictionary
@@ -53,8 +52,10 @@ internal abstract class DatabaseSerializer {
     /// <param name="configuration"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    internal static DatabaseSerializer Create(DatabaseConfiguration configuration) {
+    internal static AbstractSerializer Create(DatabaseConfiguration configuration) {
         return configuration switch {
+            { Path: "", IgnoreCase: false } => new DisabledSerializer(configuration.Path, configuration.Encoding),
+            { Path: "", IgnoreCase: true } => new DisabledIgnoreCaseSerializer(configuration.Path, configuration.Encoding),
             { HasEncryption: true, IgnoreCase: true } => new IgnoreCaseEncryptedSerializer(configuration.Path, configuration.EncryptionKey),
             { HasEncryption: true, IgnoreCase: false } => new EncryptedSerializer(configuration.Path, configuration.EncryptionKey),
             { HasEncryption: false, IgnoreCase: true } => new IgnoreCaseSerializer(configuration.Path),

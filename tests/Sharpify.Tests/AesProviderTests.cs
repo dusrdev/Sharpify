@@ -7,7 +7,7 @@ public class AesProviderTests {
     private const string PlainText = "Hello, World!";
 
     [Fact]
-    public void Encrypt_Decrypt_ReturnsOriginalText() {
+    public void AesProvider_PlainText() {
         using var aesProvider = new AesProvider(Key);
         string encrypted = aesProvider.Encrypt(PlainText);
         string decrypted = aesProvider.Decrypt(encrypted);
@@ -16,7 +16,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void EncryptBytes_DecryptBytes_ReturnsOriginalBytes() {
+    public void AesProvider_Bytes() {
         byte[] plainBytes = Encoding.UTF8.GetBytes(PlainText);
 
         using var aesProvider = new AesProvider(Key);
@@ -27,7 +27,19 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void DecryptBytes_WhenInputIsNotEncrypted_ReturnsEmptyString() {
+    public void AesProvider_Bytes_Span() {
+        byte[] plainBytes = Encoding.UTF8.GetBytes(PlainText);
+
+        using var aesProvider = new AesProvider(Key);
+        byte[] encryptedBytes = aesProvider.EncryptBytes(plainBytes);
+        Span<byte> decryptedSpan = stackalloc byte[plainBytes.Length];
+        int written = aesProvider.DecryptBytes(encryptedBytes, decryptedSpan, true);
+
+        decryptedSpan.Slice(0, written).SequenceEqual(plainBytes).Should().BeTrue();
+    }
+
+    [Fact]
+    public void AesProvider_DecryptBytes_WhenInputIsNotEncrypted_ReturnsEmptyString() {
         byte[] plainBytes = Encoding.UTF8.GetBytes(PlainText);
 
         using var aesProvider = new AesProvider(Key);
@@ -37,7 +49,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void GeneratePassword_IsPasswordValid_ReturnsTrueForValidPassword() {
+    public void AesProvider_GeneratePassword_AndValidate() {
         const string password = "Password123";
         string hashedPassword = AesProvider.GeneratePassword(password);
         bool isValid = AesProvider.IsPasswordValid(password, hashedPassword);
@@ -46,7 +58,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void GeneratePassword_IsPasswordValid_ReturnsFalseForInvalidPassword() {
+    public void AesProvider_Validate_Invalid() {
         const string password = "Password123";
         const string wrongPassword = "WrongPassword123";
         string hashedPassword = AesProvider.GeneratePassword(password);
@@ -56,7 +68,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void EncryptUrl_DecryptUrl_ValidInput_ReturnsOriginalUrl() {
+    public void AesProvider_URL() {
         var cset = new Bogus.DataSets.System();
         using var aesProvider = new AesProvider(Key);
 
@@ -71,7 +83,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void EncryptUrl_WhenInputIsPlainText_ShouldReturnEncryptedUrl() {
+    public void AesProvider_EncryptUrl_OnPlainText() {
         // Arrange
         var plainUrl = "testfile.txt";
         using var aesProvider = new AesProvider(Key);
@@ -85,7 +97,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void DecryptUrl_WhenInputIsEncryptedUrl_ShouldReturnDecryptedUrl() {
+    public void AesProvider_DecryptUrl_OnEncryptedText() {
         // Arrange
         var plainUrl = "testfile.txt";
         using var aesProvider = new AesProvider(Key);
@@ -100,7 +112,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void DecryptUrl_WhenInputIsIncorrectEncryptedUrl_ShouldNotReturnOriginalUrl() {
+    public void AesProvider_DecryptUrl_IncorrectEncryptedUrl() {
         // Arrange
         var plainUrl = "testfile.txt";
         using var aesProvider = new AesProvider(Key);
@@ -115,7 +127,7 @@ public class AesProviderTests {
     }
 
     [Fact]
-    public void EncryptAndDecryptUrl_WhenInputIsUnicode_ShouldReturnOriginalUrl() {
+    public void AesProvider_EncryptAndDecryptUrl_WhenInputIsUnicode() {
         // Arrange
         var unicodeUrl = "тестовый_файл.txt";
         using var aesProvider = new AesProvider(Key);
@@ -127,5 +139,31 @@ public class AesProviderTests {
         // Assert
         decryptedUrl.Should().NotBeNullOrEmpty();
         decryptedUrl.Should().Be(unicodeUrl);
+    }
+
+    [Fact]
+    public void AesProvider_CreateEncryptor() {
+        using var aesProvider = new AesProvider(Key);
+        var encryptor = aesProvider.CreateEncryptor();
+
+        encryptor.Should().NotBeNull();
+
+        var actual = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(PlainText), 0, PlainText.Length);
+        var expected = aesProvider.EncryptBytes(Encoding.UTF8.GetBytes(PlainText));
+
+        actual.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact]
+    public void AesProvider_CreateDecryptor() {
+        using var aesProvider = new AesProvider(Key);
+        var decryptor = aesProvider.CreateDecryptor();
+
+        var source = aesProvider.EncryptBytes(Encoding.UTF8.GetBytes(PlainText));
+
+        var actual = decryptor.TransformFinalBlock(source, 0, source.Length);
+        var expected = aesProvider.DecryptBytes(source);
+
+        actual.Should().BeEquivalentTo(expected);
     }
 }

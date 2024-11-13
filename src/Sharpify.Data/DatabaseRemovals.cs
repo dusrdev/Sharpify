@@ -1,8 +1,6 @@
-using System.Buffers;
-
 namespace Sharpify.Data;
 
-public sealed partial class Database : IDisposable {
+public sealed partial class Database {
     /// <summary>
     /// Removes the <paramref name="key"/> and its value from the inner dictionary.
     /// </summary>
@@ -14,8 +12,9 @@ public sealed partial class Database : IDisposable {
             if (!_data.Remove(key, out var val)) {
                 return false;
             }
-            var estimatedSize = Extensions.GetEstimatedSize(key, val);
+            var estimatedSize = Helper.GetEstimatedSize(key, val);
             Interlocked.Add(ref _estimatedSize, -estimatedSize);
+            Interlocked.Increment(ref _updatesCount);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }
@@ -67,16 +66,13 @@ public sealed partial class Database : IDisposable {
                 ? keySelector
                 : key => key.StartsWith(keyPrefix) && keySelector(key.Substring(keyPrefix.Length));
 
-            var matches = _data.Keys.Where(predicate).ToArray();
-
-            if (matches.Length is 0) {
-                return;
-            }
+            var matches = _data.Keys.Where(predicate);
 
             foreach (var key in matches) {
                 _data.Remove(key, out var val);
-                var estimatedSize = Extensions.GetEstimatedSize(key, val);
+                var estimatedSize = Helper.GetEstimatedSize(key, val);
                 Interlocked.Add(ref _estimatedSize, -estimatedSize);
+                Interlocked.Increment(ref _updatesCount);
 
                 if (Config.TriggerUpdateEvents) {
                     InvokeDataEvent(new DataChangedEventArgs {
@@ -85,9 +81,10 @@ public sealed partial class Database : IDisposable {
                         ChangeType = DataChangeType.Remove
                     });
                 }
-                if (Config.SerializeOnUpdate) {
-                    Serialize();
-                }
+            }
+
+            if (Config.SerializeOnUpdate) {
+                Serialize();
             }
 
         } finally {
@@ -103,6 +100,7 @@ public sealed partial class Database : IDisposable {
             _lock.EnterWriteLock();
             _data.Clear();
             Interlocked.Exchange(ref _estimatedSize, 0);
+            Interlocked.Increment(ref _updatesCount);
             if (Config.SerializeOnUpdate) {
                 Serialize();
             }

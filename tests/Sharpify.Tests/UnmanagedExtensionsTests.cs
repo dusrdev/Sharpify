@@ -1,7 +1,7 @@
 namespace Sharpify.Tests;
 
 public class UnmanagedExtensionsTests {
-        public enum ExampleEnum {
+    public enum ExampleEnum {
         FirstValue,
         SecondValue,
         ThirdValue

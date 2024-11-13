@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
-        <LangVersion>latest</LangVersion>
+        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Version>2.2.0</Version>
+        <Version>2.5.0</Version>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
@@ -11,7 +10,6 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
-        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Title>Sharpify</Title>
         <Description>A collection of high performance language extensions for C#</Description>
         <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>

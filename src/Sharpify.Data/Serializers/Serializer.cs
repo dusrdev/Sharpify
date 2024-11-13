@@ -2,12 +2,12 @@ using MemoryPack;
 
 using Sharpify.Collections;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
 /// A serializer for a database without encryption and case sensitive keys
 /// </summary>
-internal class Serializer : DatabaseSerializer {
+internal class Serializer : AbstractSerializer {
     internal Serializer(string path, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
     }
 
@@ -40,12 +40,12 @@ internal class Serializer : DatabaseSerializer {
     internal override void Serialize(Dictionary<string, byte[]?> dict, int estimatedSize) {
         using var file = new FileStream(_path, FileMode.Create);
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
-        MemoryPackSerializer.Serialize(buffer, dict, SerializerOptions);
+        MemoryPackSerializer.Serialize(in buffer, in dict, SerializerOptions);
         file.Write(buffer.WrittenSpan);
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         await MemoryPackSerializer.SerializeAsync(file, dict, SerializerOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
     }

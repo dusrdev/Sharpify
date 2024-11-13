@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System.Buffers;
 
 using Sharpify.Collections;
 
@@ -12,110 +12,59 @@ public static partial class Utils {
         private static ReadOnlySpan<string> FileSizeSuffix => new string[] { "B", "KB", "MB", "GB", "TB", "PB" };
 
         /// <summary>
+        /// The required length of the buffer to format bytes
+        /// </summary>
+        /// <remarks>
+        /// This is required to handle <see cref="double.MaxValue"/>, usual cases are much smaller, and this internal uses are pooled.
+        /// </remarks>
+        public const int FormatBytesRequiredLength = 512;
+        private const double FormatBytesKb = 1024d;
+        private const double FormatBytesDivisor = 1 / FormatBytesKb;
+
+        /// <summary>
         /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
         /// </summary>
         /// <returns>string</returns>
         public static string FormatBytes(long bytes)
-            => new(FormatBytesNonAllocated(bytes, stackalloc char[10]));
+            => FormatBytes((double)bytes);
 
         /// <summary>
         /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
         /// </summary>
         /// <returns>string</returns>
+        public static string FormatBytes(double bytes) {
+            using var owner = MemoryPool<char>.Shared.Rent(FormatBytesRequiredLength);
+            return new string(FormatBytes(bytes, owner.Memory.Span));
+        }
+
+        /// <summary>
+        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
+        /// </summary>
         /// <remarks>
-        /// <para>
-        /// This version does not allocate the string, and reuses an existing buffer
-        /// </para>
-        /// <para>
-        /// Make sure the buffer is at least 10 characters long to be safe
-        /// </para>
+        /// Ensure capacity >= <see cref="FormatBytesRequiredLength"/>
         /// </remarks>
-        public static ReadOnlySpan<char> FormatBytesNonAllocated(long bytes, Span<char> buffer)
-            => FormatBytesNonAllocated(bytes, Array.Empty<char>(), buffer);
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
-        /// </summary>
         /// <returns>string</returns>
-        /// <remarks>
-        /// <para>
-        /// This version does not allocate the string, and reuses an existing buffer
-        /// </para>
-        /// <para>
-        /// Make sure the buffer is at least 10 characters long to be safe
-        /// </para>
-        /// </remarks>
-        public static ReadOnlyMemory<char> FormatBytesNonAllocated(long bytes, char[] buffer)
-            => FormatBytesNonAllocated(bytes, buffer, Span<char>.Empty);
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
-        /// </summary>
-        /// <returns>string</returns>
-        public static string FormatBytes(double bytes)
-            => new(FormatBytesNonAllocated(bytes, stackalloc char[10]));
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
-        /// </summary>
-        /// <returns>string</returns>
-        /// <remarks>
-        /// <para>
-        /// This version does not allocate the string, and reuses an existing buffer
-        /// </para>
-        /// <para>
-        /// Make sure the buffer is at least 10 characters long to be safe
-        /// </para>
-        /// </remarks>
-        public static ReadOnlySpan<char> FormatBytesNonAllocated(double bytes, Span<char> buffer)
-            => FormatBytesNonAllocated(bytes, Array.Empty<char>(), buffer);
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
-        /// </summary>
-        /// <returns>string</returns>
-        /// <remarks>
-        /// <para>
-        /// This version does not allocate the string, and reuses an existing buffer
-        /// </para>
-        /// <para>
-        /// Make sure the buffer is at least 10 characters long to be safe
-        /// </para>
-        /// </remarks>
-        public static ReadOnlyMemory<char> FormatBytesNonAllocated(double bytes, char[] buffer)
-            => FormatBytesNonAllocated(bytes, buffer, Span<char>.Empty);
-
-        /// <summary>
-        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB...
-        /// </summary>
-        /// <returns>string</returns>
-        /// <remarks>
-        /// <para>
-        /// This version does not allocate the string, and reuses an existing buffer
-        /// </para>
-        /// If the buffer is empty, the span is used, and the other way around.
-        /// </remarks>
-        [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.NoInlining)]
-        public static AllocatedStringBuffer FormatBytesNonAllocated(double bytes, Span<char> buffer, Span<char> sBuffer) {
-            const double kb = 1024d;
-            const double divisor = 1 / kb;
-
-            var buf = buffer.Length is 0
-                ? StringBuffer.Create(sBuffer)
-                : StringBuffer.Create(buffer!);
-            if (bytes < kb) {
-                return buf.Append(Math.Round(bytes, 2))
-                          .Append(' ')
-                          .Append(FileSizeSuffix[0]);
-            }
+        public static ReadOnlySpan<char> FormatBytes(double bytes, Span<char> buffer) {
             var suffix = 0;
-            while (bytes >= kb && suffix < FileSizeSuffix.Length) {
-                bytes *= divisor;
+            while (suffix < FileSizeSuffix.Length - 1 && bytes >= FormatBytesKb) {
+                bytes *= FormatBytesDivisor;
                 suffix++;
             }
-            return buf.Append(Math.Round(bytes, 2))
-                      .Append(' ')
-                      .Append(FileSizeSuffix[suffix]);
+            return StringBuffer.Create(buffer)
+                               .Append(bytes, "#,##0.##")
+                               .Append(' ')
+                               .Append(FileSizeSuffix[suffix])
+                               .Allocate();
         }
+
+        /// <summary>
+        /// Formats bytes to friendlier strings, i.e: B,KB,MB,TB,PB... into the buffer and returns the written span
+        /// </summary>
+        /// <remarks>
+        /// Ensure capacity >= <see cref="FormatBytesRequiredLength"/>
+        /// </remarks>
+        /// <returns>string</returns>
+        public static ReadOnlySpan<char> FormatBytes(long bytes, Span<char> buffer)
+            => FormatBytes((double)bytes, buffer);
     }
 }

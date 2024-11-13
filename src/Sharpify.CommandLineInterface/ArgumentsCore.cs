@@ -5,6 +5,9 @@ namespace Sharpify.CommandLineInterface;
 /// <summary>
 /// A wrapper class over a dictionary of string : string with additional features
 /// </summary>
+/// <remarks>
+/// Arguments instances are created via <see cref="Parser"/>
+/// </remarks>
 public sealed partial class Arguments {
     private readonly string[] _args;
     private readonly Dictionary<string, string> _arguments;
@@ -23,6 +26,16 @@ public sealed partial class Arguments {
     /// Gets the number of arguments.
     /// </summary>
     public int Count => _arguments.Count;
+
+    /// <summary>
+    /// Checks if the arguments are empty.
+    /// </summary>
+    public bool AreEmpty => _arguments.Count is 0;
+
+    /// <summary>
+    /// Returns an empty arguments object.
+    /// </summary>
+    public static readonly Arguments Empty = new([], []);
 
     /// <summary>
     /// Returns a <see cref="ReadOnlyMemory{String}"/> of the arguments as they were before processing, but after splitting (if it was required)
@@ -63,25 +76,25 @@ public sealed partial class Arguments {
     /// </remarks>
     public Arguments ForwardPositionalArguments() {
         if (!Contains("0")) {
-            return new(_args, _arguments);
+            return this;
         }
         var dict = new Dictionary<string, string>(_arguments.Comparer);
 
-        foreach (var (prevK, prevV) in _arguments) {
+        foreach ((string prevKey, string prevValue) in _arguments) {
             // Handle non numeric
-            if (!int.TryParse(prevK.AsSpan(), out int numericIndex)) {
-                dict.Add(prevK, prevV);
+            if (!int.TryParse(prevKey.AsSpan(), out int numericIndex)) {
+                dict.Add(prevKey, prevValue);
             }
             // Handle numeric
             if (numericIndex is 0) { // forwarding means the previous 0 is lost
                 continue;
             }
-            dict.Add((numericIndex - 1).ToString(), prevV); // Add with the index reduced by 1.
+            dict.Add((numericIndex - 1).ToString(), prevValue); // Add with the index reduced by 1.
         }
 
         // Because this is a new dictionary, if pos 1, isn't found, 0 still won't be present
         // So essentially 0 was forwarded to no longer exist
-        return new(_args, dict);
+        return new Arguments(_args, dict);
     }
 
     /// <summary>

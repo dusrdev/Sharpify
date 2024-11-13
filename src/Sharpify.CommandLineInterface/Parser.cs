@@ -1,5 +1,6 @@
-using System.Buffers;
 using System.Runtime.CompilerServices;
+
+using Sharpify.Collections;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -11,13 +12,11 @@ public static class Parser {
     /// Very efficiently splits an input into a List of strings, respects quotes
     /// </summary>
     /// <param name="str"></param>
-    /// <param name="buffer">The buffer is used to reduce allocation, to overestimate, the length of str should suffice</param>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static ArraySegment<string> Split(ReadOnlySpan<char> str, string[] buffer) {
+    public static RentedBufferWriter<string> Split(ReadOnlySpan<char> str) {
         if (str.Length is 0) {
-            return ArraySegment<string>.Empty;
+            return new RentedBufferWriter<string>(0);
         }
-        int pos = 0;
+        var buffer = new RentedBufferWriter<string>(str.Length);
         int i = 0;
         while ((uint)i < (uint)str.Length) {
             char c = str[i];
@@ -26,27 +25,27 @@ public static class Parser {
                 continue;
             }
             if (c is '"') { // everything without a quote block is a single item, regardless of spaces
-                str = str[(i + 1)..];
+                str = str.Slice(i + 1);
                 int nextQuote = str.IndexOf('"');
                 if (nextQuote is -1) {
                     break;
                 }
-                buffer[pos++] = new string(str[..nextQuote]);
+                buffer.WriteAndAdvance(new string(str.Slice(0, nextQuote)));
                 i = nextQuote + 1;
                 continue;
             }
             // next is a word
-            str = str[i..];
+            str = str.Slice(i);
             int nextSpace = str.IndexOf(' ');
             if (nextSpace <= 0) { // the last word, no spaces after
-                buffer[pos++] = new string(str);
+                buffer.WriteAndAdvance(new string(str));
                 i = str.Length;
                 continue;
             }
-            buffer[pos++] = new string(str[..nextSpace]);
+            buffer.WriteAndAdvance(new string(str.Slice(0, nextSpace)));
             i = nextSpace + 1;
         }
-        return new ArraySegment<string>(buffer, 0, pos);
+        return buffer;
     }
 
     /// <summary>
@@ -54,23 +53,19 @@ public static class Parser {
     /// </summary>
     /// <param name="str">The input <see cref="ReadOnlySpan{T}"/> of characters to split.</param>
     /// <returns>A <see cref="List{T}"/> of strings containing the split parts.</returns>
-    public static List<string> Split(ReadOnlySpan<char> str) {
-        var buffer = ArrayPool<string>.Shared.Rent(str.Length);
-        try {
-            ReadOnlySpan<string> argList = Split(str, buffer);
-            var list = new List<string>(argList.Length);
-            list.AddRange(argList);
-            return list;
-        } finally {
-            buffer.ReturnBufferToSharedArrayPool();
-        }
+    public static List<string> SplitToList(ReadOnlySpan<char> str) {
+        using var splitBuffer = Split(str);
+        var span = splitBuffer.WrittenSpan;
+        var list = new List<string>(span.Length);
+        list.AddRange(span);
+        return list;
     }
 
     /// <summary>
     /// Parses a string into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="str"></param>
-    public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.CurrentCultureIgnoreCase);
+    public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Parses a string into an <see cref="Arguments"/> object
@@ -78,16 +73,8 @@ public static class Parser {
     /// <param name="str"></param>
     /// <param name="comparer"></param>
     public static Arguments? ParseArguments(ReadOnlySpan<char> str, StringComparer comparer) {
-        var buffer = ArrayPool<string>.Shared.Rent(str.Length);
-        try {
-            var argList = Split(str, buffer);
-            if (argList.Count is 0) {
-                return null;
-            }
-            return ParseArguments(argList, comparer);
-        } finally {
-            buffer.ReturnBufferToSharedArrayPool();
-        }
+        using var splitBuffer = Split(str);
+        return ParseArguments(splitBuffer.WrittenSpan, comparer);
     }
 
     /// <summary>
@@ -110,16 +97,12 @@ public static class Parser {
             return null;
         }
 
-        var argsCopy = GC.AllocateUninitializedArray<string>(args.Length);
-        args.CopyTo(argsCopy);
-
+        var argsCopy = args.ToArray();
         var results = MapArguments(argsCopy, comparer);
-
         return results.Count is 0 ? null : new Arguments(argsCopy, results);
     }
 
     // Maps a List of strings into a dictionary of arguments
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static Dictionary<string, string> MapArguments(ReadOnlySpan<string> args, StringComparer comparer) {
         var results = new Dictionary<string, string>(args.Length, comparer);
         Span<bool> mapped = stackalloc bool[args.Length];
@@ -139,7 +122,7 @@ public static class Parser {
             while (current[ii] is '-') { // Skip the dashes
                 ii++;
             }
-            var name = current[ii..]; // Parameter name without dashes
+            var name = current.Substring(ii); // Parameter name without dashes
 
             // i + 1 == args.Length => checks if the next argument is available
             // if not, then this is a switch (i.e. a named boolean toggle)
@@ -178,6 +161,20 @@ public static class Parser {
     }
 
     // Checks whether a string starts with "-"
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static bool IsParameterName(ReadOnlySpan<char> str) => str.StartsWith("-");
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool IsParameterName(ReadOnlySpan<char> str) {
+        // check length
+        if (str.Length is 0) {
+            return false;
+        }
+        // check numeric + negative numeric (negative numeric could look like parameter name because of the dash)
+        if (char.IsDigit(str[0]) || char.IsDigit(str[str.LastIndexOf('-') + 1])) {
+            return false;
+        }
+        // not dash - not parameter
+        if (!str.StartsWith("-")) {
+            return false;
+        }
+        return true;
+    }
 }

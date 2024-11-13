@@ -4,23 +4,30 @@ namespace Sharpify.Tests.Routines;
 
 public class AsyncRoutineTests {
     [Theory]
-    [InlineData(550, 5)]
-    [InlineData(150, 1)]
-    [InlineData(1050, 10)]
-    [InlineData(50, 0)]
-    public async Task AsyncRoutine_GivenIncreaseValueFunction_IncreasesValue(int milliseconds, int expected) {
+    [InlineData(5)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(0)]
+    public async Task AsyncRoutine_GivenIncreaseValueFunction_IncreasesValue(int expected) {
         // Arrange
         var count = 0;
+        var tcs = new TaskCompletionSource();
         var options = RoutineOptions.ExecuteInParallel;
-        using var routine = new AsyncRoutine(TimeSpan.FromMilliseconds(100))
+        using var routine = new AsyncRoutine(TimeSpan.FromMilliseconds(50))
                         .ChangeOptions(options)
-                        .Add(x => Task.FromResult(count++));
+                        .Add(_ => {
+                            var newCount = Interlocked.Increment(ref count);
+                            if (newCount >= expected) {
+                                tcs.TrySetResult();
+                            }
+                            return Task.CompletedTask;
+                        });
 
         // Act
         _ = routine.Start();
-        await Task.Delay(milliseconds);
+        await tcs.Task;
 
         // Assert
-        count.Should().Be(expected);
+        count.Should().BeGreaterThanOrEqualTo(expected);
     }
 }

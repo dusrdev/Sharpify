@@ -121,8 +121,8 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -134,7 +134,7 @@ public class DatabaseTests {
         using var db = Factory("");
 
         // Act
-        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] bytes = [1, 2, 3, 4, 5];
         db.Database.Upsert("test", bytes);
 
         using var buffer = db.Database.TryReadToRentedBuffer("test", "", 1);
@@ -145,8 +145,8 @@ public class DatabaseTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual<byte>([1, 2, 3, 4, 5, 6]).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual<byte>([1, 2, 3, 4, 5, 6]).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -203,7 +203,7 @@ public class DatabaseTests {
         // Act
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
-        Span<Person> span = new []{ p1, p2 };
+        Span<Person> span = [p1, p2];
         db.Database.UpsertMany<Person>("1", span);
 
         // Arrange
@@ -226,7 +226,7 @@ public class DatabaseTests {
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
         var p3 = new Person("Jane", 25);
-        Span<Person> span = new []{ p1, p2 };
+        Span<Person> span = [p1, p2];
         db.Database.UpsertMany<Person>("1", span);
 
         using var buffer = db.Database.TryReadToRentedBuffer<Person>("1", "", 1);
@@ -303,7 +303,7 @@ public class DatabaseTests {
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
         var test = new ConcurrentTest(db.Database);
-        await items.Concurrent().ForEachAsync(test);
+        await items.ForAllAsync(test);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -432,7 +432,7 @@ public class DatabaseTests {
             _database = database;
         }
 
-        public Task InvokeAsync(int item) {
+        public Task InvokeAsync(int item, CancellationToken token = default) {
             var rnd = Random.Shared.Next(10_000, 200_000);
             _database.Upsert(item.ToString(), rnd.ToString());
             return Task.CompletedTask;

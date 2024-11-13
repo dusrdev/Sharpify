@@ -3,8 +3,13 @@ namespace Sharpify;
 /// <summary>
 /// A wrapper around a value that makes it thread safe.
 /// </summary>
-public sealed class ThreadSafe<T> {
+public sealed class ThreadSafe<T> : IEquatable<T>, IEquatable<ThreadSafe<T>> {
+    //TODO: Switch to NET9 new Lock type
+#if NET9_0_OR_GREATER
+    private readonly Lock _lock = new();
+#elif NET8_0
     private readonly object _lock = new();
+#endif
     private T _value;
 
     /// <summary>
@@ -45,13 +50,39 @@ public sealed class ThreadSafe<T> {
     }
 
     /// <summary>
-    /// Provides a thread-safe way to modify the value.
+    /// Checks if the value is equal to the other value.
     /// </summary>
-    /// <returns>The value after the modification</returns>
-    public T Modify(IModifier<T> modifier, T newValue) {
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool Equals(ThreadSafe<T>? other) => other is not null && Equals(other.Value);
+
+    /// <summary>
+    /// Checks if the value is equal to the other value.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool Equals(T? other) {
+        if (other is null) {
+            return false;
+        }
         lock (_lock) {
-            _value = modifier.Modify(_value, newValue);
-            return _value;
+            return _value is not null && _value.Equals(other);
         }
     }
+
+    /// <summary>
+    /// Checks if the value is equal to the other value.
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns></returns>
+    public override bool Equals(object? obj) {
+        return Equals(obj as ThreadSafe<T>);
+    }
+
+    /// <summary>
+    /// Gets the hash code of the value.
+    /// </summary>
+    /// <returns></returns>
+    public override int GetHashCode() => Value!.GetHashCode();
+
 }

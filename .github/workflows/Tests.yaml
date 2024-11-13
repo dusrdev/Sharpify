@@ -1,0 +1,136 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-sharpify:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+
+    env:
+      # Define the path to project and test project
+      PROJECT: src/Sharpify/Sharpify.csproj
+      TEST_PROJECT: tests/Sharpify.Tests/Sharpify.Tests.csproj
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Cache NuGet packages
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 3. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      # 4. Clean
+      - name: Clean
+        run: |
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 5. Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+  test-sharpify-data:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+
+    env:
+      # Define the path to project and test project
+      PROJECT: src/Sharpify.Data/Sharpify.Data.csproj
+      TEST_PROJECT: tests/Sharpify.Data.Tests/Sharpify.Data.Tests.csproj
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Cache NuGet packages
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 3. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      # 4. Clean
+      - name: Clean
+        run: |
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 5. Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+  test-sharpify-cli:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+
+    env:
+      # Define the path to project and test project
+      PROJECT: src/Sharpify.CommandLineInterface/Sharpify.CommandLineInterface.csproj
+      TEST_PROJECT: tests/Sharpify.CommandLineInterface.Tests/Sharpify.CommandLineInterface.Tests.csproj
+
+    steps:
+      # 1. Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Cache NuGet packages
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # 3. Setup .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      # 4. Clean
+      - name: Clean
+        run: |
+          dotnet clean ${{ env.PROJECT }} -c ${{ matrix.configuration }}
+          dotnet clean ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}
+
+      # 5. Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test ${{ env.TEST_PROJECT }} -c ${{ matrix.configuration }}

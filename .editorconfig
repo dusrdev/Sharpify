@@ -76,6 +76,15 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 
 #### C# Coding Conventions ####
 [*.cs]
+# analyzers
+dotnet_diagnostic.IDE0290.severity = none # use primary constuctor
+dotnet_diagnostic.IDE0028.severity = none # use collection expression
+dotnet_diagnostic.IDE0056.severity = none # simplify index operator
+dotnet_diagnostic.IDE0057.severity = none # use range operator
+dotnet_diagnostic.IDE0301.severity = none # simplify collection initialization
+
+# namespace decleration
+csharp_style_namespace_declarations = file_scoped:warning
 
 # var preferences
 csharp_style_var_elsewhere = false:silent
@@ -360,4 +369,4 @@ dotnet_naming_style.camelcase.capitalization = camel_case
 dotnet_naming_style.s_camelcase.required_prefix = s_
 dotnet_naming_style.s_camelcase.required_suffix = 
 dotnet_naming_style.s_camelcase.word_separator = 
-dotnet_naming_style.s_camelcase.capitalization = camel_case
+dotnet_naming_style.s_camelcase.capitalization = camel_casel

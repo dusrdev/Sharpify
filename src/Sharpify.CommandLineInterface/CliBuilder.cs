@@ -4,18 +4,10 @@ namespace Sharpify.CommandLineInterface;
 /// Represents a builder for a CliRunner.
 /// </summary>
 public sealed class CliBuilder {
-	private readonly List<Command> _commands;
-
-	private readonly CliMetadata _metaData;
-
-	private CliRunnerOptions _options;
-	private string _header = "";
-
-	private bool _showErrorCodes;
+	private readonly CliRunnerConfiguration _config;
 
 	internal CliBuilder() {
-		_commands = new List<Command>();
-		_metaData = CliMetadata.Default;
+		_config = new CliRunnerConfiguration();
 	}
 
 	/// <summary>
@@ -24,17 +16,7 @@ public sealed class CliBuilder {
 	/// <param name="command"></param>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder AddCommand(Command command) {
-		_commands.Add(command);
-		return this;
-	}
-
-	/// <summary>
-	/// Adds commands to the CLI runner.
-	/// </summary>
-	/// <param name="commands"></param>
-	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder AddCommands(params Command[] commands) {
-		_commands.AddRange(commands);
+		_config.Commands.Add(command);
 		return this;
 	}
 
@@ -44,7 +26,7 @@ public sealed class CliBuilder {
 	/// <param name="commands"></param>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder AddCommands(ReadOnlySpan<Command> commands) {
-		_commands.AddRange(commands);
+		_config.Commands.AddRange(commands);
 		return this;
 	}
 
@@ -75,33 +57,53 @@ public sealed class CliBuilder {
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder SortCommandsAlphabetically() {
-		_options |= CliRunnerOptions.SortCommandsAlphabetically;
+		_config.SortCommandsAlphabetically = true;
 		return this;
 	}
 
 	/// <summary>
-	/// Use metadata in the help text of the CLI runner.
+	/// Add metadata - can be used to generate the general help text (Is the default source)
 	/// </summary>
 	/// <remarks>
-	/// Has priority over the custom header, and only one is used, so including a custom header as well will not do anything.
+	/// Configure the help text source with <see cref="SetHelpTextSource(HelpTextSource)"/>
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
-	public CliBuilder WithMetadata(Action<CliMetadata> action) {
-		action(_metaData);
-		_options |= CliRunnerOptions.IncludeMetadata;
+	public CliBuilder WithMetadata(Action<CliMetadata> options) {
+		options(_config.MetaData);
 		return this;
 	}
 
 	/// <summary>
-	/// Use a custom header instead of Metadata in the header of the help text
+	/// Add a custom header - can be used instead of Metadata in the header of the help text
 	/// </summary>
 	/// <remarks>
-	/// <see cref="CliMetadata"/> as priority over the custom header, and only one is used, so make sure not to include it if you want the custom header to show.
+	/// Configure the help text source with <see cref="SetHelpTextSource(HelpTextSource)"/>
 	/// </remarks>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder WithCustomHeader(string header) {
-		_header = header;
-		_options |= CliRunnerOptions.UseCustomHeader;
+		_config.CustomHeader = header;
+		return this;
+	}
+
+	/// <summary>
+	/// Sets the source of the general help text.
+	/// </summary>
+	/// <param name="source">Requested source of the help text.</param>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder SetHelpTextSource(HelpTextSource source) {
+		_config.HelpTextSource = source;
+		return this;
+	}
+
+	/// <summary>
+	/// Configures how the parser handles argument casing.
+	/// </summary>
+	/// <remarks>
+	/// By default it is set to <see cref="ArgumentCaseHandling.IgnoreCase"/> to improve user experience
+	/// </remarks>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder ConfigureArgumentCaseHandling(ArgumentCaseHandling caseHandling) {
+		_config.ArgumentCaseHandling = caseHandling;
 		return this;
 	}
 
@@ -110,7 +112,16 @@ public sealed class CliBuilder {
 	/// </summary>
 	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
 	public CliBuilder ShowErrorCodes() {
-		_showErrorCodes = true;
+		_config.ShowErrorCodes = true;
+		return this;
+	}
+
+	/// <summary>
+	/// Configures how the CLI runner handles empty input.
+	/// </summary>
+	/// <returns>The same instance of <see cref="CliBuilder"/></returns>
+	public CliBuilder ConfigureEmptyInputBehavior(EmptyInputBehavior behavior) {
+		_config.EmptyInputBehavior = behavior;
 		return this;
 	}
 
@@ -118,9 +129,9 @@ public sealed class CliBuilder {
 	/// Builds the CLI runner.
 	/// </summary>
 	public CliRunner Build() {
-		if (_commands.Count is 0) {
+		if (_config.Commands.Count is 0) {
 			throw new InvalidOperationException("No commands were added.");
 		}
-		return new CliRunner(_commands, _options, _metaData, _header, _showErrorCodes);
+		return new CliRunner(_config);
 	}
 }

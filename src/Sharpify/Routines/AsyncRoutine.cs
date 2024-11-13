@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+
+using Sharpify.Collections;
 
 namespace Sharpify.Routines;
 
@@ -9,7 +10,7 @@ namespace Sharpify.Routines;
 /// </summary>
 public class AsyncRoutine : IDisposable {
     private readonly PeriodicTimer _timer;
-    private volatile bool _isRunning;
+    private bool _isRunning;
     private RoutineOptions _options;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private volatile bool _disposed;
@@ -70,7 +71,6 @@ public class AsyncRoutine : IDisposable {
     /// </summary>
     /// <param name="options">The new options to apply.</param>
     /// <returns>The current AsyncRoutine instance.</returns>
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public AsyncRoutine ChangeOptions(RoutineOptions options) {
         _options = options;
         return this;
@@ -80,27 +80,26 @@ public class AsyncRoutine : IDisposable {
     /// Starts the async routine and executes the registered actions either sequentially or in parallel.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public async Task Start() {
         Debug.Assert(Actions.Count > 0, "Actions.Count must be > 0");
         try {
             while (Actions.Count > 0
                    && await _timer.WaitForNextTickAsync(_cancellationTokenSource.Token).ConfigureAwait(false)) {
-                if (!_isRunning) {
+                if (!Volatile.Read(ref _isRunning)) {
                     continue;
                 }
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    var buffer = ArrayPool<Task>.Shared.Rent(Actions.Count);
-                    ArraySegment<Task> tasks = new(buffer, 0, Actions.Count);
-                    for (int i = 0; i < tasks.Count; i++) {
-                        tasks[i] = Actions[i](_cancellationTokenSource.Token);
+                    using var buffer = new RentedBufferWriter<Task>(Actions.Count);
+                    foreach (var action in Actions) {
+                        buffer.WriteAndAdvance(Task.Run(() => action(_cancellationTokenSource.Token)
+                        , _cancellationTokenSource.Token));
                     }
-                    try {
-                        await Task.WhenAll(tasks).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                    } finally {
-                        ArrayPool<Task>.Shared.Return(buffer);
-                    }
+#if NET9_0_OR_GREATER
+                    await Task.WhenAll(buffer.WrittenSpan).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+#else
+                    await Task.WhenAll(buffer.WrittenSegment).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+#endif
                     // Execute sequentially
                 } else {
                     foreach (var action in Actions) {
@@ -118,16 +117,12 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// Stops the routine.
     /// </summary>
-    public void Stop() {
-        _isRunning = false;
-    }
+    public void Stop() => Volatile.Write(ref _isRunning, false);
 
     /// <summary>
     /// Resumes the execution of the asynchronous routine.
     /// </summary>
-    public void Resume() {
-        _isRunning = true;
-    }
+    public void Resume() => Volatile.Write(ref _isRunning, true);
 
     /// <summary>
     /// Disposes the timer and suppresses finalization of the object.
@@ -144,11 +139,12 @@ public class AsyncRoutine : IDisposable {
         if (_disposed) {
             return;
         }
-        if (_cancellationTokenSource is not null && !_cancellationTokenSource.IsCancellationRequested) {
+        if (!_cancellationTokenSource.IsCancellationRequested) {
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
         }
         _timer?.Dispose();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -4,10 +4,10 @@ using MemoryPack;
 
 using Sharpify.Collections;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
-/// A serializer for a database encryption and case sensitive keys
+/// A serializer for a database encryption and case-sensitive keys
 /// </summary>
 internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     internal IgnoreCaseEncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, key, encoding) {
@@ -42,7 +42,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
         int numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenSpan);
+        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenMemory);
         return dict;
     }
 }

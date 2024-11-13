@@ -22,8 +22,8 @@ public class SerializableObject<T> : IDisposable {
     /// </summary>
     public T Value {
         get {
+            _lock.EnterReadLock();
             try {
-                _lock.EnterReadLock();
                 return _value;
             } finally {
                 _lock.ExitReadLock();
@@ -31,7 +31,10 @@ public class SerializableObject<T> : IDisposable {
         }
     }
 
-    private volatile bool _disposed;
+    /// <summary>
+    /// A value indicating whether the object has been disposed.
+    /// </summary>
+    protected volatile bool _disposed;
 
     /// <summary>
     /// The path of the serialized object.
@@ -78,22 +81,27 @@ public class SerializableObject<T> : IDisposable {
         if (string.IsNullOrWhiteSpace(fileName)) {
             throw new IOException("Filename is invalid");
         }
-        _segmentedPath = new(dir, fileName);
+        _segmentedPath = new SegmentedPath(dir, fileName);
         _path = path;
-        if (Path.Exists(path)) {
-            var length = checked((int)new FileInfo(path).Length);
-            var textLength = length / sizeof(char);
-            if (textLength is 0) {
+        if (File.Exists(path)) {
+            var fileContent = File.ReadAllText(path);
+            if (fileContent.Length is 0) {
                 SetValueAndSerialize(defaultValue);
             } else {
                 try {
-                    using var file = File.Open(path, FileMode.Open);
-                    _value = JsonSerializer.Deserialize(file, _jsonTypeInfo)!;
+                    var val = JsonSerializer.Deserialize(fileContent, _jsonTypeInfo);
+                    if (val is null) {
+                        SetValueAndSerialize(defaultValue);
+                    }
+                    _value = val!;
                 } catch {
                     SetValueAndSerialize(defaultValue);
                 }
             }
         } else {
+            if (File.GetAttributes(path).HasFlag(FileAttributes.Directory)) {
+                throw new ArgumentException("The provided path is an existing directory.");
+            }
             SetValueAndSerialize(defaultValue);
         }
     }
@@ -102,8 +110,8 @@ public class SerializableObject<T> : IDisposable {
         try {
             _lock.EnterWriteLock();
             _value = value;
-            using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
+            var json = JsonSerializer.Serialize(_value, _jsonTypeInfo);
+            File.WriteAllText(_path, json);
         } finally {
             _lock.ExitWriteLock();
         }
@@ -142,15 +150,8 @@ public class SerializableObject<T> : IDisposable {
     /// </para>
     /// </remarks>
     public virtual void Modify(Func<T, T> modifier) {
-        try {
-            _lock.EnterWriteLock();
-            _value = modifier(_value);
-            using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-        }
+        SetValueAndSerialize(modifier(_value));
+        InvokeOnChangedEvent(_value);
     }
 
     /// <inheritdoc/>
@@ -158,8 +159,7 @@ public class SerializableObject<T> : IDisposable {
         if (_disposed) {
             return;
         }
-        _lock?.Dispose();
-        GC.SuppressFinalize(this);
+        _lock.Dispose();
         _disposed = true;
     }
 

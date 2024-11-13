@@ -78,20 +78,6 @@ public static partial class Extensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ToTitle(this string str) => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str);
 
-#if NET7_0
-    /// <summary>
-    /// Checks if a string is a valid binary string (0,1,' ','\t','\n','\r')
-    /// </summary>
-    public static bool IsBinary(this string str) {
-        foreach (var c in str.AsSpan()) {
-            if (c is '0' or '1' || char.IsWhiteSpace(c)) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-#elif NET8_0_OR_GREATER
     private const string BinaryChars = "01 \t\n\r";
     private static readonly SearchValues<char> BinarySearchValues = SearchValues.Create(BinaryChars);
 
@@ -101,5 +87,4 @@ public static partial class Extensions {
     public static bool IsBinary(this string str) {
         return !str.AsSpan().ContainsAnyExcept(BinarySearchValues);
     }
-#endif
 }

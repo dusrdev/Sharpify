@@ -20,7 +20,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to retrieve the value for.</param>
 	/// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValue(string key, out T value) => TryGetValue(key, "", out value);
+	bool TryGetValue(string key, out T value) => TryGetValue(key, string.Empty, out value);
 
 	/// <summary>
 	/// Gets the value for the specified key from the database using the specified encryption key.
@@ -39,7 +39,7 @@ public interface IDatabaseFilter<T> {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-	RentedBufferWriter<T> TryReadToRentedBuffer(string key, int reservedCapacity = 0) => TryReadToRentedBuffer(key, "", reservedCapacity);
+	RentedBufferWriter<T> TryReadToRentedBuffer(string key, int reservedCapacity = 0) => TryReadToRentedBuffer(key, string.Empty, reservedCapacity);
 
 	/// <summary>
     /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
@@ -58,7 +58,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to retrieve the value for.</param>
 	/// <param name="values">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValues(string key, out T[] values) => TryGetValues(key, "", out values);
+	bool TryGetValues(string key, out T[] values) => TryGetValues(key, string.Empty, out values);
 
 	/// <summary>
 	/// Gets the values for the specified key from the database using the specified encryption key.
@@ -75,10 +75,14 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the value for.</param>
 	/// <param name="value">The value to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
 	/// <remarks>
 	/// Null values are disallowed and will cause an exception to be thrown.
 	/// </remarks>
-	void Upsert(string key, T value, string encryptionKey = "");
+	/// <returns>
+	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -86,10 +90,14 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the values for.</param>
 	/// <param name="values">The values to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
 	/// <remarks>
 	/// Null values are disallowed and will cause an exception to be thrown.
 	/// </remarks>
-	void UpsertMany(string key, T[] values, string encryptionKey = "");
+	/// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -97,7 +105,11 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to upsert the values for.</param>
 	/// <param name="values">The values to upsert.</param>
 	/// <param name="encryptionKey">The encryption key to use.</param>
-	void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "");
+	/// <param name="updateCondition">a conditional check that the previously stored value must pass before being updated</param>
+	/// <returns>
+	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
+	/// </returns>
+	bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Removes the item with the specified key from the filtered database.

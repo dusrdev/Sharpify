@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Buffers;
+using System.Collections.ObjectModel;
 
 using Sharpify.Collections;
 
@@ -13,12 +14,10 @@ public sealed class CliRunner {
 	/// </summary>
 	public static CliBuilder CreateBuilder() => new();
 
-	private readonly List<Command> _commands;
-
 	/// <summary>
 	/// Gets the commands registered with the CLI runner.
 	/// </summary>
-	public ReadOnlyCollection<Command> Commands => _commands.AsReadOnly();
+	public ReadOnlyCollection<Command> Commands => _config.Commands.AsReadOnly();
 
 	/// <summary>
 	/// Gets the output writer for the CLI runner.
@@ -33,37 +32,38 @@ public sealed class CliRunner {
 		OutputWriter = writer;
 	}
 
-	private readonly CliRunnerOptions _options;
-	private readonly CliMetadata _metaData;
-	private readonly string _customerHeader;
-	private readonly string _help;
-	private readonly bool _showErrorCodes;
+	private readonly CliRunnerConfiguration _config;
 
 	/// <summary>
 	/// Creates a new instance of the <see cref="CliRunner"/> class.
 	/// </summary>
 	/// <remarks>To be used with the <see cref="CliBuilder"/></remarks>
-	internal CliRunner(List<Command> commands, CliRunnerOptions options, CliMetadata metaData, string customHeader,
-		bool showErrorCodes) {
-		_options = options;
-		_commands = commands;
-		if (_options.HasFlag(CliRunnerOptions.SortCommandsAlphabetically)) {
-			_commands.Sort(Command.ByNameComparer);
+	internal CliRunner(CliRunnerConfiguration config) {
+		_config = config;
+		// If there is only one command, sorting is not necessary
+		if (_config.SortCommandsAlphabetically && _config.Commands.Count is not 1) {
+			_config.Commands.Sort(Command.ByNameComparer);
 		}
-		_metaData = metaData;
-		_customerHeader = customHeader;
-		_help = GenerateHelp(); // Keep this last to make sure changes are reflected in the help text
-		_showErrorCodes = showErrorCodes;
 	}
 
 	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<char> args, bool commandNameRequired = true) {
+		// Handle no input
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
+			// If display help text is used, always display the help text
+			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
+				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+			}
+			// We assume the need to attempt to proceed
+			if (commandNameRequired || _config.Commands.Count is not 1) {
+				// In this case, input is required
+				return OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
+			}
+			return _config.Commands[0].ExecuteAsync(Arguments.Empty);
 		}
-		var arguments = Parser.ParseArguments(args);
+		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
 	}
 
@@ -71,10 +71,20 @@ public sealed class CliRunner {
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
+		// Handle no input
 		if (args.Length is 0) {
-			return OutputHelper.Return("No command specified", 404, _showErrorCodes);
+			// If display help text is used, always display the help text
+			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
+				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+			}
+			// We assume the need to attempt to proceed
+			if (commandNameRequired || _config.Commands.Count is not 1) {
+				// In this case, input is required
+				return OutputHelper.Return("No command specified", 404, _config.ShowErrorCodes);
+			}
+			return _config.Commands[0].ExecuteAsync(Arguments.Empty);
 		}
-		var arguments = Parser.ParseArguments(args, StringComparer.CurrentCultureIgnoreCase);
+		var arguments = Parser.ParseArguments(args, _config.GetComparer());
 		return RunAsync(arguments, commandNameRequired);
 	}
 
@@ -83,108 +93,100 @@ public sealed class CliRunner {
 	/// </summary>
 	public ValueTask<int> RunAsync(Arguments? arguments, bool commandNameRequired = true) {
 		if (arguments is null) {
-			return OutputHelper.Return("Input could not be parsed", 400, _showErrorCodes);
-		}
-		if (!commandNameRequired) {
-			if (_commands.Count is not 1) {
-				return OutputHelper.Return("Command name is required when using more than one command", 405, _showErrorCodes);
-			}
-			if (arguments.Contains("help")) {
-				return OutputHelper.Return(_commands[0].GetHelp(), 0);
-			}
-			return _commands[0].ExecuteAsync(arguments);
+			return OutputHelper.Return("Input could not be parsed", 400, _config.ShowErrorCodes);
 		}
 
-		if (arguments.Count is 1 && arguments.Contains("help")) {
-			return OutputHelper.Return(_help, 0);
+		string version = $"Version: {_config.MetaData.Version}"; // cache version
+
+		// general help text
+		if (arguments.IsFirstOrFlag("help")) {
+			return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
+		}
+		if (arguments.IsFirstOrFlag("version")) {
+			return OutputHelper.Return(version, 0);
+		}
+
+		// Only for single command CLIs
+		if (!commandNameRequired) {
+			// If there is more than one command, the command name is required
+			if (_config.Commands.Count is not 1) {
+				return OutputHelper.Return("Command name is required when using more than one command", 405, _config.ShowErrorCodes);
+			}
+			// Execute the command
+			return _config.Commands[0].ExecuteAsync(arguments);
 		}
 
 		if (!arguments.TryGetValue(0, out string commandName)) {
-			return OutputHelper.Return("Command name is required", 405, _showErrorCodes);
+			return OutputHelper.Return("Command name is required", 405, _config.ShowErrorCodes);
 		}
 
-		if (commandName.Equals("help", StringComparison.OrdinalIgnoreCase)) {
-			return OutputHelper.Return(_help, 0);
+		Command? command = _config.Commands.FirstOrDefault(c => _config.GetComparer().Equals(c.Name, commandName));
+		if (command == default) {
+			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _config.ShowErrorCodes);
 		}
 
-		Command? command = null;
-		foreach (Command c in _commands.AsSpan()) {
-			if (c.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase)) {
-				command = c;
-				break;
-			}
-		}
-		if (command is null) {
-			return OutputHelper.Return($"Command \"{commandName}\" not found.", 404, _showErrorCodes);
-		}
-		if (arguments.Contains("help")) {
-			OutputWriter.WriteLine(command.GetHelp());
-			return ValueTask.FromResult(0);
+		if (arguments.Contains("help") || arguments.HasFlag("help")) {
+			return OutputHelper.Return(command.GetHelp(), 0);
 		}
 		return command.ExecuteAsync(arguments.ForwardPositionalArguments());
 	}
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
-	private string GenerateHelp() {
-		int length = GetRequiredBufferLength();
+	private string GenerateHelpText(bool commandNameRequired) {
 		// here the likely help text is larger than per command, so we use a rented buffer
-		using var buffer = StringBuffer.Rent(length);
+		using var owner = MemoryPool<char>.Shared.Rent(GetRequiredBufferLength());
+		var buffer = StringBuffer.Create(owner.Memory.Span);
 		buffer.AppendLine();
-		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
-			buffer.AppendLine(_metaData.Name)
-		 		  .AppendLine()
-		 		  .AppendLine(_metaData.Description)
-		          .AppendLine()
-		          .Append("Author: ")
-		          .AppendLine(_metaData.Author)
-		          .Append("Version: ")
-		          .AppendLine(_metaData.Version)
-		          .Append("License: ")
-		          .AppendLine(_metaData.License)
-		          .AppendLine();
-		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
-			buffer.AppendLine(_customerHeader)
-         		  .AppendLine();
+		if (_config.HelpTextSource is HelpTextSource.Metadata) {
+			var metaData = _config.MetaData;
+			buffer.AppendLine(metaData.Name);
+			buffer.AppendLine();
+			buffer.AppendLine(metaData.Description);
+			buffer.AppendLine();
+			buffer.Append("Author: ");
+			buffer.AppendLine(metaData.Author);
+			buffer.Append("Version: ");
+			buffer.AppendLine(metaData.Version);
+			buffer.Append("License: ");
+			buffer.AppendLine(metaData.License);
+			buffer.AppendLine();
+		} else if (_config.HelpTextSource is HelpTextSource.CustomHeader) {
+			buffer.AppendLine(_config.CustomHeader);
+			buffer.AppendLine();
 		}
-		buffer.AppendLine("Commands:");
-		var maxCommandLength = GetMaximumCommandLength();
-		foreach (Command command in _commands.AsSpan()) {
-			buffer.Append(command.Name.PadRight(maxCommandLength))
-				  .Append(" - ")
-				  .AppendLine(command.Description);
-		}
-		buffer.Append(
-			"""
-
-			To get help for a command, use the following syntax:
-			<command> --help
-
-			To get help for the application, use the following syntax:
-			--help
-
-			"""
-		);
-
-		return buffer.Allocate(true);
-	}
-
-	private int GetMaximumCommandLength() {
-		int max = 0;
-		foreach (Command command in _commands.AsSpan()) {
-			if (command.Name.Length > max) {
-				max = command.Name.Length;
+		if (commandNameRequired) {
+			buffer.AppendLine("Commands:");
+			var maxCommandLength = GetMaximumCommandLength() + 2;
+			foreach (Command command in _config.Commands) {
+				buffer.Append(command.Name.PadRight(maxCommandLength));
+				buffer.Append(" - ");
+				buffer.AppendLine(command.Description);
 			}
+			buffer.Append(
+				"""
+
+				To get help for a command, use: "<command> --help"
+				To get help for the application, use: "--help"
+
+				"""
+			);
+		} else {
+			var command = _config.Commands[0];
+			buffer.Append("Usage: ");
+			buffer.AppendLine(command.Usage);
 		}
-		return max;
+
+		return buffer.Allocate();
 	}
+
+	private int GetMaximumCommandLength() => _config.Commands.Max(c => c.Name.Length);
 
 	private int GetRequiredBufferLength() {
-		int length = (_commands.Count + 5) * 256; // default buffer for commands and possible extra text
-		if (_options.HasFlag(CliRunnerOptions.IncludeMetadata)) {
-			length += _metaData.TotalLength;
-		} else if (_options.HasFlag(CliRunnerOptions.UseCustomHeader)) {
-			length += _customerHeader.Length;
-		}
-		return length;
+		int length = (_config.Commands.Count + 5) * 256; // default buffer for commands and possible extra text
+		return _config.HelpTextSource switch {
+			HelpTextSource.Metadata => length + _config.MetaData.TotalLength,
+			HelpTextSource.CustomHeader => length + _config.CustomHeader.Length,
+			_ => length
+		};
 	}
 }

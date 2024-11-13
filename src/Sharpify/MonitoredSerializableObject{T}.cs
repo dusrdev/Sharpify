@@ -13,8 +13,6 @@ namespace Sharpify;
 /// </remarks>
 public class MonitoredSerializableObject<T> : SerializableObject<T> {
     private readonly FileSystemWatcher _watcher;
-    private volatile uint _isInternalModification;
-    private volatile bool _disposed;
 
     /// <summary>
     /// Represents a serializable object that is monitored for changes in a specified file path.
@@ -41,7 +39,7 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e) {
-        if (Interlocked.Exchange(ref _isInternalModification, 0) is 1) {
+        if (e.ChangeType is not WatcherChangeTypes.Changed) {
             return;
         }
         if (!File.Exists(_path)) {
@@ -49,13 +47,11 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         try {
             _lock.EnterWriteLock();
-            using var file = File.Open(_path, FileMode.Open);
-            var deserialized = JsonSerializer.Deserialize(file, _jsonTypeInfo);
-            if (deserialized is null) {
-                return;
-            }
-            _value = (T)deserialized;
+            var json = File.ReadAllText(_path);
+            _value = JsonSerializer.Deserialize(json, _jsonTypeInfo)!;
             InvokeOnChangedEvent(_value);
+        } catch {
+            // ignore
         } finally {
             _lock.ExitWriteLock();
         }
@@ -63,16 +59,9 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
 
     /// <inheritdoc/>
     public override void Modify(Func<T, T> modifier) {
-        try {
-            _lock.EnterWriteLock();
-            _value = modifier(_value);
-            Interlocked.Exchange(ref _isInternalModification, 1);
-            using var file = File.Open(_path, FileMode.Create);
-            JsonSerializer.Serialize(file, _value, _jsonTypeInfo);
-            InvokeOnChangedEvent(_value);
-        } finally {
-            _lock.ExitWriteLock();
-        }
+        _watcher.EnableRaisingEvents = false;
+        base.Modify(modifier);
+        _watcher.EnableRaisingEvents = true;
     }
 
     /// <inheritdoc/>
@@ -82,7 +71,6 @@ public class MonitoredSerializableObject<T> : SerializableObject<T> {
         }
         _watcher?.Dispose();
         _lock?.Dispose();
-        GC.SuppressFinalize(this);
         _disposed = true;
     }
 }

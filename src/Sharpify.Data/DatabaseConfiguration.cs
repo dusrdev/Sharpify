@@ -9,6 +9,9 @@ public record DatabaseConfiguration {
     /// <summary>
     /// The path to which the database file will be saved.
     /// </summary>
+    /// <remarks>
+    /// Setting path to an empty string "" will create an in-memory database.
+    /// </remarks>
     public required string Path { get; init; }
 
     /// <summary>
@@ -43,7 +46,7 @@ public record DatabaseConfiguration {
     /// <summary>
     /// General encryption key, the entire file will be encrypted with this.
     /// </summary>
-    public string EncryptionKey { get; init; } = "";
+    public string EncryptionKey { get; init; } = string.Empty;
 
     /// <summary>
     /// Whether general encryption is enabled.

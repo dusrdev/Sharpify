@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 using MemoryPack;
+
+using Sharpify.Data.Serializers;
 
 namespace Sharpify.Data;
 
@@ -23,17 +24,29 @@ public sealed partial class Database : IDisposable {
 
     private volatile bool _disposed;
 
+    // The updates count increments every time a value is updated, added or removed.
+    private long _updatesCount = 0;
+
+    // The serialization reference is checking against the updates to reduce redundant serialization.
+    private long _serializationReference = 0;
+
+#if NET9_0_OR_GREATER
+    private readonly Lock _sLock = new();
+#else
+    private readonly object _sLock = new();
+#endif
     private readonly ReaderWriterLockSlim _lock = new();
-    private readonly DatabaseSerializer _serializer;
+    private readonly AbstractSerializer _serializer;
     private volatile int _estimatedSize;
 
     private const int BufferMultiple = 4096;
     private const int ReservedBufferSize = 256;
 
+    private readonly bool _isInMemory;
+
     /// <summary>
     /// Overestimated size of the database.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private int GetOverestimatedSize() {
         return (int)Math.Ceiling((_estimatedSize + ReservedBufferSize) / (double)BufferMultiple) * BufferMultiple;
     }
@@ -63,15 +76,15 @@ public sealed partial class Database : IDisposable {
     /// Creates a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static Database CreateOrLoad(DatabaseConfiguration config) {
-        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+        AbstractSerializer serializer = AbstractSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        int estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Helper.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
 
@@ -82,25 +95,26 @@ public sealed partial class Database : IDisposable {
     /// Creates asynchronously a high performance database that stores string-byte[] pairs.
     /// </summary>
     public static async ValueTask<Database> CreateOrLoadAsync(DatabaseConfiguration config, CancellationToken token = default) {
-        DatabaseSerializer serializer = DatabaseSerializer.Create(config);
+        AbstractSerializer serializer = AbstractSerializer.Create(config);
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
                 : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
         }
 
-        int estimatedSize = Extensions.GetFileSize(config.Path);
+        int estimatedSize = Helper.GetFileSize(config.Path);
 
         Dictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, DatabaseSerializer serializer, int estimatedSize) {
+    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, AbstractSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
+        _isInMemory = config.Path.Length == 0;
         Interlocked.Exchange(ref _estimatedSize, estimatedSize);
     }
 

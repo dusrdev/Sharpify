@@ -24,12 +24,12 @@ public interface IFilterable<T> {
 	/// </summary>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	static abstract T? Deserialize(byte[]? data);
+	static abstract T? Deserialize(ReadOnlySpan<byte> data);
 
 	/// <summary>
 	/// Deserializes the specified data into multiple values.
 	/// </summary>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	static abstract T[]? DeserializeMany(byte[]? data);
+	static abstract T[]? DeserializeMany(ReadOnlySpan<byte> data);
 }

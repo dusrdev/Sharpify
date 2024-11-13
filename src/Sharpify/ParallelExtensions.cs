@@ -1,279 +1,109 @@
-using System.Buffers;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using Sharpify.Collections;
 
 namespace Sharpify;
 
 public static partial class Extensions {
     /// <summary>
-    /// Returns a <see cref="Concurrent{T}"/> wrapper for the given collection.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Concurrent<T> Concurrent<T>(this ICollection<T> source) => source is null
-        ? throw new ArgumentNullException(nameof(source))
-        : new Concurrent<T>(source);
-
-    /// <summary>
-    /// Returns a <see cref="AsyncLocal{T}"/> wrapper for the given collection.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static AsyncLocal<TList> AsAsyncLocal<TList, TItem>(this TList source) where TList : IList<TItem> {
-        if (source is null) {
-            throw new ArgumentNullException(nameof(source));
-        }
-        return new AsyncLocal<TList> {
-            Value = source
-        };
-    }
-
-    /// <summary>
-    /// Returns a <see cref="AsyncLocal{T}"/> wrapper for the given collection.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static AsyncLocal<TList> AsAsyncLocal<TList, TItem>(this TList source, TItem? @default) where TList : IList<TItem> => AsAsyncLocal<TList, TItem>(source);
-
-    /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static Task InvokeAsync<T>(
-        this Concurrent<T> concurrentReference,
-        IAsyncAction<T> action,
+    /// <param name="collection">The source collection.</param>
+    /// <param name="body">The action to be performed.</param>
+    /// <param name="token">The cancellation token.</param>
+    /// <returns>A task that completes when the entire <paramref name="collection"/> has been processed.</returns>
+    /// <remarks>
+    /// <para>If <paramref name="collection"/> is null or empty, the task will return immediately</para>
+    /// <para>The cancellation token will be injected into <paramref name="body"/> for each item of the collection</para>
+    /// <para>Unlike <see cref="ForAllAsync{T}(ICollection{T}, Func{T, CancellationToken, Task}, CancellationToken)"/>, this method is optimized for synchronous lambdas that don't need to allocate an AsyncStateMachine</para>
+    /// </remarks>
+    public static async Task ForAll<T>(
+        this ICollection<T>? collection,
+        Func<T, CancellationToken, Task> body,
         CancellationToken token = default) {
-        var length = concurrentReference.Source.Count;
-        if (length is 0) {
-            return Task.CompletedTask;
+        if (collection is null or { Count: 0 }) {
+            return;
         }
-        var tasks = new Task[length];
 
-#if NET8_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfNotEqual(tasks.Length, concurrentReference.Source.Count);
-        // Jit should use the exception to optimize the bounds check away
+        var length = collection.Count;
+
+        using var taskBuffer = new RentedBufferWriter<Task>(length);
+
+        foreach (var item in collection) {
+            taskBuffer.WriteAndAdvance(body.Invoke(item, token));
+        }
+
+#if NET9_0_OR_GREATER
+        await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
+#else
+        await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
 #endif
-
-        Span<Task> taskSpan = tasks;
-        var i = 0;
-        foreach (var item in concurrentReference.Source) {
-            taskSpan[i++] = action.InvokeAsync(item);
-        }
-        return Task.WhenAll(tasks).WaitAsync(token);
     }
 
     /// <summary>
     /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async Task InvokeAsync<TList, TItem>(
-        this AsyncLocal<TList> asyncLocalReference,
-        IAsyncAction<TItem> action,
-        CancellationToken token = default) where TList : IList<TItem> {
-        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
-        var length = asyncLocalReference.Value.Count;
-
-        if (length is 0) {
-            return;
-        }
-
-        var array = ArrayPool<Task>.Shared.Rent(length);
-        var tasks = new ArraySegment<Task>(array, 0, length);
-
-        try {
-            var i = 0;
-            foreach (var item in asyncLocalReference.Value) {
-                tasks[i++] = action.InvokeAsync(item);
-            }
-            await Task.WhenAll(tasks).WaitAsync(token).ConfigureAwait(false);
-        } finally {
-            array.ReturnBufferToSharedArrayPool();
-        }
-    }
-
-    /// <summary>
-    /// An extension method to perform an action on a collection of items in parallel.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void ForEach<T>(
-        this Concurrent<T> concurrentReference,
-        IAction<T> action) {
-        if (concurrentReference.Source.Count is 0) {
-            return;
-        }
-        Parallel.ForEach(concurrentReference.Source, action.Invoke);
-    }
-
-    /// <summary>
-    /// An extension method to perform an action on a collection of items in parallel.
-    /// </summary>
-    /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
-    /// <param name="action">the action object</param>
-    /// <param name="degreeOfParallelism">sets the baseline number of actions per iteration</param>
-    /// <param name="token">a cancellation token</param>
+    /// <param name="collection">The source collection.</param>
+    /// <param name="asyncAction">The action to be performed.</param>
+    /// <param name="token">The cancellation token.</param>
+    /// <returns>A task that completes when the entire <paramref name="collection"/> has been processed.</returns>
     /// <remarks>
-    /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, it will be equal to the number of cores in the CPU</para>
+    /// <para>If <paramref name="collection"/> is null or empty, the task will return immediately</para>
+    /// <para>The cancellation token will be injected into <paramref name="asyncAction"/> for each item of the collection</para>
+    /// <para>Unlike <see cref="ForAllAsync{T}(ICollection{T}, IAsyncAction{T}, CancellationToken)"/>, this method is optimized for synchronous lambdas that don't need to allocate an AsyncStateMachine</para>
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static ValueTask ForEach<TList, TItem>(
-        this AsyncLocal<TList> asyncLocalReference,
-        IAction<TItem> action,
-        int degreeOfParallelism = -1,
-        CancellationToken token = default) where TList : IList<TItem> {
-        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
-        var count = asyncLocalReference.Value.Count;
-
-        if (count is 0) {
-            return ValueTask.CompletedTask;
-        }
-
-        if (degreeOfParallelism is -1) {
-            degreeOfParallelism = Environment.ProcessorCount;
-        }
-
-        var partitioner = Partitioner.Create(asyncLocalReference.Value, true);
-
-        var options = new ParallelOptions {
-            MaxDegreeOfParallelism = degreeOfParallelism,
-            CancellationToken = token
-        };
-
-        _ = Parallel.ForEach(partitioner, options, action.Invoke);
-
-        return ValueTask.CompletedTask;
-    }
+    public static Task ForAll<T>(
+        this ICollection<T>? collection,
+        IAsyncAction<T> asyncAction,
+        CancellationToken token = default)
+        => ForAll(collection, asyncAction.InvokeAsync, token);
 
     /// <summary>
-    /// An extension method to perform an action on a collection of items in parallel asynchronously and in batches.
+    /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    /// <param name="concurrentReference">The reference to the concurrent instance</param>
-    /// <param name="action">the async action object</param>
-    /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
-    /// <param name="token">a cancellation token</param>
+    /// <param name="collection">The source collection.</param>
+    /// <param name="body">The action to be performed.</param>
+    /// <param name="token">The cancellation token.</param>
+    /// <returns>A task that completes when the entire <paramref name="collection"/> has been processed.</returns>
     /// <remarks>
-    /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
+    /// <para>If <paramref name="collection"/> is null or empty, the task will return immediately</para>
+    /// <para>The cancellation token will be injected into <paramref name="body"/> for each item of the collection</para>
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static Task ForEachAsync<T>(
-        this Concurrent<T> concurrentReference,
-        IAsyncAction<T> action,
-        int degreeOfParallelism = -1,
+    public static async Task ForAllAsync<T>(
+        this ICollection<T>? collection,
+        Func<T, CancellationToken, Task> body,
         CancellationToken token = default) {
-        if (concurrentReference.Source.Count is 0) {
-            return Task.CompletedTask;
+        if (collection is null or { Count: 0 }) {
+            return;
         }
 
-        if (degreeOfParallelism is -1) {
-            degreeOfParallelism = Environment.ProcessorCount;
+        var length = collection.Count;
+
+        using var taskBuffer = new RentedBufferWriter<Task>(length);
+
+        foreach (var item in collection) {
+            taskBuffer.WriteAndAdvance(Task.Run(() => body.Invoke(item, token), token));
         }
 
-        var batchCount = concurrentReference.Source.Count <= degreeOfParallelism
-            ? 1
-            : concurrentReference.Source.Count / degreeOfParallelism;
-
-        var enumeratedPartition = new EnumeratedPartition<T>(action);
-
-        return Task.WhenAll(Partitioner
-            .Create(concurrentReference.Source)
-            .GetPartitions(batchCount)
-            .AsParallel()
-            .Select(enumeratedPartition.AwaitPartitionAsync))
-            .WaitAsync(token);
+#if NET9_0_OR_GREATER
+        await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
+#else
+        await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
+#endif
     }
 
     /// <summary>
-    /// An extension method to perform an action on a collection of items in parallel asynchronously and in batches.
+    /// An extension method to perform an action on a collection of items in parallel.
     /// </summary>
-    /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
-    /// <param name="action">the async action object</param>
-    /// <param name="degreeOfParallelism">sets the number of tasks per batch</param>
-    /// <param name="loadBalance"></param>
-    /// <param name="token">a cancellation token</param>
+    /// <param name="collection">The source collection.</param>
+    /// <param name="asyncAction">The action to be performed.</param>
+    /// <param name="token">The cancellation token.</param>
+    /// <returns>A task that completes when the entire <paramref name="collection"/> has been processed.</returns>
     /// <remarks>
-    /// <para>If <paramref name="degreeOfParallelism"/> is set to -1, number of tasks per batch will be equal to the number of cores in the CPU</para>
+    /// <para>If <paramref name="collection"/> is null or empty, the task will return immediately</para>
+    /// <para>The cancellation token will be injected into <paramref name="asyncAction"/> for each item of the collection</para>
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async Task ForEachAsync<TList, TItem>(
-        this AsyncLocal<TList> asyncLocalReference,
-        IAsyncAction<TItem> action,
-        int degreeOfParallelism = -1,
-        bool loadBalance = false,
-        CancellationToken token = default) where TList : IList<TItem> {
-        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
-        var count = asyncLocalReference.Value.Count;
-
-        if (count is 0) {
-            return;
-        }
-
-        if (degreeOfParallelism is -1) {
-            degreeOfParallelism = Environment.ProcessorCount;
-        }
-
-        var batchCount = count <= degreeOfParallelism
-            ? 1
-            : count / degreeOfParallelism;
-
-        var enumeratedPartition = new EnumeratedPartition<TItem>(action);
-
-        var parallelPartitions = Partitioner
-            .Create(asyncLocalReference.Value, loadBalance)
-            .GetPartitions(batchCount)
-            .AsParallel();
-
-        var array = ArrayPool<Task>.Shared.Rent(batchCount);
-        var partitions = new ArraySegment<Task>(array, 0, batchCount);
-
-        try {
-            var i = 0;
-            foreach (var partition in parallelPartitions) {
-                partitions[i++] = enumeratedPartition.AwaitPartitionAsync(partition);
-            }
-            await Task.WhenAll(partitions).WaitAsync(token).ConfigureAwait(false);
-        } finally {
-            array.ReturnBufferToSharedArrayPool();
-        }
-    }
-
-    /// <summary>
-    /// An extension method to perform an value action on a collection of items in parallel asynchronously.
-    /// </summary>
-    /// <param name="asyncLocalReference">The reference to the async local instance that holds the collection</param>
-    /// <param name="action">the async value action object</param>
-    /// <param name="token">a cancellation token</param>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static async ValueTask WhenAllAsync<TList, TItem>(
-        this AsyncLocal<TList> asyncLocalReference,
-        IAsyncValueAction<TItem> action,
-        CancellationToken token = default) where TList : IList<TItem> {
-        ArgumentNullException.ThrowIfNull(asyncLocalReference.Value);
-        var count = asyncLocalReference.Value.Count;
-
-        if (count is 0) {
-            return;
-        }
-
-        var totalArray = ArrayPool<ValueTask>.Shared.Rent(count);
-        var totalSegment = new ArraySegment<ValueTask>(totalArray, 0, count);
-        int totalIndex = 0;
-        var needAllocation = ArrayPool<Task>.Shared.Rent(count);
-        int needAllocationIndex = 0;
-
-        try {
-            foreach (var item in asyncLocalReference.Value) {
-                totalSegment[totalIndex++] = action.InvokeAsync(item);
-            }
-            foreach (var valueTask in totalSegment) {
-                if (valueTask.IsCompletedSuccessfully) {
-                    continue;
-                }
-                needAllocation[needAllocationIndex++] = valueTask.AsTask();
-            }
-            if (needAllocationIndex is 0) {
-                return;
-            }
-            var requiringAllocation = new ArraySegment<Task>(needAllocation, 0, needAllocationIndex);
-            await Task.WhenAll(requiringAllocation).WaitAsync(token).ConfigureAwait(false);
-        } finally {
-            totalArray.ReturnBufferToSharedArrayPool();
-            needAllocation.ReturnBufferToSharedArrayPool();
-        }
-    }
+    public static Task ForAllAsync<T>(
+        this ICollection<T>? collection,
+        IAsyncAction<T> asyncAction,
+        CancellationToken token = default)
+        => ForAllAsync(collection, asyncAction.InvokeAsync, token);
 }

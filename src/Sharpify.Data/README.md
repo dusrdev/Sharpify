@@ -4,10 +4,15 @@ An extension of `Sharpify` focused on data.
 
 ## Features
 
-* `Database` is key-value-pair datastore of `string`->`byte[]` with converters that is optimized for concurrency, memory efficiency and performance, and enables 2-layer encryption, both per the database as a whole and per key.
-* The most important converter is using types which implement `IMemoryPackable<T>` which is any type that was decorated with the `MemoryPackable` attribute from [MemoryPack](https://github.com/Cysharp/MemoryPack)
-* Working with such types allows usage of `DatabaseFilter{T}` enabling the single database object (and file) to store and filter the data by the type allowing use cases similar to `table` types in more common databases.
-* `NativeAot` supported -> see [Guide](#nativeaot-guide)
+* `Database` is the base type for the data base, it is key-value-pair based local database - saved on disk.
+* `IDatabaseFilter<T>` is an interface which acts as an alternative to `DbContext` and provides enhanced type safety for contexts.
+* `MemoryPackDatabaseFilter<T>` is an implementation which focuses on types that implement `IMemoryPackable<T>` from `MemoryPack`.
+* `FlexibleDatabaseFilter<T>` is an implementation focusing on types which need custom serialization logic. To use this, you type `T` will need to implement `IFilterable<T>` which has methods for serialization and deserialization of single `T` and `T[]`. If you can choose to implement only one of the two.
+* **Concurrency** - `Database` uses highly performant synchronous concurrency models and is completely thread-safe.
+* **Disk Usage** - `Database` tracks inner changes and skips serialization if no changes occurred, enabling usage of periodic serialization without resource waste.
+* **GC Optimization** - `Database` heavily uses pooling for encryption, decryption, type conversion, serialization and deserialization to minimize GC overhead, very rarely does it allocate single-use memory and only when absolutely necessary.
+* **HotPath APIs** - `Database` is optimized for hot paths, as such it provides a number of APIs that specifically combine features for maximum performance and minimal GC overhead. Like the `TryReadToRentedBuffer<T>` methods which is optimized for adding data to a table.
+* **Runtime Optimization** - Upon initialization, `Database` chooses specific serializers and deserializers tailored for specific configurations, minimizing the amount of runnable code during runtime that would've been wasted on different checks.
 
 ## Notes
 

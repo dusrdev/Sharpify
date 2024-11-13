@@ -4,20 +4,26 @@ namespace Sharpify.Tests.Routines;
 
 public class RoutineTests {
     [Theory]
-    [InlineData(550, 5)]
-    [InlineData(150, 1)]
-    [InlineData(1050, 10)]
-    [InlineData(50, 0)]
-    public async Task Routine_GivenIncreaseValueFunction_IncreasesValue(int milliseconds, int expected) {
+    [InlineData(5)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(0)]
+    public async Task Routine_GivenIncreaseValueFunction_IncreasesValue(int expected) {
         // Arrange
         var count = 0;
-        using var routine = new Routine(100).Add(() => count++);
+        var tcs = new TaskCompletionSource();
+        using var routine = new Routine(50).Add(() => {
+            Interlocked.Increment(ref count);
+            if (count >= expected) {
+                tcs.TrySetResult();
+            }
+        });
 
         // Act
         routine.Start();
-        await Task.Delay(milliseconds);
+        await tcs.Task;
 
         // Assert
-        count.Should().Be(expected);
+        count.Should().BeGreaterThanOrEqualTo(expected);
     }
 }

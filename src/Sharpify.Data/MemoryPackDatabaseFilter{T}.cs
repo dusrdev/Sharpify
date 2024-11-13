@@ -23,12 +23,14 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     /// Creates a combined key (filter) for the specified key.
     /// </summary>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected virtual string AcquireKey(ReadOnlySpan<char> key) => string.Intern(KeyFilter.Concat(key));
+    protected string AcquireKey(ReadOnlySpan<char> key) {
+        return string.Intern(KeyFilter.Concat(key));
+    }
 
     /// <summary>
     /// The database.
     /// </summary>
-	protected readonly Database _database;
+    protected readonly Database _database;
 
     /// <summary>
     /// Creates a new database filter.
@@ -39,36 +41,57 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(string key) => _database.ContainsKey(AcquireKey(key));
+    public bool ContainsKey(string key) {
+        return _database.ContainsKey(AcquireKey(key));
+    }
 
     /// <inheritdoc />
-    public bool TryGetValue(string key, string encryptionKey, out T value) => _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
+    public bool TryGetValue(string key, string encryptionKey, out T value) {
+        return _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
+    }
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[] values) => _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
+    public bool TryGetValues(string key, string encryptionKey, out T[] values) {
+        return _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
+    }
 
     /// <inheritdoc />
-    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0)
-        => _database.TryReadToRentedBuffer<T>(AcquireKey(key), encryptionKey, reservedCapacity);
+    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
+        return _database.TryReadToRentedBuffer<T>(AcquireKey(key), encryptionKey, reservedCapacity);
+    }
 
     /// <inheritdoc />
-    public void Upsert(string key, T value, string encryptionKey = "") => _database.Upsert(AcquireKey(key), value, encryptionKey);
+    public bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
+        return _database.Upsert(AcquireKey(key), value, encryptionKey, updateCondition);
+    }
 
     /// <inheritdoc />
-    public void UpsertMany(string key, T[] values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
+    public bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        return _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
+    }
 
     /// <inheritdoc />
-    public void UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "") => _database.UpsertMany(AcquireKey(key), values, encryptionKey);
+    public bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        return _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
+    }
 
     /// <inheritdoc />
-    public bool Remove(string key) => _database.Remove(AcquireKey(key));
+    public bool Remove(string key) {
+        return _database.Remove(AcquireKey(key));
+    }
 
     /// <inheritdoc />
-    public void Remove(Func<string, bool> keySelector) => _database.Remove(keySelector, KeyFilter);
+    public void Remove(Func<string, bool> keySelector) {
+        _database.Remove(keySelector, KeyFilter);
+    }
 
     /// <inheritdoc />
-    public void Serialize() => _database.Serialize();
+    public void Serialize() {
+        _database.Serialize();
+    }
 
     /// <inheritdoc />
-    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) => _database.SerializeAsync(cancellationToken);
+    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
+        return _database.SerializeAsync(cancellationToken);
+    }
 }

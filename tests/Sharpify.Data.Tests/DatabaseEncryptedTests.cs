@@ -120,8 +120,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out byte[] result).Should().BeTrue();
-        result.SequenceEqual(bytes).Should().BeTrue();
+        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
+        result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
         File.Delete(db.Path);
@@ -227,7 +227,7 @@ public class DatabaseEncryptedTests {
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
         var test = new ConcurrentTest(db.Database);
-        await items.Concurrent().ForEachAsync(test);
+        await items.ForAllAsync(test);
 
         // Arrange
         using var db2 = Factory(db.Path);
@@ -356,7 +356,7 @@ public class DatabaseEncryptedTests {
             _database = database;
         }
 
-        public Task InvokeAsync(int item) {
+        public Task InvokeAsync(int item, CancellationToken token = default) {
             var rnd = Random.Shared.Next(10_000, 200_000);
             _database.Upsert(item.ToString(), rnd.ToString());
             return Task.CompletedTask;

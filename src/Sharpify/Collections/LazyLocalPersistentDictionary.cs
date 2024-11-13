@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text.Json;
 
 namespace Sharpify.Collections;
@@ -38,33 +37,30 @@ public class LazyLocalPersistentDictionary : PersistentDictionary {
         if (!File.Exists(_path)) {
             return null;
         }
-        var length = checked((int) new FileInfo(_path).Length);
+        var length = checked((int)new FileInfo(_path).Length);
         if (length is 0) {
             return null;
         }
-        var buffer = ArrayPool<byte>.Shared.Rent(length);
+        using var buffer = new RentedBufferWriter<byte>(length);
         using var file = File.Open(_path, FileMode.Open);
-        var numRead = file.Read(buffer, 0, length);
-        ReadOnlySpan<byte> jsonUtf8Bytes = buffer.AsSpan(0, numRead);
-        try {
-            var reader = new Utf8JsonReader(jsonUtf8Bytes, InternalHelper.JsonReaderOptions);
-            while (reader.Read()) {
-                if (reader.TokenType is not JsonTokenType.PropertyName) {
-                    continue;
-                }
-                var property = reader.GetString();
-                if (!_stringComparer.Equals(property, key)) {
-                    _ = reader.TrySkip();
-                    continue;
-                }
-                reader.Read();
-                var value = reader.GetString();
-                return value;
+        var numRead = file.Read(buffer.GetSpan());
+        buffer.Advance(numRead);
+        ReadOnlySpan<byte> jsonUtf8Bytes = buffer.WrittenSpan;
+        var reader = new Utf8JsonReader(jsonUtf8Bytes, InternalHelper.JsonReaderOptions);
+        while (reader.Read()) {
+            if (reader.TokenType is not JsonTokenType.PropertyName) {
+                continue;
             }
-            return null;
-        } finally {
-            ArrayPool<byte>.Shared.Return(buffer);
+            var property = reader.GetString();
+            if (!_stringComparer.Equals(property, key)) {
+                _ = reader.TrySkip();
+                continue;
+            }
+            reader.Read();
+            var value = reader.GetString();
+            return value;
         }
+        return null;
     }
 
     /// <summary>

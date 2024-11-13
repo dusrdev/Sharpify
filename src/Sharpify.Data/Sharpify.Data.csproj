@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2.5.0</Version>
+    <Version>2.6.0</Version>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>David Shnayder</Authors>
@@ -12,7 +11,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Sharpify.Data</Title>
     <Description>An extension of Sharpify, focused on Data</Description>
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
@@ -26,13 +24,9 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants>ATOMIC_UPSERTS</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="MemoryPack" Version="[1.21.1,)" />
-    <PackageReference Include="Sharpify" Version="[2.2.0,)" />
+    <PackageReference Include="MemoryPack" Version="1.21.3" />
+    <PackageReference Include="Sharpify" Version="2.5.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
@@ -40,6 +34,12 @@
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
     <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Sharpify.Data.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

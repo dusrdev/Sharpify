@@ -4,12 +4,12 @@ using MemoryPack;
 
 using Sharpify.Collections;
 
-namespace Sharpify.Data;
+namespace Sharpify.Data.Serializers;
 
 /// <summary>
 /// A serializer for a database encryption and case sensitive keys
 /// </summary>
-internal class EncryptedSerializer : DatabaseSerializer {
+internal class EncryptedSerializer : AbstractSerializer {
     protected readonly string _key;
 
     internal EncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
@@ -26,11 +26,11 @@ internal class EncryptedSerializer : DatabaseSerializer {
         using var file = new FileStream(_path, FileMode.Open);
         int rawRead = file.Read(rawBuffer.GetSpan());
         rawBuffer.Advance(rawRead);
-        var rawSpan = rawBuffer.WrittenSpan;
+        ReadOnlySpan<byte> rawSpan = rawBuffer.WrittenSpan;
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
-        var decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
+        int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        var decrypted = decryptedBuffer.WrittenSpan;
+        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
         var dict = MemoryPackSerializer.Deserialize<Dictionary<string, byte[]?>>(decrypted, SerializerOptions);
         return dict ?? new Dictionary<string, byte[]?>();
     }
@@ -58,7 +58,7 @@ internal class EncryptedSerializer : DatabaseSerializer {
     }
 
 /// <inheritdoc />
-    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, int estimatedSize, CancellationToken cancellationToken = default) {
+    internal override async ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) {
         using var file = new FileStream(_path, FileMode.Create);
         using ICryptoTransform transform = Helper.Instance.GetEncryptor(_key);
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Write);
