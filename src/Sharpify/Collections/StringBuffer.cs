@@ -32,7 +32,7 @@ public unsafe ref struct StringBuffer {
     }
 
     /// <summary>
-    /// This returns an empty buffer. It will throw if you try to append anything to it. use <see cref="StringBuffer(Span{char})"/> instead.
+    /// This returns an empty buffer. It will throw if you try to append anything to it. use <see cref="StringBuffer.Create(Span{char})"/> instead.
     /// </summary>
     public StringBuffer() : this(Span<char>.Empty) {
     }
