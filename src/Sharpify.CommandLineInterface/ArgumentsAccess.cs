@@ -43,10 +43,10 @@ public sealed partial class Arguments {
 	/// <returns>true if the key exists, false otherwise.</returns>
     public bool TryGetValue(string key, out string value) {
         if (!_arguments.TryGetValue(key, out var res)) {
-            value = "";
+            value = string.Empty;
             return false;
         }
-        value = res!;
+        value = res;
         return true;
     }
 

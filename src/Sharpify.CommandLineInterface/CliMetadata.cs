@@ -7,27 +7,27 @@ public record CliMetadata {
 	/// <summary>
 	/// The name of the CLI application.
 	/// </summary>
-	public string Name { get; set; } = "";
+	public string Name { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The description of the CLI application.
 	/// </summary>
-	public string Description { get; set; } = "";
+	public string Description { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The version of the CLI application.
 	/// </summary>
-	public string Version { get; set; } = "";
+	public string Version { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The author of the CLI application.
 	/// </summary>
-	public string Author { get; set; } = "";
+	public string Author { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The license of the CLI application.
 	/// </summary>
- 	public string License { get; set; } = "";
+ 	public string License { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The default metadata for a CLI application.

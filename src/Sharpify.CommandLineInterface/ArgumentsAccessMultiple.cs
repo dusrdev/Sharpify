@@ -87,7 +87,7 @@ public sealed partial class Arguments {
                 values = [];
                 return false;
             }
-            result[i++] = parsed!;
+            result[i++] = parsed;
         }
 
         values = result;
@@ -121,7 +121,7 @@ public sealed partial class Arguments {
                 values = [];
                 return false;
             }
-            result[i++] = parsed!;
+            result[i++] = parsed;
         }
 
         values = result;

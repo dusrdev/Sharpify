@@ -76,25 +76,25 @@ public sealed partial class Arguments {
     /// </remarks>
     public Arguments ForwardPositionalArguments() {
         if (!Contains("0")) {
-            return new(_args, _arguments);
+            return this;
         }
         var dict = new Dictionary<string, string>(_arguments.Comparer);
 
-        foreach (var (prevK, prevV) in _arguments) {
+        foreach ((string prevKey, string prevValue) in _arguments) {
             // Handle non numeric
-            if (!int.TryParse(prevK.AsSpan(), out int numericIndex)) {
-                dict.Add(prevK, prevV);
+            if (!int.TryParse(prevKey.AsSpan(), out int numericIndex)) {
+                dict.Add(prevKey, prevValue);
             }
             // Handle numeric
             if (numericIndex is 0) { // forwarding means the previous 0 is lost
                 continue;
             }
-            dict.Add((numericIndex - 1).ToString(), prevV); // Add with the index reduced by 1.
+            dict.Add((numericIndex - 1).ToString(), prevValue); // Add with the index reduced by 1.
         }
 
         // Because this is a new dictionary, if pos 1, isn't found, 0 still won't be present
         // So essentially 0 was forwarded to no longer exist
-        return new(_args, dict);
+        return new Arguments(_args, dict);
     }
 
     /// <summary>

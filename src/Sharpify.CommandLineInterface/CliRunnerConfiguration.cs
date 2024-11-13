@@ -17,7 +17,7 @@ internal sealed class CliRunnerConfiguration {
 	/// <summary>
 	/// The header to use in the help text.
 	/// </summary>
-	public string CustomHeader { get; set; } = "";
+	public string CustomHeader { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The source of the help text.
