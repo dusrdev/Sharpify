@@ -18,7 +18,7 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     public readonly Guid Guid = Guid.NewGuid();
 
-    private readonly Dictionary<string, byte[]?> _data;
+    private readonly ConcurrentDictionary<string, byte[]?> _data;
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
@@ -80,13 +80,13 @@ public sealed partial class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
+                ? new Database(new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                : new Database(new ConcurrentDictionary<string, byte[]?>(), config, serializer, 0);
         }
 
         int estimatedSize = Helper.GetFileSize(config.Path);
 
-        Dictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
+        ConcurrentDictionary<string, byte[]?> dict = serializer.Deserialize(estimatedSize);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
@@ -99,18 +99,18 @@ public sealed partial class Database : IDisposable {
 
         if (!File.Exists(config.Path)) {
             return config.IgnoreCase
-                ? new Database(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
-                : new Database(new Dictionary<string, byte[]?>(), config, serializer, 0);
+                ? new Database(new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase), config, serializer, 0)
+                : new Database(new ConcurrentDictionary<string, byte[]?>(), config, serializer, 0);
         }
 
         int estimatedSize = Helper.GetFileSize(config.Path);
 
-        Dictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
+        ConcurrentDictionary<string, byte[]?> dict = await serializer.DeserializeAsync(estimatedSize, token);
 
         return new Database(dict, config, serializer, estimatedSize);
     }
 
-    private Database(Dictionary<string, byte[]?> data, DatabaseConfiguration config, AbstractSerializer serializer, int estimatedSize) {
+    private Database(ConcurrentDictionary<string, byte[]?> data, DatabaseConfiguration config, AbstractSerializer serializer, int estimatedSize) {
         _data = data;
         Config = config;
         _serializer = serializer;
@@ -119,7 +119,7 @@ public sealed partial class Database : IDisposable {
     }
 
     static Database() {
-        MemoryPackFormatterProvider.RegisterDictionary<Dictionary<string, byte[]?>, string, byte[]>();
+        MemoryPackFormatterProvider.RegisterDictionary<ConcurrentDictionary<string, byte[]?>, string, byte[]>();
     }
 
     /// <summary>
@@ -145,12 +145,7 @@ public sealed partial class Database : IDisposable {
     /// Returns an immutable copy of the keys in the inner dictionary
     /// </summary>
     public IReadOnlyCollection<string> GetKeys() {
-        try {
-            _lock.EnterReadLock();
-            return _data.Keys;
-        } finally {
-            _lock.ExitReadLock();
-        }
+        return (IReadOnlyCollection<string>)_data.Keys;
     }
 
     /// <summary>

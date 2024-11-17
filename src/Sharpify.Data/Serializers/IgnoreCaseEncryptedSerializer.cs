@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
 using MemoryPack;
@@ -13,10 +14,10 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
     internal IgnoreCaseEncryptedSerializer(string path, string key, StringEncoding encoding = StringEncoding.Utf8) : base(path, key, encoding) {
     }
 
-/// <inheritdoc />
-    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) {
+    /// <inheritdoc />
+    internal override ConcurrentDictionary<string, byte[]?> Deserialize(int estimatedSize) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
+            return new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
         using var rawBuffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
@@ -27,14 +28,14 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
         ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
+        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
         return dict;
     }
 
-/// <inheritdoc />
-    internal override async ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
+    /// <inheritdoc />
+    internal override async ValueTask<ConcurrentDictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) {
         if (estimatedSize is 0) {
-            return new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
+            return new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
         using var buffer = new RentedBufferWriter<byte>(estimatedSize);
         using var file = new FileStream(_path, FileMode.Open);
@@ -42,7 +43,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
         int numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        Dictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenMemory);
+        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenMemory);
         return dict;
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 using MemoryPack;
 
 namespace Sharpify.Data.Serializers;
@@ -10,16 +12,16 @@ internal class DisabledSerializer : AbstractSerializer {
     }
 
     /// <inheritdoc />
-    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new();
+    internal override ConcurrentDictionary<string, byte[]?> Deserialize(int estimatedSize) => new();
 
     /// <inheritdoc />
-    internal override ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new Dictionary<string, byte[]?>());
+    internal override ValueTask<ConcurrentDictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new ConcurrentDictionary<string, byte[]?>());
 
     /// <inheritdoc />
-    internal override void Serialize(Dictionary<string, byte[]?> dict, int estimatedSize) { }
+    internal override void Serialize(ConcurrentDictionary<string, byte[]?> dict, int estimatedSize) { }
 
-/// <inheritdoc />
-    internal override ValueTask SerializeAsync(Dictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    /// <inheritdoc />
+    internal override ValueTask SerializeAsync(ConcurrentDictionary<string, byte[]?> dict, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -30,8 +32,8 @@ internal class DisabledIgnoreCaseSerializer : DisabledSerializer {
     }
 
     /// <inheritdoc />
-    internal override Dictionary<string, byte[]?> Deserialize(int estimatedSize) => new(StringComparer.OrdinalIgnoreCase);
+    internal override ConcurrentDictionary<string, byte[]?> Deserialize(int estimatedSize) => new(StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc />
-    internal override ValueTask<Dictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new Dictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase));
+    internal override ValueTask<ConcurrentDictionary<string, byte[]?>> DeserializeAsync(int estimatedSize, CancellationToken cancellationToken = default) => ValueTask.FromResult(new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase));
 }
