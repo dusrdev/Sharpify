@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using MemoryPack;
 
@@ -22,7 +24,7 @@ public sealed partial class Database {
 
     private readonly ConcurrentDictionary<string, byte[]?>.AlternateLookup<ReadOnlySpan<char>> _lookup;
 
-    private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
+    private readonly IAlternateEqualityComparer<ReadOnlySpan<char>, string> _alternateComparer;
 
     // The updates count increments every time a value is updated, added or removed.
     private long _updatesCount = 0;
@@ -31,6 +33,8 @@ public sealed partial class Database {
     private long _serializationReference = 0;
 
     private readonly Lock _lock = new();
+
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     private readonly AbstractSerializer _serializer;
     private volatile int _estimatedSize;
@@ -112,7 +116,11 @@ public sealed partial class Database {
         _serializer = serializer;
         _isInMemory = config.Path.Length == 0;
         Interlocked.Exchange(ref _estimatedSize, estimatedSize);
-        _lookup = new ConcurrentDictionary<string, byte[]?>.AlternateLookup<ReadOnlySpan<char>>();
+        _lookup = _data.GetAlternateLookup<ReadOnlySpan<char>>();
+        var comparer = config.IgnoreCase
+                    ? StringComparer.OrdinalIgnoreCase
+                    : StringComparer.Ordinal;
+        _alternateComparer = Unsafe.As<IAlternateEqualityComparer<ReadOnlySpan<char>, string>>(comparer);
     }
 
     static Database() {

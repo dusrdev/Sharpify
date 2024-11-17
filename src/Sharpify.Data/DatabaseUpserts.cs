@@ -17,23 +17,21 @@ public sealed partial class Database {
     /// This pure method which accepts the value as ReadOnlySpan{byte} allows you to use more complex but also more efficient serializers.
     /// </para>
     /// </remarks>
-    public void Upsert(string key, ReadOnlySpan<byte> value, string encryptionKey = "") {
+    public void Upsert(ReadOnlySpan<char> key, ReadOnlySpan<byte> value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, value.ToArray()));
+            UpsertEntry(key, value.ToArray());
         } else {
             byte[] encrypted = Helper.Instance.Encrypt(value, encryptionKey);
-            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, encrypted));
+            UpsertEntry(key, encrypted);
         }
 
         if (Config.TriggerUpdateEvents) {
             InvokeDataEvent(new DataChangedEventArgs {
-                Key = key,
+                Key = _alternateComparer.Create(key),
                 Value = value.ToArray(),
                 ChangeType = DataChangeType.Upsert
             });
         }
-
-        EmptyQueue();
     }
 
     /// <summary>
@@ -47,27 +45,25 @@ public sealed partial class Database {
     /// This method directly inserts the array reference in to the database to reduce copying.
     /// </para>
     /// <para>
-    /// If you cannot ensure that this reference doesn't change, for example if using a pooled array, use the <see cref="Upsert(string, ReadOnlySpan{byte}, string)"/> method instead.
+    /// If you cannot ensure that this reference doesn't change, for example if using a pooled array, use the <see cref="Upsert(ReadOnlySpan{char}, ReadOnlySpan{byte}, string)"/> method instead.
     /// </para>
     /// </remarks>
-    public void Upsert(string key, byte[] value, string encryptionKey = "") {
+    public void Upsert(ReadOnlySpan<char> key, byte[] value, string encryptionKey = "") {
         if (encryptionKey.Length is 0) {
-            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, value));
+            UpsertEntry(key, value);
         } else {
             ReadOnlySpan<byte> valueSpan = value;
             byte[] encrypted = Helper.Instance.Encrypt(valueSpan, encryptionKey);
-            _queue.Enqueue(new KeyValuePair<string, byte[]>(key, encrypted));
+            UpsertEntry(key, encrypted);
         }
 
         if (Config.TriggerUpdateEvents) {
             InvokeDataEvent(new DataChangedEventArgs {
-                Key = key,
+                Key = _alternateComparer.Create(key),
                 Value = value,
                 ChangeType = DataChangeType.Upsert
             });
         }
-
-        EmptyQueue();
     }
 
     /// <summary>
@@ -88,7 +84,7 @@ public sealed partial class Database {
     /// <returns>
 	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool Upsert<T>(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
+    public bool Upsert<T>(ReadOnlySpan<char> key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) where T : IMemoryPackable<T> {
         if (updateCondition is not null) {
             if (TryGetValue<T>(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
@@ -117,7 +113,7 @@ public sealed partial class Database {
     /// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool UpsertMany<T>(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
+    public bool UpsertMany<T>(ReadOnlySpan<char> key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
             if (TryGetValues<T>(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
@@ -147,7 +143,7 @@ public sealed partial class Database {
     /// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool UpsertMany<T>(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
+    public bool UpsertMany<T>(ReadOnlySpan<char> key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) where T : IMemoryPackable<T> {
         return UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
     }
 
@@ -163,7 +159,7 @@ public sealed partial class Database {
     /// Null values are disallowed and will cause an exception to be thrown.
     /// </para>
     /// </remarks>
-    public void Upsert(string key, string value, string encryptionKey = "") {
+    public void Upsert(ReadOnlySpan<char> key, string value, string encryptionKey = "") {
         byte[] bytes = value.Length is 0
                     ? Array.Empty<byte>()
                     : MemoryPackSerializer.Serialize(value, _serializer.SerializerOptions);
@@ -187,7 +183,7 @@ public sealed partial class Database {
     /// <returns>
 	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-    public bool Upsert<T>(string key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
+    public bool Upsert<T>(ReadOnlySpan<char> key, T value, JsonTypeInfo<T> jsonTypeInfo, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
         if (updateCondition is not null) {
             if (!TryGetValue(key, encryptionKey, jsonTypeInfo, out var existingValue) || !updateCondition(existingValue)) {
                 return false;
@@ -198,22 +194,30 @@ public sealed partial class Database {
         return true;
     }
 
-    // Adds items to the dictionary and serializes if needed at the end.
-    // This enables us to add multiple items at once without serializing multiple times.
-    // Essentially synchronizing concurrent writes.
-    // While the inner sequential addition to the dictionary makes it thread safe.
-    private void EmptyQueue() {
-        nint itemsAdded = 0;
-        lock (_lock) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-                itemsAdded++;
-                int estimatedSize = Helper.GetEstimatedSize(kvp);
-                Interlocked.Add(ref _estimatedSize, estimatedSize);
-                Interlocked.Increment(ref _updatesCount);
-            }
+    /// <summary>
+    /// Adds or updates an entry to the database
+    /// </summary>
+    /// <param name="key">Entry key</param>
+    /// <param name="value">Entry value</param>
+    private void UpsertEntry(ReadOnlySpan<char> key, byte[] value) {
+        // Adding values is thread safe
+        if (_lookup.TryAdd(key, value)) {
+            // Only if not existed before
+            int estimatedSize = Helper.GetEstimatedSize(key, value);
+            Interlocked.Add(ref _estimatedSize, estimatedSize);
+            Interlocked.Increment(ref _updatesCount);
+        } else {
+            // This case requires delta of size difference to get more accurate size estimates
+            var prevLength = _lookup[key]?.Length ?? 0;
+            _lookup[key] = value;
+            var change = value.Length - prevLength;
+            Interlocked.Add(ref _estimatedSize, change);
+            Interlocked.Increment(ref _updatesCount);
         }
-        if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
+
+        // sync serialization to allow concurrent writing threads (1+) to skip serialization
+        // serialize will check if needed by update count
+        lock (_lock) {
             Serialize();
         }
     }

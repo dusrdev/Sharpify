@@ -1,64 +1,53 @@
-using System.Diagnostics;
-
 namespace Sharpify.Data;
 
 public sealed partial class Database {
-    private void EnsureUpsertsAreFinished() {
-        if (!Config.SerializeOnUpdate) {
-            while (_queue.TryDequeue(out var kvp)) {
-                _data[kvp.Key] = kvp.Value;
-                int estimatedSize = Helper.GetEstimatedSize(kvp);
-                Interlocked.Add(ref _estimatedSize, estimatedSize);
-                Interlocked.Increment(ref _updatesCount);
-            }
-        }
-    }
-
     /// <summary>
     /// Checks if the database needs to be serialized.
     /// </summary>
     /// <returns></returns>
     private bool IsSerializationNecessary() {
-        if (_isInMemory) {
+        if (_updatesCount == _serializationReference) {
             return false;
         }
-        lock (_lock) {
-            if (_updatesCount == _serializationReference) {
-                return false;
-            }
-            _serializationReference = _updatesCount;
-            return true;
-        }
+        _serializationReference = _updatesCount;
+        return true;
     }
 
     /// <summary>
     /// Saves the database to the hard disk.
     /// </summary>
     public void Serialize() {
-        EnsureUpsertsAreFinished();
-
-        if (!IsSerializationNecessary()) {
+        if (_isInMemory) {
             return;
         }
 
-        Debug.Assert(!_isInMemory);
+        lock (_lock) {
+            if (!IsSerializationNecessary()) {
+                return;
+            }
 
-        int estimatedSize = GetOverestimatedSize();
-        _serializer.Serialize(_data, estimatedSize);
+            int estimatedSize = GetOverestimatedSize();
+            _serializer.Serialize(_data, estimatedSize);
+        }
     }
 
     /// <summary>
     /// Saves the database to the hard disk asynchronously.
     /// </summary>
-    public ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
-        EnsureUpsertsAreFinished();
-
-        if (!IsSerializationNecessary()) {
-            return ValueTask.CompletedTask;
+    public async ValueTask SerializeAsync(CancellationToken cancellationToken = default) {
+        if (_isInMemory) {
+            return;
         }
 
-        Debug.Assert(!_isInMemory);
+        try {
+            await _semaphore.WaitAsync(cancellationToken);
+            if (!IsSerializationNecessary()) {
+                return;
+            }
 
-        return _serializer.SerializeAsync(_data, cancellationToken);
+            await _serializer.SerializeAsync(_data, cancellationToken);
+        } finally {
+            _semaphore.Release();
+        }
     }
 }
