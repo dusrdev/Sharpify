@@ -75,7 +75,7 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     /// <inheritdoc />
     public bool Remove(ReadOnlySpan<char> key) {
         using var disposableKey = DisposableKey.Create(KeyFilter, key);
-        return _database.Remove(disposableKey.Key);
+        return _database.Remove(new string(disposableKey.Key));
     }
 
     /// <inheritdoc />

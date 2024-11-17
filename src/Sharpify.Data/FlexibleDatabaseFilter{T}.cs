@@ -105,7 +105,7 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     /// <inheritdoc />
     public bool Remove(ReadOnlySpan<char> key) {
         using var disposableKey = DisposableKey.Create(KeyFilter, key);
-        return _database.Remove(disposableKey.Key);
+        return _database.Remove(new string(disposableKey.Key));
     }
 
 
