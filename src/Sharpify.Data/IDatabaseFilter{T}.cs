@@ -12,7 +12,7 @@ public interface IDatabaseFilter<T> {
 	/// </summary>
 	/// <param name="key">The key to check.</param>
 	/// <returns><c>true</c> if the database contains the key; otherwise, <c>false</c>.</returns>
-	bool ContainsKey(string key);
+	bool ContainsKey(ReadOnlySpan<char> key);
 
 	/// <summary>
 	/// Gets the value for the specified key from the database.
@@ -20,7 +20,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to retrieve the value for.</param>
 	/// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValue(string key, out T value) => TryGetValue(key, string.Empty, out value);
+	bool TryGetValue(ReadOnlySpan<char> key, out T value) => TryGetValue(key, string.Empty, out value);
 
 	/// <summary>
 	/// Gets the value for the specified key from the database using the specified encryption key.
@@ -29,7 +29,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="encryptionKey">The encryption key to use.</param>
 	/// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValue(string key, string encryptionKey, out T value);
+	bool TryGetValue(ReadOnlySpan<char> key, string encryptionKey, out T value);
 
 	/// <summary>
     /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
@@ -39,7 +39,7 @@ public interface IDatabaseFilter<T> {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-	RentedBufferWriter<T> TryReadToRentedBuffer(string key, int reservedCapacity = 0) => TryReadToRentedBuffer(key, string.Empty, reservedCapacity);
+	RentedBufferWriter<T> TryReadToRentedBuffer(ReadOnlySpan<char> key, int reservedCapacity = 0) => TryReadToRentedBuffer(key, string.Empty, reservedCapacity);
 
 	/// <summary>
     /// Tries to get the values for the <paramref name="key"/> and write it to a <see cref="RentedBufferWriter{T}"/>
@@ -50,7 +50,7 @@ public interface IDatabaseFilter<T> {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-	RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0);
+	RentedBufferWriter<T> TryReadToRentedBuffer(ReadOnlySpan<char> key, string encryptionKey = "", int reservedCapacity = 0);
 
 	/// <summary>
 	/// Gets the values for the specified key from the database.
@@ -58,7 +58,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="key">The key to retrieve the value for.</param>
 	/// <param name="values">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValues(string key, out T[] values) => TryGetValues(key, string.Empty, out values);
+	bool TryGetValues(ReadOnlySpan<char> key, out T[] values) => TryGetValues(key, string.Empty, out values);
 
 	/// <summary>
 	/// Gets the values for the specified key from the database using the specified encryption key.
@@ -67,7 +67,7 @@ public interface IDatabaseFilter<T> {
 	/// <param name="encryptionKey">The encryption key to use.</param>
 	/// <param name="values">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter.</param>
 	/// <returns><c>true</c> if the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-	bool TryGetValues(string key, string encryptionKey, out T[] values);
+	bool TryGetValues(ReadOnlySpan<char> key, string encryptionKey, out T[] values);
 
 	/// <summary>
 	/// Upserts the value into the database.
@@ -82,7 +82,7 @@ public interface IDatabaseFilter<T> {
 	/// <returns>
 	/// False if the previous value exists, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-	bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null);
+	bool Upsert(ReadOnlySpan<char> key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -97,7 +97,7 @@ public interface IDatabaseFilter<T> {
 	/// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-	bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
+	bool UpsertMany(ReadOnlySpan<char> key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Upserts multiple values into the database under a single key.
@@ -109,14 +109,14 @@ public interface IDatabaseFilter<T> {
 	/// <returns>
 	/// False if the previous values exist, <paramref name="updateCondition"/> is not null, and the update condition is not met, otherwise True.
 	/// </returns>
-	bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
+	bool UpsertMany(ReadOnlySpan<char> key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null);
 
 	/// <summary>
 	/// Removes the item with the specified key from the filtered database.
 	/// </summary>
 	/// <param name="key">The key of the item to remove.</param>
 	/// <returns><c>true</c> if the item was successfully removed; otherwise, <c>false</c>.</returns>
-	bool Remove(string key);
+	bool Remove(ReadOnlySpan<char> key);
 
 	/// <summary>
     /// Removes all keys that match the <paramref name="keySelector"/>, while applying the key filtering

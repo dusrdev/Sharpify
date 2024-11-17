@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 using MemoryPack;
 
 using Sharpify.Collections;
@@ -20,14 +18,6 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     public static readonly string KeyFilter = $"{typeof(T).Name}:";
 
     /// <summary>
-    /// Creates a combined key (filter) for the specified key.
-    /// </summary>
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected string AcquireKey(ReadOnlySpan<char> key) {
-        return string.Intern(KeyFilter.Concat(key));
-    }
-
-    /// <summary>
     /// The database.
     /// </summary>
     protected readonly Database _database;
@@ -41,43 +31,51 @@ public class MemoryPackDatabaseFilter<T> : IDatabaseFilter<T> where T : IMemoryP
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(string key) {
-        return _database.ContainsKey(AcquireKey(key));
+    public bool ContainsKey(ReadOnlySpan<char> key) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.ContainsKey(disposableKey.Key);
     }
 
     /// <inheritdoc />
-    public bool TryGetValue(string key, string encryptionKey, out T value) {
-        return _database.TryGetValue(AcquireKey(key), encryptionKey, out value);
+    public bool TryGetValue(ReadOnlySpan<char> key, string encryptionKey, out T value) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.TryGetValue(disposableKey.Key, encryptionKey, out value);
     }
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[] values) {
-        return _database.TryGetValues(AcquireKey(key), encryptionKey, out values);
+    public bool TryGetValues(ReadOnlySpan<char> key, string encryptionKey, out T[] values) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.TryGetValues(disposableKey.Key, encryptionKey, out values);
     }
 
     /// <inheritdoc />
-    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
-        return _database.TryReadToRentedBuffer<T>(AcquireKey(key), encryptionKey, reservedCapacity);
+    public RentedBufferWriter<T> TryReadToRentedBuffer(ReadOnlySpan<char> key, string encryptionKey = "", int reservedCapacity = 0) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.TryReadToRentedBuffer<T>(disposableKey.Key, encryptionKey, reservedCapacity);
     }
 
     /// <inheritdoc />
-    public bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
-        return _database.Upsert(AcquireKey(key), value, encryptionKey, updateCondition);
+    public bool Upsert(ReadOnlySpan<char> key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.Upsert(disposableKey.Key, value, encryptionKey, updateCondition);
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
-        return _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
+    public bool UpsertMany(ReadOnlySpan<char> key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.UpsertMany(disposableKey.Key, values, encryptionKey, updateCondition);
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
-        return _database.UpsertMany(AcquireKey(key), values, encryptionKey, updateCondition);
+    public bool UpsertMany(ReadOnlySpan<char> key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.UpsertMany(disposableKey.Key, values, encryptionKey, updateCondition);
     }
 
     /// <inheritdoc />
-    public bool Remove(string key) {
-        return _database.Remove(AcquireKey(key));
+    public bool Remove(ReadOnlySpan<char> key) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.Remove(disposableKey.Key);
     }
 
     /// <inheritdoc />
