@@ -6,8 +6,9 @@ public sealed partial class Database {
     /// </summary>
     /// <param name="key"></param>
     /// <returns>True if the key was removed, false if it didn't exist or couldn't be removed.</returns>
-    public bool Remove(string key) {
-        if (!_data.Remove(key, out var val)) {
+    public bool Remove(ReadOnlySpan<char> key) {
+        var tKey = _alternateComparer.Create(key);
+        if (!_data.Remove(tKey, out var val)) {
             return false;
         }
         var estimatedSize = Helper.GetEstimatedSize(key, val);
@@ -18,7 +19,7 @@ public sealed partial class Database {
         }
         if (Config.TriggerUpdateEvents) {
             InvokeDataEvent(new DataChangedEventArgs {
-                Key = key,
+                Key = tKey,
                 Value = val,
                 ChangeType = DataChangeType.Remove
             });
