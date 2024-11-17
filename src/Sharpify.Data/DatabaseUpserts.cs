@@ -5,6 +5,8 @@ using MemoryPack;
 
 namespace Sharpify.Data;
 
+
+//TODO: Update overloads to use string.Empty
 public sealed partial class Database {
     /// <summary>
     /// Updates or inserts a new <paramref name="value"/> @ <paramref name="key"/>.
