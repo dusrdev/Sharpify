@@ -12,7 +12,7 @@ public sealed partial class Database {
     /// Checked whether the inner dictionary contains the <paramref name="key"/>.
     /// </summary>
     /// <param name="key"></param>
-    public bool ContainsKey(string key) => _data.ContainsKey(key);
+    public bool ContainsKey(ReadOnlySpan<char> key) => _lookup.ContainsKey(key);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -20,7 +20,7 @@ public sealed partial class Database {
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, out ReadOnlyMemory<byte> value) => TryGetValue(key, "", out value);
+    public bool TryGetValue(ReadOnlySpan<char> key, out ReadOnlyMemory<byte> value) => TryGetValue(key, string.Empty, out value);
 
     /// <summary>
     /// Tries to get the value for the <paramref name="key"/>.
@@ -29,9 +29,9 @@ public sealed partial class Database {
     /// <param name="encryptionKey">individual encryption key for this specific value</param>
     /// <param name="value"></param>
     /// <returns>True if the value was found, false if not.</returns>
-    public bool TryGetValue(string key, string encryptionKey, out ReadOnlyMemory<byte> value) {
+    public bool TryGetValue(ReadOnlySpan<char> key, string encryptionKey, out ReadOnlyMemory<byte> value) {
         // Get val reference
-        if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+        if (!_lookup.TryGetValue(key, out byte[]? val)) { // Not found
             value = ReadOnlyMemory<byte>.Empty;
             return false;
         }
@@ -53,7 +53,7 @@ public sealed partial class Database {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, int reservedCapacity = 0) {
+    public RentedBufferWriter<byte> TryReadToRentedBuffer(ReadOnlySpan<char> key, int reservedCapacity = 0) {
         return TryReadToRentedBuffer(key, string.Empty, reservedCapacity);
     }
 
@@ -67,9 +67,9 @@ public sealed partial class Database {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<byte> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
+    public RentedBufferWriter<byte> TryReadToRentedBuffer(ReadOnlySpan<char> key, string encryptionKey = "", int reservedCapacity = 0) {
         // Get val reference
-        if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+        if (!_lookup.TryGetValue(key, out byte[]? val)) { // Not found
             return new RentedBufferWriter<byte>(0);
         }
         if (encryptionKey.Length is 0) { // Not encrypted
@@ -92,7 +92,7 @@ public sealed partial class Database {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, out T value) where T : IMemoryPackable<T> {
+    public bool TryGetValue<T>(ReadOnlySpan<char> key, out T value) where T : IMemoryPackable<T> {
         return TryGetValue(key, string.Empty, out value);
     }
 
@@ -105,9 +105,9 @@ public sealed partial class Database {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
+    public bool TryGetValue<T>(ReadOnlySpan<char> key, string encryptionKey, out T value) where T : IMemoryPackable<T> {
         // Get val reference
-        if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+        if (!_lookup.TryGetValue(key, out byte[]? val)) { // Not found
             value = default!;
             return false;
         }
@@ -136,7 +136,7 @@ public sealed partial class Database {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, out T[] value) where T : IMemoryPackable<T> {
+    public bool TryGetValues<T>(ReadOnlySpan<char> key, out T[] value) where T : IMemoryPackable<T> {
         return TryGetValues(key, string.Empty, out value);
     }
 
@@ -149,9 +149,9 @@ public sealed partial class Database {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="values">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValues<T>(string key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> {
+    public bool TryGetValues<T>(ReadOnlySpan<char> key, string encryptionKey, out T[] values) where T : IMemoryPackable<T> {
         // Get val reference
-        if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
+        if (!_lookup.TryGetValue(key, out byte[]? val)) { // Not found
             values = Array.Empty<T>();
             return false;
         }
@@ -181,7 +181,7 @@ public sealed partial class Database {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, int reservedCapacity = 0) where T : IMemoryPackable<T> {
+    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(ReadOnlySpan<char> key, int reservedCapacity = 0) where T : IMemoryPackable<T> {
         return TryReadToRentedBuffer<T>(key, string.Empty, reservedCapacity);
     }
 
@@ -195,7 +195,7 @@ public sealed partial class Database {
     /// <returns>
     /// A rented buffer writer containing the values if they were found, otherwise a disabled buffer writer (can be checked with <see cref="RentedBufferWriter{T}.IsDisabled"/>)
     /// </returns>
-    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(string key, string encryptionKey = "", int reservedCapacity = 0) where T : IMemoryPackable<T> {
+    public RentedBufferWriter<T> TryReadToRentedBuffer<T>(ReadOnlySpan<char> key, string encryptionKey = "", int reservedCapacity = 0) where T : IMemoryPackable<T> {
         if (!TryGetValue(key, encryptionKey, out ReadOnlyMemory<byte> data)) {
             return new RentedBufferWriter<T>(0);
         }
@@ -212,7 +212,7 @@ public sealed partial class Database {
     /// <param name="key">The key used to identify the object in the database.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetString(string key, out string value) {
+    public bool TryGetString(ReadOnlySpan<char> key, out string value) {
         return TryGetString(key, string.Empty, out value);
     }
 
@@ -224,10 +224,10 @@ public sealed partial class Database {
     /// <param name="encryptionKey">The encryption key used to decrypt the object if it is encrypted.</param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetString(string key, string encryptionKey, out string value) {
+    public bool TryGetString(ReadOnlySpan<char> key, string encryptionKey, out string value) {
         // Get val reference
-        if (!_data.TryGetValue(key, out byte[]? val)) { // Not found
-            value = "";
+        if (!_lookup.TryGetValue(key, out byte[]? val)) { // Not found
+            value = string.Empty;
             return false;
         }
         ReadOnlySpan<byte> valSpan = val;
@@ -255,7 +255,7 @@ public sealed partial class Database {
     /// <param name="jsonTypeInfo"></param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, JsonTypeInfo<T> jsonTypeInfo, out T value) {
+    public bool TryGetValue<T>(ReadOnlySpan<char> key, JsonTypeInfo<T> jsonTypeInfo, out T value) {
         return TryGetValue(key, string.Empty, jsonTypeInfo, out value);
     }
 
@@ -268,7 +268,7 @@ public sealed partial class Database {
     /// <param name="jsonTypeInfo"></param>
     /// <param name="value">The retrieved object of type T, or default if the object does not exist.</param>
     /// <returns>True if the value was found, otherwise false.</returns>
-    public bool TryGetValue<T>(string key, string encryptionKey, JsonTypeInfo<T> jsonTypeInfo, out T value) {
+    public bool TryGetValue<T>(ReadOnlySpan<char> key, string encryptionKey, JsonTypeInfo<T> jsonTypeInfo, out T value) {
         if (!TryGetValue(key, encryptionKey, out ReadOnlyMemory<byte> bytes)) {
             value = default!;
             return false;

@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Trimming", "IL2091:Target generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in target method or type. The generic parameter of the source method or type does not have matching annotations.", Justification = "See \"NativeAot Guide\" in the README.md", Scope = "member", Target = "~M:Sharpify.Data.Database.TryGetValue``1(System.String,System.String,``0@)~System.Boolean")]
+[assembly: SuppressMessage("Trimming", "IL2091:Target generic argument does not satisfy 'DynamicallyAccessedMembersAttribute' in target method or type. The generic parameter of the source method or type does not have matching annotations.", Justification = "<Pending>", Scope = "member", Target = "~M:Sharpify.Data.Database.TryGetValue``1(System.ReadOnlySpan{System.Char},System.String,``0@)~System.Boolean")]
