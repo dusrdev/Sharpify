@@ -20,6 +20,8 @@ public sealed partial class Database {
 
     private readonly ConcurrentDictionary<string, byte[]?> _data;
 
+    private readonly ConcurrentDictionary<string, byte[]?>.AlternateLookup<ReadOnlySpan<char>> _lookup;
+
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
     // The updates count increments every time a value is updated, added or removed.
@@ -110,6 +112,7 @@ public sealed partial class Database {
         _serializer = serializer;
         _isInMemory = config.Path.Length == 0;
         Interlocked.Exchange(ref _estimatedSize, estimatedSize);
+        _lookup = new ConcurrentDictionary<string, byte[]?>.AlternateLookup<ReadOnlySpan<char>>();
     }
 
     static Database() {
