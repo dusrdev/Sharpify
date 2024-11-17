@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 using Sharpify.Collections;
 
 namespace Sharpify.Data;
@@ -18,14 +16,6 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     public static readonly string KeyFilter = $"{typeof(T).Name}:";
 
     /// <summary>
-    /// Creates a combined key (filter) for the specified key.
-    /// </summary>
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected string AcquireKey(ReadOnlySpan<char> key) {
-        return string.Intern(KeyFilter.Concat(key));
-    }
-
-    /// <summary>
     /// The database.
     /// </summary>
     protected readonly Database _database;
@@ -39,14 +29,16 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool ContainsKey(string key) {
-        return _database.ContainsKey(AcquireKey(key));
+    public bool ContainsKey(ReadOnlySpan<char> key) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.ContainsKey(disposableKey.Key);
     }
 
 
     /// <inheritdoc />
-    public bool TryGetValue(string key, string encryptionKey, out T value) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out var data)) {
+    public bool TryGetValue(ReadOnlySpan<char> key, string encryptionKey, out T value) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        if (!_database.TryGetValue(disposableKey.Key, encryptionKey, out var data)) {
             value = default!;
             return false;
         }
@@ -55,8 +47,9 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool TryGetValues(string key, string encryptionKey, out T[] values) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out ReadOnlyMemory<byte> data)) {
+    public bool TryGetValues(ReadOnlySpan<char> key, string encryptionKey, out T[] values) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        if (!_database.TryGetValue(disposableKey.Key, encryptionKey, out ReadOnlyMemory<byte> data)) {
             values = default!;
             return false;
         }
@@ -65,8 +58,9 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public RentedBufferWriter<T> TryReadToRentedBuffer(string key, string encryptionKey = "", int reservedCapacity = 0) {
-        if (!_database.TryGetValue(AcquireKey(key), encryptionKey, out ReadOnlyMemory<byte> data)) {
+    public RentedBufferWriter<T> TryReadToRentedBuffer(ReadOnlySpan<char> key, string encryptionKey = "", int reservedCapacity = 0) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        if (!_database.TryGetValue(disposableKey.Key, encryptionKey, out ReadOnlyMemory<byte> data)) {
             return new RentedBufferWriter<T>(0);
         }
         T[] values = T.DeserializeMany(data.Span)!;
@@ -76,19 +70,21 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
     }
 
     /// <inheritdoc />
-    public bool Upsert(string key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
+    public bool Upsert(ReadOnlySpan<char> key, T value, string encryptionKey = "", Func<T, bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
         if (updateCondition is not null) {
             if (TryGetValue(key, encryptionKey, out var existingValue) && !updateCondition(existingValue)) {
                 return false;
             }
         }
         var bytes = T.Serialize(value)!;
-        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
+        _database.Upsert(disposableKey.Key, bytes, encryptionKey);
         return true;
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+    public bool UpsertMany(ReadOnlySpan<char> key, T[] values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
         ArgumentNullException.ThrowIfNull(values, nameof(values));
         if (updateCondition is not null) {
             if (TryGetValues(key, encryptionKey, out var existingValues) && !updateCondition(existingValues)) {
@@ -96,18 +92,20 @@ public class FlexibleDatabaseFilter<T> : IDatabaseFilter<T> where T : IFilterabl
             }
         }
         var bytes = T.SerializeMany(values)!;
-        _database.Upsert(AcquireKey(key), bytes, encryptionKey);
+        _database.Upsert(disposableKey.Key, bytes, encryptionKey);
         return true;
     }
 
     /// <inheritdoc />
-    public bool UpsertMany(string key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+    public bool UpsertMany(ReadOnlySpan<char> key, ReadOnlySpan<T> values, string encryptionKey = "", Func<T[], bool>? updateCondition = null) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
         return UpsertMany(key, values.ToArray(), encryptionKey, updateCondition);
     }
 
     /// <inheritdoc />
-    public bool Remove(string key) {
-        return _database.Remove(AcquireKey(key));
+    public bool Remove(ReadOnlySpan<char> key) {
+        using var disposableKey = DisposableKey.Create(KeyFilter, key);
+        return _database.Remove(disposableKey.Key);
     }
 
 
