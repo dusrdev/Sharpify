@@ -22,7 +22,7 @@ public sealed partial class Database {
         if (_isInMemory) {
             return false;
         }
-        lock (_sLock) {
+        lock (_lock) {
             if (_updatesCount == _serializationReference) {
                 return false;
             }

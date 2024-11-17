@@ -12,7 +12,7 @@ namespace Sharpify.Data;
 /// <remarks>
 /// Do not create this class directly or by using an activator, the factory methods are required for proper initializations using different abstractions.
 /// </remarks>
-public sealed partial class Database : IDisposable {
+public sealed partial class Database {
     /// <summary>
     /// The unique identifier of the database.
     /// </summary>
@@ -22,20 +22,14 @@ public sealed partial class Database : IDisposable {
 
     private readonly ConcurrentQueue<KeyValuePair<string, byte[]>> _queue = new();
 
-    private volatile bool _disposed;
-
     // The updates count increments every time a value is updated, added or removed.
     private long _updatesCount = 0;
 
     // The serialization reference is checking against the updates to reduce redundant serialization.
     private long _serializationReference = 0;
 
-#if NET9_0_OR_GREATER
-    private readonly Lock _sLock = new();
-#else
-    private readonly object _sLock = new();
-#endif
-    private readonly ReaderWriterLockSlim _lock = new();
+    private readonly Lock _lock = new();
+
     private readonly AbstractSerializer _serializer;
     private volatile int _estimatedSize;
 
@@ -146,16 +140,5 @@ public sealed partial class Database : IDisposable {
     /// </summary>
     public IReadOnlyCollection<string> GetKeys() {
         return (IReadOnlyCollection<string>)_data.Keys;
-    }
-
-    /// <summary>
-    /// Frees the resources used by the database.
-    /// </summary>
-    public void Dispose() {
-        if (_disposed) {
-            return;
-        }
-        _lock.Dispose();
-        _disposed = true;
     }
 }

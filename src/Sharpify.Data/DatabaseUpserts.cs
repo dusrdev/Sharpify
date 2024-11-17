@@ -203,9 +203,8 @@ public sealed partial class Database {
     // Essentially synchronizing concurrent writes.
     // While the inner sequential addition to the dictionary makes it thread safe.
     private void EmptyQueue() {
-        try {
-            _lock.EnterWriteLock();
-            nint itemsAdded = 0;
+        nint itemsAdded = 0;
+        lock (_lock) {
             while (_queue.TryDequeue(out var kvp)) {
                 _data[kvp.Key] = kvp.Value;
                 itemsAdded++;
@@ -213,11 +212,9 @@ public sealed partial class Database {
                 Interlocked.Add(ref _estimatedSize, estimatedSize);
                 Interlocked.Increment(ref _updatesCount);
             }
-            if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
-                Serialize();
-            }
-        } finally {
-            _lock.ExitWriteLock();
+        }
+        if (itemsAdded is not 0 && Config.SerializeOnUpdate) {
+            Serialize();
         }
     }
 }
