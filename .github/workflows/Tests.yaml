@@ -2,6 +2,7 @@ name: Tests
 
 on:
   push:
+    branches: [ "stable", "pre-release" ]
   pull_request:
   workflow_dispatch:
 
