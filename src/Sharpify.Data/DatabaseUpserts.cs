@@ -217,6 +217,10 @@ public sealed partial class Database {
             Interlocked.Increment(ref _updatesCount);
         }
 
+        if (!Config.SerializeOnUpdate) {
+            return;
+        }
+
         // sync serialization to allow concurrent writing threads (1+) to skip serialization
         // serialize will check if needed by update count
         lock (_lock) {
