@@ -1,35 +1,33 @@
 namespace Sharpify.Data.Tests;
 
 public class DatabaseIgnoreCaseTests {
-    private static Func<string, FactoryResult<Database>> Factory => p => {
+    private static Func<string, (Database, string)> Factory => p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = Database.CreateOrLoad(new() {
+        return (Database.CreateOrLoad(new() {
             Path = path,
             IgnoreCase = true,
             SerializeOnUpdate = true,
             TriggerUpdateEvents = true,
-        });
-        return new(path, database);
+        }), path);
     };
 
-    private static Func<string, Task<FactoryResult<Database>>> AsyncFactory => async p => {
+    private static Func<string, ValueTask<(Database, string)>> AsyncFactory => async p => {
         var path = p.Length is 0 ?
                     Path.GetTempFileName()
                     : p;
-        var database = await Database.CreateOrLoadAsync(new() {
+        return (await Database.CreateOrLoadAsync(new() {
             Path = path,
             IgnoreCase = true,
             SerializeOnUpdate = false,
             TriggerUpdateEvents = false,
-        });
-        return new(path, database);
+        }), path);
     };
 
     [Fact]
     public void SerializeAndDeserialize() {
-        using var database = Database.CreateOrLoad(new() {
+        var database = Database.CreateOrLoad(new() {
             Path = Path.GetTempFileName(),
             EncryptionKey = "test",
             IgnoreCase = true,
@@ -37,9 +35,8 @@ public class DatabaseIgnoreCaseTests {
 
         database.Upsert("test", new Person("David", 27));
         database.Serialize();
-        var length = new FileInfo(database.Config.Path).Length;
 
-        using var database2 = Database.CreateOrLoad(new() {
+        var database2 = Database.CreateOrLoad(new() {
             Path = database.Config.Path,
             EncryptionKey = "test",
             IgnoreCase = true,
@@ -52,129 +49,129 @@ public class DatabaseIgnoreCaseTests {
     [Fact]
     public async Task AsyncSerializeDeserialize() {
         // Arrange
-        using var db = await AsyncFactory("");
+        var (db, path) = await AsyncFactory(string.Empty);
 
         // Act
-        db.Database.Upsert("test", new Person("David", 27));
+        db.Upsert("test", new Person("David", 27));
 
-        await db.Database.SerializeAsync();
+        await db.SerializeAsync();
 
         // Arrange
-        using var db2 = await AsyncFactory(db.Path);
+        var (db2, _) = await AsyncFactory(path);
 
         // Assert
-        db2.Database.TryGetValue("TEST", out Person result).Should().BeTrue();
+        db2.TryGetValue("test", out Person result).Should().BeTrue();
         result.Should().Be(new Person("David", 27));
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void Upsert() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test");
-        db.Database.Serialize();
+        db.Upsert("test", "test");
+        db.Serialize();
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetString("TEST", out string result).Should().BeTrue();
+        db2.TryGetString("TEST", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void UpsertEncrypted() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test", "enc");
-        db.Database.Serialize();
+        db.Upsert("test", "test", "enc");
+        db.Serialize();
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetString("TEST", "enc", out string result).Should().BeTrue();
+        db2.TryGetString("TEST", "enc", out string result).Should().BeTrue();
         result.Should().Be("test");
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void UpsertBytes() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        byte[] bytes = [1, 2, 3, 4, 5];
-        db.Database.Upsert("test", bytes);
+        var bytes = new byte[] { 1, 2, 3, 4, 5 };
+        db.Upsert("test", bytes);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetValue("TEST", out var result).Should().BeTrue();
+        db2.TryGetValue("TEST", out var result).Should().BeTrue();
         result.Span.SequenceEqual(bytes).Should().BeTrue();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void UpsertMemoryPackable() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
-        db.Database.Upsert("1", p1);
+        db.Upsert("1", p1);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetValue<Person>("1", out var p2).Should().BeTrue();
+        db2.TryGetValue<Person>("1", out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void UpsertMany() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
-        db.Database.UpsertMany("1", new []{ p1, p2 });
+        db.UpsertMany("1", [p1, p2]);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
+        db2.TryGetValues<Person>("1", out var arr).Should().BeTrue();
         arr.Should().ContainInOrder(p1, p2);
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void UpsertJson() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
         var p1 = new Color {
@@ -183,186 +180,172 @@ public class DatabaseIgnoreCaseTests {
             Green = 0,
             Blue = 0
         };
-        db.Database.Upsert("1", p1, JsonContext.Default.Color);
+        db.Upsert("1", p1, JsonContext.Default.Color);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2).Should().BeTrue();
+        db2.TryGetValue("1", JsonContext.Default.Color, out var p2).Should().BeTrue();
         p2.Should().Be(p1);
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void GeneralFilterTest() {
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
         var p1 = new Person("David", 27);
         var d1 = new Dog("Buddy", 5);
 
-        db.Database.CreateMemoryPackFilter<Person>().Upsert("David", p1);
-        db.Database.CreateMemoryPackFilter<Dog>().Upsert("Buddy", d1);
+        db.CreateMemoryPackFilter<Person>().Upsert("David", p1);
+        db.CreateMemoryPackFilter<Dog>().Upsert("Buddy", d1);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.ContainsKey("David").Should().BeFalse();
-        db2.Database.ContainsKey("Buddy").Should().BeFalse();
-        db.Database.CreateMemoryPackFilter<Person>().TryGetValue("DAVID", out var p2).Should().BeTrue();
-        db.Database.CreateMemoryPackFilter<Dog>().TryGetValue("BUDDY", out var d2).Should().BeTrue();
+        db2.ContainsKey("David").Should().BeFalse();
+        db2.ContainsKey("Buddy").Should().BeFalse();
+        db.CreateMemoryPackFilter<Person>().TryGetValue("DAVID", out var p2).Should().BeTrue();
+        db.CreateMemoryPackFilter<Dog>().TryGetValue("BUDDY", out var d2).Should().BeTrue();
         p2.Should().Be(p1);
         d2.Should().Be(d1);
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public async Task UpsertConcurrently() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
         var items = Enumerable.Range(0, 100).ToArray();
-        var test = new ConcurrentTest(db.Database);
+        var test = new ConcurrentDatabaseTest(db);
         await items.ForAllAsync(test);
 
         // Arrange
-        using var db2 = Factory(db.Path);
+        var (db2, _) = Factory(path);
 
         // Assert
-        db2.Database.Count.Should().Be(100);
+        db2.Count.Should().Be(100);
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void Contains() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test");
+        db.Upsert("test", "test");
 
         // Assert
-        db.Database.ContainsKey("TEST").Should().BeTrue();
+        db.ContainsKey("TEST").Should().BeTrue();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void ContainsFiltered() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("TEST").Should().BeTrue();
+        db.CreateMemoryPackFilter<Person>().ContainsKey("TEST").Should().BeTrue();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void Remove() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test");
-        db.Database.Remove("test");
+        db.Upsert("test", "test");
+        db.Remove("test");
 
         // Assert
-        db.Database.ContainsKey("TEST").Should().BeFalse();
+        db.ContainsKey("TEST").Should().BeFalse();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void RemovePredicate() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test");
-        db.Database.Remove(key => key == "test");
+        db.Upsert("test", "test");
+        db.Remove(key => key == "test");
 
         // Assert
-        db.Database.ContainsKey("test").Should().BeFalse();
+        db.ContainsKey("test").Should().BeFalse();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void RemoveFiltered() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
-        db.Database.CreateMemoryPackFilter<Person>().Remove("test");
+        db.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.CreateMemoryPackFilter<Person>().Remove("test");
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("TEST").Should().BeFalse();
+        db.CreateMemoryPackFilter<Person>().ContainsKey("TEST").Should().BeFalse();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void RemoveFilteredPredicate() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
-        db.Database.CreateMemoryPackFilter<Person>().Remove(key => key == "test");
+        db.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
+        db.CreateMemoryPackFilter<Person>().Remove(key => key == "test");
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
+        db.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
 
         // Cleanup
-        File.Delete(db.Path);
+        File.Delete(path);
     }
 
     [Fact]
     public void Clear() {
         // Arrange
-        using var db = Factory("");
+        var (db, path) = Factory("");
 
         // Act
-        db.Database.Upsert("test", "test");
-        db.Database.Clear();
+        db.Upsert("test", "test");
+        db.Clear();
 
         // Assert
-        db.Database.ContainsKey("TEST").Should().BeFalse();
+        db.ContainsKey("TEST").Should().BeFalse();
 
         // Cleanup
-        File.Delete(db.Path);
-    }
-
-    private class ConcurrentTest : IAsyncAction<int> {
-        private readonly Database _database;
-
-        public ConcurrentTest(Database database) {
-            _database = database;
-        }
-
-        public Task InvokeAsync(int item, CancellationToken token = default) {
-            var rnd = Random.Shared.Next(10_000, 200_000);
-            _database.Upsert(item.ToString(), rnd.ToString());
-            return Task.CompletedTask;
-        }
+        File.Delete(path);
     }
 }
