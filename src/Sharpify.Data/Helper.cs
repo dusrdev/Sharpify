@@ -128,14 +128,6 @@ internal sealed class Helper : IDisposable {
 	}
 
 	/// <summary>
-	/// Gets the estimated size of the key-value pair.
-	/// </summary>
-	/// <param name="kvp"></param>
-	public static int GetEstimatedSize(KeyValuePair<string, byte[]> kvp)
-		=> GetEstimatedSize(kvp.Key, kvp.Value);
-
-
-	/// <summary>
 	/// Gets the estimated size of a key-value pair.
 	/// </summary>
 	/// <param name="key"></param>
