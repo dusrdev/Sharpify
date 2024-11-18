@@ -27,8 +27,7 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         using var decryptedBuffer = new RentedBufferWriter<byte>(rawSpan.Length);
         int decryptedRead = Helper.Instance.Decrypt(rawSpan, decryptedBuffer.GetSpan(), _key);
         decryptedBuffer.Advance(decryptedRead);
-        ReadOnlySpan<byte> decrypted = decryptedBuffer.WrittenSpan;
-        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decrypted);
+        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(decryptedBuffer.WrittenSpan, SerializerOptions);
         return dict;
     }
 
@@ -37,13 +36,15 @@ internal class IgnoreCaseEncryptedSerializer : EncryptedSerializer {
         if (estimatedSize is 0) {
             return new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
-        using var buffer = new RentedBufferWriter<byte>(estimatedSize);
-        using var file = new FileStream(_path, FileMode.Open);
-        using ICryptoTransform transform = Helper.Instance.GetDecryptor(_key);
-        using var cryptoStream = new CryptoStream(file, transform, CryptoStreamMode.Read);
-        int numRead = await cryptoStream.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
-        buffer.Advance(numRead);
-        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(buffer.WrittenMemory);
+        using var encryptedBuffer = new RentedBufferWriter<byte>(estimatedSize);
+        await using var file = new FileStream(_path, FileMode.Open);
+        int encryptedRead = await file.ReadAsync(encryptedBuffer.GetMemory(), cancellationToken);
+        encryptedBuffer.Advance(encryptedRead);
+        var encrypted = encryptedBuffer.WrittenSpan;
+        using var rawBuffer = new RentedBufferWriter<byte>(encrypted.Length);
+        int rawRead = Helper.Instance.Decrypt(encrypted, rawBuffer.GetSpan(), _key);
+        rawBuffer.Advance(rawRead);
+        ConcurrentDictionary<string, byte[]?> dict = IgnoreCaseSerializer.FromSpan(rawBuffer.WrittenSpan, SerializerOptions);
         return dict;
     }
 }

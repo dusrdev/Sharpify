@@ -14,17 +14,12 @@ internal class IgnoreCaseSerializer : Serializer {
     internal IgnoreCaseSerializer(string path, StringEncoding encoding = StringEncoding.Utf8) : base(path, encoding) {
     }
 
-    internal static ConcurrentDictionary<string, byte[]?> FromSpan(ReadOnlyMemory<byte> bin) {
-        ReadOnlySpan<byte> data = bin.Span;
-        return FromSpan(data);
-    }
-
-    internal static ConcurrentDictionary<string, byte[]?> FromSpan(ReadOnlySpan<byte> bin) {
+    internal static ConcurrentDictionary<string, byte[]?> FromSpan(ReadOnlySpan<byte> bin, MemoryPackSerializerOptions options) {
         if (bin.Length is 0) {
             return new ConcurrentDictionary<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
         }
         var formatter = new ConcurrentDictionaryFormatter<string, byte[]?>(StringComparer.OrdinalIgnoreCase);
-        var state = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
+        var state = MemoryPackReaderOptionalStatePool.Rent(options);
         var reader = new MemoryPackReader(bin, state);
         ConcurrentDictionary<string, byte[]?>? dict = null;
         formatter.Deserialize(ref reader, ref dict);
@@ -40,8 +35,7 @@ internal class IgnoreCaseSerializer : Serializer {
         using var file = new FileStream(_path, FileMode.Open);
         int numRead = file.Read(buffer.Buffer, 0, estimatedSize);
         buffer.Advance(numRead);
-        ReadOnlySpan<byte> deserialized = buffer.WrittenSpan;
-        ConcurrentDictionary<string, byte[]?> dict = FromSpan(deserialized);
+        ConcurrentDictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan, SerializerOptions);
         return dict;
     }
 
@@ -54,7 +48,7 @@ internal class IgnoreCaseSerializer : Serializer {
         using var file = new FileStream(_path, FileMode.Open);
         int numRead = await file.ReadAsync(buffer.GetMemory(), cancellationToken).ConfigureAwait(false);
         buffer.Advance(numRead);
-        ConcurrentDictionary<string, byte[]?> dict = FromSpan(buffer.WrittenMemory);
+        ConcurrentDictionary<string, byte[]?> dict = FromSpan(buffer.WrittenSpan, SerializerOptions);
         return dict;
     }
 }
