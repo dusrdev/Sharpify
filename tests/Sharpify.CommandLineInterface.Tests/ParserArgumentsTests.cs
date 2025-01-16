@@ -5,7 +5,7 @@ namespace Sharpify.CommandLineInterface.Tests;
 public class ParserArgumentsTests {
 	[Fact]
 	public void Split_WhenEmpty_ReturnsEmptyList() {
-		Parser.Split("").IsDisabled.Should().BeTrue();
+		Assert.True(Parser.Split("").IsDisabled);
 	}
 
 	[Theory]
@@ -14,7 +14,7 @@ public class ParserArgumentsTests {
 	[InlineData("\"hello world\"", new[] { "hello world" })]
 	[InlineData("\"hello world\" \"hello world\"", new[] { "hello world", "hello world" })]
 	public void Split_WhenValid_ReturnsValid(string input, string[] expected) {
-		Parser.Split(input).WrittenSpan.SequenceEqual(expected).Should().BeTrue();
+		Assert.Equal(expected, Parser.Split(input).WrittenSpan);
 	}
 
 	[Fact]
@@ -40,103 +40,103 @@ public class ParserArgumentsTests {
 		for (var i = 0; i < args.Length; i++) {
 			var localArgs = args[i];
 			var localArguments = Parser.MapArguments(localArgs, StringComparer.CurrentCultureIgnoreCase);
-			localArguments.Should().BeEquivalentTo(expected[i]);
+			Assert.Equal(expected[i], localArguments);
 		}
 	}
 
 	[Fact]
 	public void Parse_WhenEmpty_ReturnsNull() {
-		Parser.ParseArguments("").Should().BeNull();
+		Assert.Null(Parser.ParseArguments(""));
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Command_Name() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue(0, out var command).Should().BeTrue();
-		command.Should().Be("command");
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue(0, out var command));
+		Assert.Equal("command", command);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Named_Argument() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue("message", out var message).Should().BeTrue();
-		message.Should().Be("hello world");
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue("message", out var message));
+		Assert.Equal("hello world", message);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Named_Argument_Multiple() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValues("message", " ", out var message).Should().BeTrue();
-		message.Should().BeEquivalentTo(["hello", "world"]);
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValues("message", " ", out var message));
+		Assert.Equal(["hello", "world"], message);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Named_Argument_With_Aliases() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue(["message", "m"], out var message).Should().BeTrue();
-		message.Should().Be("hello world");
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue(["message", "m"], out var message));
+		Assert.Equal("hello world", message);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Named_Argument_With_Aliases_Inverted() {
 		const string input = "command -m \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue(["message", "m"], out var message).Should().BeTrue();
-		message.Should().Be("hello world");
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue(["message", "m"], out var message));
+		Assert.Equal("hello world", message);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Named_Argument_Integer_WithDefault() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue("code", 12, out var code).Should().BeTrue();
-		code.Should().Be(404);
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue("code", 12, out var code));
+		Assert.Equal(404, code);
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_With_Flag() {
 		const string input = "command --message \"hello world\" --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.HasFlag("force").Should().BeTrue();
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.HasFlag("force"));
 	}
 
 	[Fact]
 	public void Parse_And_Arguments_Positional_Negative_Numeric() {
 		const string input = "command -5 -9";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
-		arguments!.TryGetValue(1, 0, out int num).Should().BeTrue();
-		num.Should().Be(-5);
-		arguments!.TryGetValue(2, 0, out int num2).Should().BeTrue();
-		num2.Should().Be(-9);
+		Assert.NotNull(arguments);
+		Assert.True(arguments!.TryGetValue(1, 0, out int num));
+		Assert.Equal(-5, num);
+		Assert.True(arguments!.TryGetValue(2, 0, out int num2));
+		Assert.Equal(-9, num2);
 	}
 
 	[Fact]
 	public void Arguments_ForwardPositional_Works() {
 		const string input = "command delete --code 404 --force";
 		var arguments = Parser.ParseArguments(input);
-		arguments.Should().NotBeNull();
+		Assert.NotNull(arguments);
 		var containsCommandAtPosition0 = arguments!.TryGetValue(0, out var command);
-		containsCommandAtPosition0.Should().BeTrue();
-		command.Should().Be("command");
+		Assert.True(containsCommandAtPosition0);
+		Assert.Equal("command", command);
 		var containsDelete = arguments.TryGetValue(1, out var delete);
-		containsDelete.Should().BeTrue();
-		delete.Should().Be("delete");
+		Assert.True(containsDelete);
+		Assert.Equal("delete", delete);
 		var forwarded = arguments.ForwardPositionalArguments();
-		forwarded.Should().NotBeNull();
+		Assert.NotNull(forwarded);
 		var first = forwarded!.TryGetValue(0, out var firstArg);
-		first.Should().BeTrue();
-		firstArg.Should().Be("delete");
+		Assert.True(first);
+		Assert.Equal("delete", firstArg);
 	}
 }

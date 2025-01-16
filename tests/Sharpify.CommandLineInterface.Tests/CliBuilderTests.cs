@@ -9,14 +9,14 @@ public class CliBuilderTests {
 	public void Build_WhenEmpty_ReturnsEmpty() {
 		var action = () => CliRunner.CreateBuilder().Build();
 
-		action.Should().Throw<InvalidOperationException>();
+		Assert.Throws<InvalidOperationException>(action);
 	}
 
 	[Fact]
 	public void Build_WhenNotEmpty_ReturnsCliRunner() {
 		var action = () => CliRunner.CreateBuilder().AddCommand(new EchoCommand()).Build();
 
-		action.Should().NotThrow<InvalidOperationException>();
+		action();
 	}
 
 	[Fact]
@@ -25,7 +25,7 @@ public class CliBuilderTests {
 
 		var cliRunner = CliRunner.CreateBuilder().AddCommand(echo).Build();
 
-		cliRunner.Commands.Should().Contain(echo);
+		Assert.Contains(echo, cliRunner.Commands);
 	}
 
 	[Fact]
@@ -39,7 +39,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("echo --help");
 
-		writer.ToString().Should().Contain("echo <message>");
+		Assert.Contains("echo <message>", writer.ToString());
 	}
 
 	[Fact]
@@ -61,12 +61,12 @@ public class CliBuilderTests {
 		await cliRunner.RunAsync("help", false);
 
 		var output = writer.ToString();
-		output.Should().Contain("Single");
-		output.Should().Contain("A single command");
-		output.Should().Contain("Version: 1.0.0");
-		output.Should().Contain("Author: David");
-		output.Should().Contain("License: MIT");
-		output.Should().Contain(single.Usage);
+		Assert.Contains("Single", output);
+		Assert.Contains("A single command", output);
+		Assert.Contains("Version: 1.0.0", output);
+		Assert.Contains("Author: David", output);
+		Assert.Contains("License: MIT", output);
+		Assert.Contains(single.Usage, output);
 	}
 
 	[Theory]
@@ -82,7 +82,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync(input, false);
 
-		writer.ToString().Should().Contain(single.Usage);
+		Assert.Contains(single.Usage, writer.ToString());
 	}
 
 	[Theory]
@@ -99,7 +99,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync(input, false);
 
-		writer.ToString().Should().Contain("Version: 1.0.0");
+		Assert.Contains("Version: 1.0.0", writer.ToString());
 	}
 
 	[Fact]
@@ -115,8 +115,8 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("--help");
 
-		writer.ToString().Should().Contain("Echo");
-		writer.ToString().Should().Contain("Add");
+		Assert.Contains("Echo", writer.ToString());
+		Assert.Contains("Add", writer.ToString());
 	}
 
 	[Fact]
@@ -130,7 +130,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync(["add", "1", "2"]);
 
-		writer.ToString().Should().Contain("3");
+		Assert.Contains("3", writer.ToString());
 	}
 
 	[Fact]
@@ -147,7 +147,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("help");
 
-		writer.ToString().Should().Contain("Dave");
+		Assert.Contains("Dave", writer.ToString());
 	}
 
 	[Fact]
@@ -164,7 +164,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("--help");
 
-		writer.ToString().Should().Contain("Dave");
+		Assert.Contains("Dave", writer.ToString());
 	}
 
 	[Fact]
@@ -184,7 +184,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("version");
 
-		writer.ToString().Should().Contain("Version: 1.0.0");
+		Assert.Contains("Version: 1.0.0", writer.ToString());
 	}
 
 	[Fact]
@@ -204,7 +204,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("--version");
 
-		writer.ToString().Should().Contain("Version: 1.0.0");
+		Assert.Contains("Version: 1.0.0", writer.ToString());
 	}
 
 	[Fact]
@@ -222,7 +222,7 @@ public class CliBuilderTests {
                            .Build();
 		await cliRunner.RunAsync("--help");
 
-		writer.ToString().Should().Contain("Dave");
+		Assert.Contains("Dave", writer.ToString());
 	}
 
 	[Fact]
@@ -240,9 +240,9 @@ public class CliBuilderTests {
 						   .SetOutputWriter(writer)
 						   .Build();
 		var copy = cliRunner.Commands;
-		copy[0].Should().Be(add);
-		copy[1].Should().Be(echo);
-		copy[2].Should().Be(sAdd);
+		Assert.Equal(add, copy[0]);
+		Assert.Equal(echo, copy[1]);
+		Assert.Equal(sAdd, copy[2]);
 	}
 
 	[Fact]
@@ -255,8 +255,8 @@ public class CliBuilderTests {
 						   .Build();
 		var exitCode = await cliRunner.RunAsync("", false);
 
-		exitCode.Should().Be(0);
-		value.Value.Should().BeTrue();
+		Assert.Equal(0, exitCode);
+		Assert.True(value.Value);
 	}
 
 	[Fact]
@@ -268,6 +268,6 @@ public class CliBuilderTests {
 						   .Build();
 		var exitCode = await cliRunner.RunAsync("aDD 1 2");
 
-		exitCode.Should().NotBe(0);
+		Assert.NotEqual(0, exitCode);
 	}
 }
