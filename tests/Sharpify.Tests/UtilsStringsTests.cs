@@ -16,7 +16,7 @@ public partial class UtilsTests {
         string result = Utils.Strings.FormatBytes(bytes);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     [Theory]
@@ -33,7 +33,7 @@ public partial class UtilsTests {
         string result = Utils.Strings.FormatBytes(bytes);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     [Theory]
@@ -46,7 +46,7 @@ public partial class UtilsTests {
         string result = Utils.Strings.FormatBytes(bytes);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     [Theory]
@@ -59,7 +59,7 @@ public partial class UtilsTests {
         string result = Utils.Strings.FormatBytes(bytes);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public partial class UtilsTests {
         Action act = () => _ = Utils.Strings.FormatBytes(double.MaxValue);
 
         // Assert
-        act.Should().NotThrow<ArgumentOutOfRangeException>();
+        act();
     }
 
     [Fact]
@@ -77,6 +77,6 @@ public partial class UtilsTests {
         Action act = () => _ = Utils.Strings.FormatBytes(long.MaxValue);
 
         // Assert
-        act.Should().NotThrow<ArgumentOutOfRangeException>();
+        act();
     }
 }

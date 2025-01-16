@@ -21,7 +21,7 @@ public partial class UtilsTests {
         ReadOnlySpan<char> result = Utils.DateAndTime.FormatTimeSpan(elapsed, owner.Memory.Span);
 
         // Assert
-        result.SequenceEqual(expected).Should().BeTrue();
+        Assert.Equal(expected, result);
     }
 
     [Theory]
@@ -41,7 +41,7 @@ public partial class UtilsTests {
         string result = Utils.DateAndTime.FormatTimeSpan(elapsed);
 
         // Assert
-        result.Equals(expected).Should().BeTrue();
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public partial class UtilsTests {
         ReadOnlySpan<char> result = Utils.DateAndTime.FormatTimeStamp(dateTime, owner.Memory.Span);
 
         // Assert
-        result.SequenceEqual("1355-6-Apr-22").Should().BeTrue();
+        Assert.Equal("1355-6-Apr-22", result);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public partial class UtilsTests {
         string result = Utils.DateAndTime.FormatTimeStamp(dateTime);
 
         // Assert
-        result.Equals("1355-6-Apr-22").Should().BeTrue();
+        Assert.Equal("1355-6-Apr-22", result);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public partial class UtilsTests {
         var result = await Utils.DateAndTime.GetCurrentTimeAsync();
 
         // Assert
-        result.Should().BeCloseTo(expected, TimeSpan.FromSeconds(1));
+        Assert.Equal(expected, result, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
@@ -91,6 +91,6 @@ public partial class UtilsTests {
         var fromResult = DateTime.FromBinary(result);
 
         // Assert
-        fromResult.Should().BeCloseTo(expected, TimeSpan.FromSeconds(1));
+        Assert.Equal(expected, fromResult, TimeSpan.FromSeconds(1));
     }
 }

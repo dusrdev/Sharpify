@@ -12,7 +12,7 @@ public class AesProviderTests {
         string encrypted = aesProvider.Encrypt(PlainText);
         string decrypted = aesProvider.Decrypt(encrypted);
 
-        decrypted.Should().Be(PlainText);
+        Assert.Equal(PlainText, decrypted);
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public class AesProviderTests {
         byte[] encryptedBytes = aesProvider.EncryptBytes(plainBytes);
         byte[] decryptedBytes = aesProvider.DecryptBytes(encryptedBytes);
 
-        decryptedBytes.Should().Equal(plainBytes);
+        Assert.Equal(plainBytes, decryptedBytes);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class AesProviderTests {
         Span<byte> decryptedSpan = stackalloc byte[plainBytes.Length];
         int written = aesProvider.DecryptBytes(encryptedBytes, decryptedSpan, true);
 
-        decryptedSpan.Slice(0, written).SequenceEqual(plainBytes).Should().BeTrue();
+        Assert.Equal(plainBytes, decryptedSpan.Slice(0, written));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class AesProviderTests {
         using var aesProvider = new AesProvider(Key);
         byte[] decryptedBytes = aesProvider.DecryptBytes(plainBytes);
 
-        decryptedBytes.Should().Equal(Array.Empty<byte>());
+        Assert.Equal(Array.Empty<byte>(), decryptedBytes);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class AesProviderTests {
         string hashedPassword = AesProvider.GeneratePassword(password);
         bool isValid = AesProvider.IsPasswordValid(password, hashedPassword);
 
-        isValid.Should().BeTrue();
+        Assert.True(isValid);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class AesProviderTests {
         string hashedPassword = AesProvider.GeneratePassword(password);
         bool isValid = AesProvider.IsPasswordValid(wrongPassword, hashedPassword);
 
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public class AesProviderTests {
             string copy = new(url);
             string encryptedUrl = aesProvider.EncryptUrl(url);
             string decryptedUrl = aesProvider.DecryptUrl(encryptedUrl);
-            url.Should().Be(copy);
-            decryptedUrl.Should().Be(url);
+            Assert.Equal(copy, url);
+            Assert.Equal(url, decryptedUrl);
         }
     }
 
@@ -92,8 +92,9 @@ public class AesProviderTests {
         var encryptedUrl = aesProvider.EncryptUrl(plainUrl);
 
         // Assert
-        encryptedUrl.Should().NotBeNullOrEmpty();
-        encryptedUrl.Should().NotBe(plainUrl);
+        Assert.NotNull(encryptedUrl);
+        Assert.NotEmpty(encryptedUrl);
+        Assert.NotEqual(plainUrl, encryptedUrl);
     }
 
     [Fact]
@@ -107,8 +108,9 @@ public class AesProviderTests {
         var decryptedUrl = aesProvider.DecryptUrl(encryptedUrl);
 
         // Assert
-        decryptedUrl.Should().NotBeNullOrEmpty();
-        decryptedUrl.Should().Be(plainUrl);
+        Assert.NotNull(decryptedUrl);
+        Assert.NotEmpty(decryptedUrl);
+        Assert.Equal(plainUrl, decryptedUrl);
     }
 
     [Fact]
@@ -122,8 +124,8 @@ public class AesProviderTests {
         var decryptedUrl = aesProvider.DecryptUrl(incorrectEncryptedUrl);
 
         // Assert
-        decryptedUrl.Should().NotBeNull();
-        decryptedUrl.Should().NotBe(plainUrl);
+        Assert.NotNull(decryptedUrl);
+        Assert.NotEqual(plainUrl, decryptedUrl);
     }
 
     [Fact]
@@ -137,8 +139,9 @@ public class AesProviderTests {
         var decryptedUrl = aesProvider.DecryptUrl(encryptedUrl);
 
         // Assert
-        decryptedUrl.Should().NotBeNullOrEmpty();
-        decryptedUrl.Should().Be(unicodeUrl);
+        Assert.NotNull(decryptedUrl);
+        Assert.NotEmpty(decryptedUrl);
+        Assert.Equal(unicodeUrl, decryptedUrl);
     }
 
     [Fact]
@@ -146,12 +149,12 @@ public class AesProviderTests {
         using var aesProvider = new AesProvider(Key);
         var encryptor = aesProvider.CreateEncryptor();
 
-        encryptor.Should().NotBeNull();
+        Assert.NotNull(encryptor);
 
         var actual = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(PlainText), 0, PlainText.Length);
         var expected = aesProvider.EncryptBytes(Encoding.UTF8.GetBytes(PlainText));
 
-        actual.Should().BeEquivalentTo(expected);
+        Assert.Equal(expected, actual);
     }
 
     [Fact]
@@ -164,6 +167,6 @@ public class AesProviderTests {
         var actual = decryptor.TransformFinalBlock(source, 0, source.Length);
         var expected = aesProvider.DecryptBytes(source);
 
-        actual.Should().BeEquivalentTo(expected);
+        Assert.Equal(expected, actual);
     }
 }

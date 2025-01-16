@@ -19,7 +19,7 @@ public class UnmanagedExtensionsTests {
         bool result = value.TryParseAsEnum(out ExampleEnum parsedEnum);
 
         // Assert
-        result.Should().Be(expectedResult);
-        parsedEnum.Should().Be(expectedEnum);
+        Assert.Equal(expectedResult, result);
+        Assert.Equal(expectedEnum, parsedEnum);
     }
 }

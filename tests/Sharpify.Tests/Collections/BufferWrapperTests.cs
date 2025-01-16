@@ -13,7 +13,7 @@ public class BufferWrapperTests {
         };
 
         // Act & Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class BufferWrapperTests {
         };
 
         // Assert
-        act.Should().NotThrow<ArgumentOutOfRangeException>();
+        act();
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class BufferWrapperTests {
         };
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class BufferWrapperTests {
         buffer.Append("David");
 
         // Assert
-        (buffer.WrittenSpan is "David").Should().BeTrue();
+        Assert.Equal("David", buffer.WrittenSpan);
     }
 }
 #endif

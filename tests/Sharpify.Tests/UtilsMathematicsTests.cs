@@ -15,7 +15,7 @@ public partial class UtilsTests {
         result = Math.Round(result, 3);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     [Theory]
@@ -27,7 +27,7 @@ public partial class UtilsTests {
         var result = Utils.Mathematics.Factorial(n);
 
         // Assert
-        result.Should().Be(expected);
+        Assert.Equal(expected, result);
     }
 
     [Theory]
@@ -41,6 +41,6 @@ public partial class UtilsTests {
 
         // Assert
         const double margin = 0.01;
-        result.Should().BeApproximately(expected, margin);
+        Assert.Equal(expected, result, margin);
     }
 }

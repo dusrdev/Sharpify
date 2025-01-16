@@ -7,8 +7,8 @@ public class EitherTests {
         Either<int, string> either = 42;
 
         // Assert
-        either.IsT0.Should().BeTrue();
-        either.AsT0.Should().Be(42);
+        Assert.True(either.IsT0);
+        Assert.Equal(42, either.AsT0);
     }
 
     [Fact]
@@ -17,8 +17,8 @@ public class EitherTests {
         Either<int, string> either = "Hello";
 
         // Assert
-        either.IsT1.Should().BeTrue();
-        either.AsT1.Should().Be("Hello");
+        Assert.True(either.IsT1);
+        Assert.Equal("Hello", either.AsT1);
     }
 
     [Fact]
@@ -32,8 +32,8 @@ public class EitherTests {
         either.Switch(t0 => t0HandlerCalled = true, t1 => t1HandlerCalled = false);
 
         // Assert
-        t0HandlerCalled.Should().BeTrue();
-        t1HandlerCalled.Should().BeFalse();
+        Assert.True(t0HandlerCalled);
+        Assert.False(t1HandlerCalled);
     }
 
     [Fact]
@@ -47,8 +47,8 @@ public class EitherTests {
         either.Switch(t0 => t0HandlerCalled = true, t1 => t1HandlerCalled = true);
 
         // Assert
-        t0HandlerCalled.Should().BeFalse();
-        t1HandlerCalled.Should().BeTrue();
+        Assert.False(t0HandlerCalled);
+        Assert.True(t1HandlerCalled);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class EitherTests {
         var result = either.Match(t0 => t0 * 2, t1 => t1.Length);
 
         // Assert
-        result.Should().Be(84);
+        Assert.Equal(84, result);
     }
 
     [Fact]
@@ -72,6 +72,6 @@ public class EitherTests {
         var result = either.Match(t0 => t0 * 2, t1 => t1.Length);
 
         // Assert
-        result.Should().Be(5);
+        Assert.Equal(5, result);
     }
 }

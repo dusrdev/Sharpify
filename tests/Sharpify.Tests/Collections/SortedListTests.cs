@@ -12,7 +12,7 @@ public class SortedListTests {
 		list.Add(6);
 
 		// Assert
-		list.GetIndex(6).Should().Be(list.Count - 1);
+		Assert.Equal(list.Count - 1, list.GetIndex(6));
 
 		// Act
 		int count = list.Count;
@@ -20,7 +20,7 @@ public class SortedListTests {
 
 		// Assert
 		// Duplicates should be ignored, no change to count
-		list.Count.Should().Be(count);
+		Assert.Equal(count, list.Count);
 	}
 
 	[Fact]
@@ -32,7 +32,7 @@ public class SortedListTests {
 		list.AddRange(new ReadOnlySpan<int>([6, 7, 8]));
 
 		// Assert
-		list.Span.SequenceEqual([1, 2, 3, 4, 5, 6, 7, 8]).Should().BeTrue();
+		Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8], list.Span);
 	}
 
 	[Fact]
@@ -44,7 +44,7 @@ public class SortedListTests {
 		list.AddRange(new List<int>() { 6, 7, 8 });
 
 		// Assert
-		list.Span.SequenceEqual([1, 2, 3, 4, 5, 6, 7, 8]).Should().BeTrue();
+		Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8], list.Span);
 	}
 
 	[Fact]
@@ -56,17 +56,17 @@ public class SortedListTests {
 		list.Remove(3);
 
 		// Assert
-		list.GetIndex(3).Should().BeLessThan(0);
+		Assert.True(list.GetIndex(3) < 0);
 
 		// Act
 		for (int i = 0; i < 5; i++) {
 			list.Add(6);
 		}
-		list.Count.Should().Be(5 - 1 + 5);
+		Assert.Equal(5 - 1 + 5, list.Count);
 		list.Remove(6);
 
 		// Assert
-		list.GetIndex(6).Should().BeLessThan(0);
+		Assert.True(list.GetIndex(6) < 0);
 	}
 
 	[Fact]
@@ -75,7 +75,7 @@ public class SortedListTests {
 		var list = new SortedList<int>([1, 2, 3, 4, 5]);
 
 		// Assert
-		list.GetIndex(4).Should().Be(3);
+		Assert.Equal(3, list.GetIndex(4));
 	}
 
 	[Fact]
@@ -84,7 +84,7 @@ public class SortedListTests {
 		var list = new SortedList<int>([1, 2, 3, 5, 6]);
 
 		// Assert
-		(~list.GetIndex(4)).Should().Be(3);
+		Assert.Equal(3, ~list.GetIndex(4));
 	}
 
 	[Fact]
@@ -93,7 +93,7 @@ public class SortedListTests {
 		var list = new SortedList<int>([1, 2, 3, 5, 6]);
 
 		// Assert
-		(~list.GetIndex(7)).Should().BeGreaterThan(list.Count - 1);
+		Assert.True(~list.GetIndex(7) > list.Count - 1);
 	}
 
 	[Fact]
@@ -106,7 +106,7 @@ public class SortedListTests {
 		ReadOnlySpan<int> section = list.Span.Slice(~index);
 
 		// Assert
-		section.SequenceEqual(new[] { 5, 6 }).Should().BeTrue();
+		Assert.Equal([5, 6], section);
 	}
 
 	[Fact]
@@ -123,11 +123,11 @@ public class SortedListTests {
 
 		// Act + Assert
 		var section = list.Span.Slice(~list.GetIndex(new Person("f", 4)));
-		section.SequenceEqual([ new Person("d", 5), new Person("e",6) ]).Should().BeTrue();
+		Assert.Equal([new Person("d", 5), new Person("e", 6)], section);
 
 		// Act + Assert
 		section = list.Span.Slice(list.GetIndex(new Person("f", 3)) + 1);
-		section.SequenceEqual([ new Person("d", 5), new Person("e",6) ]).Should().BeTrue();
+		Assert.Equal([new Person("d", 5), new Person("e", 6)], section);
 	}
 
 	private record Person(string Name, int Age) : IComparable<Person> {

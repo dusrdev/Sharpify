@@ -1,4 +1,3 @@
-
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -14,7 +13,7 @@ public class SerializableObjectTests {
         var action = () => new MonitoredSerializableObject<Configuration>(dir, JsonContext.Default.Configuration); // no filename
 
         // Act & Assert
-        action.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(action);
 
         // Cleanup
         await file.DeleteAsync();
@@ -27,10 +26,10 @@ public class SerializableObjectTests {
         var action = () => new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
 
         // Act
-        action.Should().NotThrow();
+        action();
 
         // Assert
-        File.Exists(file).Should().BeTrue();
+        Assert.True(File.Exists(file));
         await file.DeleteAsync();
     }
 
@@ -42,13 +41,13 @@ public class SerializableObjectTests {
         var action = () => new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
 
         // Act
-        action.Should().NotThrow();
+        action();
         // Assert
-        File.Exists(file).Should().BeTrue();
+        Assert.True(File.Exists(file));
         // Act
         using var obj = new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
         // Assert
-        obj.Value.Should().BeEquivalentTo(config);
+        Assert.Equal(config, obj.Value);
 
         // Cleanup
         await file.DeleteAsync();
@@ -65,9 +64,9 @@ public class SerializableObjectTests {
         // Act
         obj.Modify(c => c with { Name = newName });
         // Assert
-        obj.Value.Name.Should().Be(newName);
+        Assert.Equal(newName, obj.Value.Name);
         using var obj2 = new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
-        obj2.Value.Name.Should().BeEquivalentTo(newName);
+        Assert.Equal(newName, obj2.Value.Name);
 
         // Cleanup
         await file.DeleteAsync();
@@ -90,8 +89,8 @@ public class SerializableObjectTests {
         // Act
         obj.Modify(c => c with { Name = newName });
         // Assert
-        count.Should().Be(1);
-        lastValue.Name.Should().Be(newName);
+        Assert.Equal(1, count);
+        Assert.Equal(newName, lastValue.Name);
 
         // Cleanup
         await file.DeleteAsync();
@@ -108,7 +107,7 @@ public class SerializableObjectTests {
         await File.WriteAllTextAsync(file, "");
 
         // Assert
-        obj.Value.Name.Should().Be("John Doe");
+        Assert.Equal("John Doe", obj.Value.Name);
 
         // Cleanup
         await file.DeleteAsync();
@@ -128,7 +127,7 @@ public class SerializableObjectTests {
         // Act
         await File.WriteAllTextAsync(file, "invalid json");
         // Assert
-        count.Should().Be(0);
+        Assert.Equal(0, count);
 
         // Cleanup
         await file.DeleteAsync();
@@ -141,7 +140,7 @@ public class SerializableObjectTests {
         var config = new Configuration { Name = "John Doe", Age = 42 };
         using var obj = new MonitoredSerializableObject<Configuration>(file, config, JsonContext.Default.Configuration);
         // Assert
-        obj.OnChanged += (sender, e) => e.Value.Name.Should().Be("Jane");
+        obj.OnChanged += (sender, e) => Assert.Equal("Jane", e.Value.Name);
 
         // Act
         await File.WriteAllTextAsync(file, JsonSerializer.Serialize(config with { Name = "Jane" }, JsonContext.Default.Configuration));

@@ -12,7 +12,7 @@ public class CollectionExtensionsTests {
         var result = list.IsNullOrEmpty();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class CollectionExtensionsTests {
         var result = list.IsNullOrEmpty();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -36,9 +36,9 @@ public class CollectionExtensionsTests {
         var span = list.AsSpan();
 
         // Assert
-        span.Length.Should().Be(list.Count);
+        Assert.Equal(list.Count, span.Length);
         for (int i = 0; i < list.Count; i++) {
-            span[i].Should().Be(list[i]);
+            Assert.Equal(list[i], span[i]);
         }
     }
 
@@ -51,7 +51,7 @@ public class CollectionExtensionsTests {
         var span = list.AsSpan();
 
         // Assert
-        span.Length.Should().Be(0);
+        Assert.Equal(0, span.Length);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class CollectionExtensionsTests {
         ref var valueReal = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
 
         // Assert
-        Unsafe.AreSame(ref valueRef, ref valueReal).Should().BeTrue();
+        Assert.True(Unsafe.AreSame(ref valueRef, ref valueReal));
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class CollectionExtensionsTests {
         ref var valueRef = ref dictionary.GetValueRefOrNullRef(key);
 
         // Assert
-        Unsafe.IsNullRef(ref valueRef).Should().BeTrue();
+        Assert.True(Unsafe.IsNullRef(ref valueRef));
     }
 
     [Fact]
@@ -101,8 +101,8 @@ public class CollectionExtensionsTests {
         ref var valueRef = ref dictionary.GetValueRefOrAddDefault(key, out bool exists);
 
         // Assert
-        valueRef.Should().BeEquivalentTo("two");
-        exists.Should().BeTrue();
+        Assert.Equal("two", valueRef);
+        Assert.True(exists);
     }
 
     [Fact]
@@ -116,9 +116,9 @@ public class CollectionExtensionsTests {
 
         // Assert
         #pragma warning disable
-        valueRef.Should().Be(default(string));
-        exists.Should().BeFalse();
-        dictionary.Should().ContainKey(key).And.ContainValue(default(string));
+        Assert.Equal(default(string), valueRef);
+        Assert.False(exists);
+        Assert.Contains(new KeyValuePair<int, string>(key, default(string)), dictionary);
         #pragma warning restore
     }
 
@@ -128,7 +128,7 @@ public class CollectionExtensionsTests {
         var buffer = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
         dict.CopyTo(buffer, 0);
         var span = new Span<KeyValuePair<int, int>>(buffer, 0, dict.Count);
-        span.ToArray().Should().Equal(dict);
+        Assert.Equal(dict, span.ToArray());
         buffer.ReturnBufferToSharedArrayPool();
     }
 
@@ -137,7 +137,7 @@ public class CollectionExtensionsTests {
         var dict = Enumerable.Range(1, 10).ToDictionary(i => i, i => i);
         var (buffer, entries) = dict.RentBufferAndCopyEntries();
         try {
-            entries.ToArray().Should().Equal(dict);
+            Assert.Equal(dict, entries.ToArray());
         } finally {
             buffer.ReturnBufferToSharedArrayPool();
         }
@@ -150,7 +150,7 @@ public class CollectionExtensionsTests {
         dict.CopyTo(buffer, 0);
         var span = buffer.AsSpan(0, dict.Count);
         try {
-            span.SequenceEqual(dict.ToArray()).Should().BeTrue();
+            Assert.Equal(dict, span.ToArray());
         } finally {
             buffer.ReturnBufferToSharedArrayPool();
         }
@@ -166,7 +166,7 @@ public class CollectionExtensionsTests {
         var result = source.PureSort(Comparer<int>.Default);
 
         // Assert
-        result.Should().Equal(expected);
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class CollectionExtensionsTests {
         var result = source.PureSort(StringComparer.InvariantCulture);
 
         // Assert
-        result.Should().Equal(expected);
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public class CollectionExtensionsTests {
         var result = source.PureSort(Comparer<int>.Default);
 
         // Assert
-        result.Should().Equal(expected);
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class CollectionExtensionsTests {
         var result = source.PureSort(Comparer<string>.Default);
 
         // Assert
-        result.Should().Equal(expected);
+        Assert.Equal(expected, result);
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class CollectionExtensionsTests {
         list.RemoveDuplicates();
 
         // Assert
-        list.Should().Equal(expected);
+        Assert.Equal(expected, list);
     }
 
     [Fact]
@@ -231,8 +231,8 @@ public class CollectionExtensionsTests {
         list.RemoveDuplicates(out var hSet);
 
         // Assert
-        list.Should().Equal(expected);
-        hSet.Should().HaveCount(expected.Count);
+        Assert.Equal(expected, list);
+        Assert.Equal(expected.Count, hSet.Count);
     }
 
     [Fact]
@@ -245,7 +245,7 @@ public class CollectionExtensionsTests {
         list.RemoveDuplicates(comparer: StringComparer.InvariantCulture);
 
         // Assert
-        list.Should().Equal(expected);
+        Assert.Equal(expected, list);
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public class CollectionExtensionsTests {
         list.RemoveDuplicates(isSorted: true);
 
         // Assert
-        list.Should().Equal(expected);
+        Assert.Equal(expected, list);
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public class CollectionExtensionsTests {
         list.RemoveDuplicates(isSorted: true, comparer: StringComparer.InvariantCulture);
 
         // Assert
-        list.Should().Equal(expected);
+        Assert.Equal(expected, list);
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public class CollectionExtensionsTests {
         var result = array.ChunkToSegments(3);
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -295,8 +295,8 @@ public class CollectionExtensionsTests {
         var result = array.ChunkToSegments(5);
 
         // Assert
-        result.Should().HaveCount(1);
-        result[0].Should().Equal(array);
+        Assert.Single(result);
+        Assert.Equal(array, result[0]);
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public class CollectionExtensionsTests {
         var result = array.ChunkToSegments(3);
 
         // Assert
-        result.Should().HaveCount(3);
-        result.Sum(s => s.Count).Should().Be(array.Length);
+        Assert.Equal(3, result.Count);
+        Assert.Equal(array.Length, result.Sum(s => s.Count));
     }
 }

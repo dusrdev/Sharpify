@@ -24,6 +24,6 @@ public class RoutineTests {
         await tcs.Task;
 
         // Assert
-        count.Should().BeGreaterThanOrEqualTo(expected);
+        Assert.True(count >= expected);
     }
 }
