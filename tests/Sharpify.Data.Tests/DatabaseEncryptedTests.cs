@@ -42,8 +42,8 @@ public class DatabaseEncryptedTests {
             EncryptionKey = "test"
         });
 
-        database2.TryGetValue("test", out Person result).Should().BeTrue();
-        result.Should().Be(new Person("David", 27));
+        Assert.True(database2.TryGetValue("test", out Person result));
+        Assert.Equal(new Person("David", 27), result);
     }
 
     [Fact]
@@ -60,8 +60,8 @@ public class DatabaseEncryptedTests {
         using var db2 = await AsyncFactory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out Person result).Should().BeTrue();
-        result.Should().Be(new Person("David", 27));
+        Assert.True(db2.Database.TryGetValue("test", out Person result));
+        Assert.Equal(new Person("David", 27), result);
 
         // Cleanup
         File.Delete(db.Path);
@@ -80,8 +80,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", out string result).Should().BeTrue();
-        result.Should().Be("test");
+        Assert.True(db2.Database.TryGetString("test", out string result));
+        Assert.Equal("test", result);
 
         // Cleanup
         File.Delete(db.Path);
@@ -100,8 +100,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetString("test", "enc", out string result).Should().BeTrue();
-        result.Should().Be("test");
+        Assert.True(db2.Database.TryGetString("test", "enc", out string result));
+        Assert.Equal("test", result);
 
         // Cleanup
         File.Delete(db.Path);
@@ -113,15 +113,15 @@ public class DatabaseEncryptedTests {
         using var db = Factory("");
 
         // Act
-        byte[] bytes = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] bytes = [1, 2, 3, 4, 5];
         db.Database.Upsert("test", bytes);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("test", out var result).Should().BeTrue();
-        result.Span.SequenceEqual(bytes).Should().BeTrue();
+        Assert.True(db2.Database.TryGetValue("test", out var result));
+        Assert.Equal(bytes, result.Span);
 
         // Cleanup
         File.Delete(db.Path);
@@ -140,8 +140,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue<Person>("1", out var p2).Should().BeTrue();
-        p2.Should().Be(p1);
+        Assert.True(db2.Database.TryGetValue<Person>("1", out var p2));
+        Assert.Equal(p1, p2);
 
         // Cleanup
         File.Delete(db.Path);
@@ -155,14 +155,14 @@ public class DatabaseEncryptedTests {
         // Act
         var p1 = new Person("David", 27);
         var p2 = new Person("John", 30);
-        db.Database.UpsertMany("1", new []{ p1, p2 });
+        db.Database.UpsertMany("1", [p1, p2]);
 
         // Arrange
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValues<Person>("1", out var arr).Should().BeTrue();
-        arr.Should().ContainInOrder(p1, p2);
+        Assert.True(db2.Database.TryGetValues<Person>("1", out var arr));
+        Assert.Equal([p1, p2], arr);
 
         // Cleanup
         File.Delete(db.Path);
@@ -186,8 +186,8 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2).Should().BeTrue();
-        p2.Should().Be(p1);
+        Assert.True(db2.Database.TryGetValue("1", JsonContext.Default.Color, out var p2));
+        Assert.Equal(p1, p2);
 
         // Cleanup
         File.Delete(db.Path);
@@ -208,12 +208,12 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.ContainsKey("David").Should().BeFalse();
-        db2.Database.ContainsKey("Buddy").Should().BeFalse();
-        db.Database.CreateMemoryPackFilter<Person>().TryGetValue("David", out var p2).Should().BeTrue();
-        db.Database.CreateMemoryPackFilter<Dog>().TryGetValue("Buddy", out var d2).Should().BeTrue();
-        p2.Should().Be(p1);
-        d2.Should().Be(d1);
+        Assert.False(db2.Database.ContainsKey("David"));
+        Assert.False(db2.Database.ContainsKey("Buddy"));
+        Assert.True(db.Database.CreateMemoryPackFilter<Person>().TryGetValue("David", out var p2));
+        Assert.True(db.Database.CreateMemoryPackFilter<Dog>().TryGetValue("Buddy", out var d2));
+        Assert.Equal(p1, p2);
+        Assert.Equal(d1, d2);
 
         // Cleanup
         File.Delete(db.Path);
@@ -233,7 +233,7 @@ public class DatabaseEncryptedTests {
         using var db2 = Factory(db.Path);
 
         // Assert
-        db2.Database.Count.Should().Be(100);
+        Assert.Equal(100, db2.Database.Count);
 
         // Cleanup
         File.Delete(db.Path);
@@ -248,7 +248,7 @@ public class DatabaseEncryptedTests {
         db.Database.Upsert("test", "test");
 
         // Assert
-        db.Database.ContainsKey("test").Should().BeTrue();
+        Assert.True(db.Database.ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -263,7 +263,7 @@ public class DatabaseEncryptedTests {
         db.Database.CreateMemoryPackFilter<Person>().Upsert("test", new Person("David", 27));
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeTrue();
+        Assert.True(db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -279,7 +279,7 @@ public class DatabaseEncryptedTests {
         db.Database.Remove("test");
 
         // Assert
-        db.Database.ContainsKey("test").Should().BeFalse();
+        Assert.False(db.Database.ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -295,7 +295,7 @@ public class DatabaseEncryptedTests {
         db.Database.Remove(key => key == "test");
 
         // Assert
-        db.Database.ContainsKey("test").Should().BeFalse();
+        Assert.False(db.Database.ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -311,7 +311,7 @@ public class DatabaseEncryptedTests {
         db.Database.CreateMemoryPackFilter<Person>().Remove("test");
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
+        Assert.False(db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -327,7 +327,7 @@ public class DatabaseEncryptedTests {
         db.Database.CreateMemoryPackFilter<Person>().Remove(key => key == "test");
 
         // Assert
-        db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test").Should().BeFalse();
+        Assert.False(db.Database.CreateMemoryPackFilter<Person>().ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
@@ -343,7 +343,7 @@ public class DatabaseEncryptedTests {
         db.Database.Clear();
 
         // Assert
-        db.Database.ContainsKey("test").Should().BeFalse();
+        Assert.False(db.Database.ContainsKey("test"));
 
         // Cleanup
         File.Delete(db.Path);
