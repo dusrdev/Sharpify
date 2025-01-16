@@ -11,7 +11,7 @@ public class RentedBufferWriterTests {
         };
 
         // Act & Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class RentedBufferWriterTests {
         using var buffer = new RentedBufferWriter<char>(0);
 
         // Assert
-        buffer.IsDisabled.Should().BeTrue();
+        Assert.True(buffer.IsDisabled);
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.WrittenSpan.SequenceEqual("Hello").Should().BeTrue();
+        Assert.Equal("Hello", buffer.WrittenSpan);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class RentedBufferWriterTests {
         buffer.WriteAndAdvance("Hello");
 
         // Assert
-        buffer.WrittenSpan.SequenceEqual("Hello").Should().BeTrue();
+        Assert.Equal("Hello", buffer.WrittenSpan);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(length);
 
         // Assert
-        buffer.WrittenSpan.SequenceEqual([1, 1, 1, 1, 1]).Should().BeTrue();
+        Assert.Equal([1, 1, 1, 1, 1], buffer.WrittenSpan);
 
         static int WriteOnes(ref int[] buffer, int length) {
             for (var i = 0; i < length; i++) {
@@ -82,7 +82,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.GetSpanSlice(0, 3).SequenceEqual("Hel").Should().BeTrue();
+        Assert.Equal("Hel", buffer.GetSpanSlice(0, 3));
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.WrittenSegment.SequenceEqual("Hello").Should().BeTrue();
+        Assert.Equal("Hello".ToCharArray(), buffer.WrittenSegment);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.GetMemorySlice(0, 3).Span.SequenceEqual("Hel").Should().BeTrue();
+        Assert.Equal("Hello", buffer.GetMemorySlice(0, 5).Span);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.WrittenSegment.SequenceEqual("Hello").Should().BeTrue();
+        Assert.Equal("Hello".ToCharArray(), buffer.WrittenSegment);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class RentedBufferWriterTests {
         buffer.Reset();
 
         // Assert
-        buffer.WrittenSpan.SequenceEqual(ReadOnlySpan<char>.Empty).Should().BeTrue();
+        Assert.Equal(ReadOnlySpan<char>.Empty, buffer.WrittenSpan);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class RentedBufferWriterTests {
         using var buffer = new RentedBufferWriter<char>(20);
 
         // Assert
-        buffer.ActualCapacity.Should().BeGreaterThanOrEqualTo(20);
+        Assert.True(buffer.ActualCapacity >= 20);
     }
 
     [Fact]
@@ -162,6 +162,6 @@ public class RentedBufferWriterTests {
         buffer.Advance(5);
 
         // Assert
-        buffer.FreeCapacity.Should().BeGreaterThanOrEqualTo(15);
+        Assert.True(buffer.FreeCapacity >= 15);
     }
 }

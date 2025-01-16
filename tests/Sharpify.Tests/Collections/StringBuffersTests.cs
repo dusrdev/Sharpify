@@ -12,7 +12,7 @@ public class StringBuffersTests {
         };
 
         // Act & Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class StringBuffersTests {
         };
 
         // Assert
-        act.Should().NotThrow<ArgumentOutOfRangeException>();
+        act();
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class StringBuffersTests {
         };
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -69,9 +69,9 @@ public class StringBuffersTests {
         };
 
         // Assert
-        act1.Should().Throw<ArgumentOutOfRangeException>();
-        act2.Should().Throw<ArgumentOutOfRangeException>();
-        act3.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act1);
+        Assert.Throws<ArgumentOutOfRangeException>(act2);
+        Assert.Throws<ArgumentOutOfRangeException>(act3);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class StringBuffersTests {
         var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
 
         // Assert
-        buffer.Allocate(true).Should().Be(expected);
+        Assert.Equal(expected, buffer.Allocate(true));
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class StringBuffersTests {
         var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
 
         // Assert
-        buffer.Allocate(true).Should().Be(expected);
+        Assert.Equal(expected, buffer.Allocate(true));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class StringBuffersTests {
         var expected = string.Create(null, stackalloc char[20], $"Hello{Environment.NewLine}World");
 
         // Assert
-        buffer.Allocate(true).Should().Be(expected);
+        Assert.Equal(expected, buffer.Allocate(true));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        buffer.Allocate(false).Should().Be("abcd\0");
+        Assert.Equal("abcd\0", buffer.Allocate(false));
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class StringBuffersTests {
         buffer.Append('d');
 
         // Assert
-        buffer.Allocate(true).Should().Be("abcd");
+        Assert.Equal("abcd", buffer.Allocate(true));
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class StringBuffersTests {
         buffer.Append(' ');
 
         // Assert
-        buffer.Allocate(true, true).Should().Be("abcd");
+        Assert.Equal("abcd", buffer.Allocate(true, true));
     }
 
     [Fact]
@@ -178,6 +178,6 @@ public class StringBuffersTests {
         buffer.Append("David");
 
         // Assert
-        buffer.WrittenSpan.SequenceEqual("David").Should().BeTrue();
+        Assert.Equal("David", buffer.WrittenSpan);
     }
 }

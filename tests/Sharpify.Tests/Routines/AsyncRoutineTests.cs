@@ -28,6 +28,6 @@ public class AsyncRoutineTests {
         await tcs.Task;
 
         // Assert
-        count.Should().BeGreaterThanOrEqualTo(expected);
+        Assert.True(count >= expected);
     }
 }

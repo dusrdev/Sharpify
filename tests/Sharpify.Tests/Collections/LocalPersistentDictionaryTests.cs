@@ -24,7 +24,7 @@ public class LocalPersistentDictionaryTests {
         var result = dict["test"];
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class LocalPersistentDictionaryTests {
         await dict.UpsertAsync("one", "1");
 
         // Assert
-        dict["one"].Should().Be("1");
+        Assert.Equal("1", dict["one"]);
     }
 
     [Fact]
@@ -57,8 +57,8 @@ public class LocalPersistentDictionaryTests {
         var check = dict["one"] is "1";
 
         // Assert
-        result.Should().Be("1");
-        check.Should().BeTrue();
+        Assert.Equal("1", result);
+        Assert.True(check);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class LocalPersistentDictionaryTests {
         // Ideally with perfectly concurrent updates, the dictionary would only be serialized once.
         // The reason not to check for 1 is that the tasks may not be executed perfectly in parallel.
         var sdict = new LocalPersistentDictionary(path);
-        sdict.Count.Should().Be(upsertTasks.Length);
+        Assert.Equal(upsertTasks.Length, sdict.Count);
         File.Delete(path);
     }
 
@@ -111,7 +111,7 @@ public class LocalPersistentDictionaryTests {
 
         // Assert
         var sdict = new LocalPersistentDictionary(path);
-        sdict.Count.Should().Be(5);
+        Assert.Equal(5, sdict.Count);
         File.Delete(path);
     }
 
@@ -133,8 +133,8 @@ public class LocalPersistentDictionaryTests {
         int two = await sdict.GetOrCreateAsync("two", 0);
 
         // Assert
-        one.Should().Be(1);
-        two.Should().Be(2);
+        Assert.Equal(1, one);
+        Assert.Equal(2, two);
         File.Delete(path);
     }
 }

@@ -12,7 +12,7 @@ public class UnsafeSpanIteratorTests {
         var sum = iterator.Select(x => x + 1).Sum(); // [0-99] -> [1-100]
 
         // Assert
-        sum.Should().Be(5050);
+        Assert.Equal(5050, sum);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class UnsafeSpanIteratorTests {
         await Task.WhenAll(tasks);
 
         // Assert
-        sum.Should().Be(5050);
+        Assert.Equal(5050, sum);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class UnsafeSpanIteratorTests {
         var slice = iterator.Slice(3, 2);
 
         // Assert
-        slice.SequenceEqual([4, 5]).Should().BeTrue();
+        Assert.Equal(slice, [4, 5]);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class UnsafeSpanIteratorTests {
         var count = iterator.ToEnumerable().Count();
 
         // Assert
-        count.Should().Be(items.Length);
+        Assert.Equal(items.Length, count);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class UnsafeSpanIteratorTests {
         var act = () => { var slice = iterator.Slice(4, 4); };
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class UnsafeSpanIteratorTests {
         var iterator = new UnsafeSpanIterator<int>(items);
 
         // Assert
-        iterator[3].Should().Be(4);
+        Assert.Equal(4, iterator[3]);
     }
 
     [Fact]
@@ -95,6 +95,6 @@ public class UnsafeSpanIteratorTests {
         var act = () => { var item = iterator[9]; };
 
         // Assert
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(act);
     }
 }

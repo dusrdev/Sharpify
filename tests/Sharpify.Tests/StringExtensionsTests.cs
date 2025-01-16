@@ -11,7 +11,7 @@ public class StringExtensionsTests {
         var result = value.IsNullOrEmpty();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public class StringExtensionsTests {
         var result = value.IsNullOrEmpty();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class StringExtensionsTests {
         var result = value.IsNullOrWhiteSpace();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class StringExtensionsTests {
         var result = value.IsNullOrWhiteSpace();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class StringExtensionsTests {
         var result = value.IsNullOrWhiteSpace();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Theory]
@@ -70,8 +70,8 @@ public class StringExtensionsTests {
     public void TryConvertToInt32_ValidString_ReturnsTrue(string input, int expected) {
         bool result = input.AsSpan().TryConvertToInt32(out var output);
 
-        result.Should().BeTrue();
-        output.Should().Be(expected);
+        Assert.True(result);
+        Assert.Equal(expected, output);
     }
 
     [Theory]
@@ -83,8 +83,8 @@ public class StringExtensionsTests {
     public void TryConvertToInt32_InvalidString_ReturnsFalse(string input) {
         bool result = input.AsSpan().TryConvertToInt32(out var output);
 
-        result.Should().BeFalse();
-        output.Should().Be(0); // Ensure that the value is not changed in case of failure
+        Assert.False(result);
+        Assert.Equal(0, output); // Ensure that the value is not changed in case of failure
     }
 
     // Tests for Concat
@@ -102,7 +102,7 @@ public class StringExtensionsTests {
         string result = value.Concat(suffix);
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     // Tests for ToTitle
@@ -115,7 +115,7 @@ public class StringExtensionsTests {
         string result = input.ToTitle();
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 
     // Tests for IsBinary
@@ -132,7 +132,7 @@ public class StringExtensionsTests {
         bool result = input.IsBinary();
 
         // Assert
-        result.Should().Be(expectedResult);
+        Assert.Equal(expectedResult, result);
     }
 }
 #pragma warning restore

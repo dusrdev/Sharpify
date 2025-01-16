@@ -15,7 +15,7 @@ public class ParallelExtensionsTests {
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
-        results.Should().Equal(expected);
+        Assert.Equal(expected, results);
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class ParallelExtensionsTests {
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
-        results.Should().Equal(expected);
+        Assert.Equal(expected, results);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ParallelExtensionsTests {
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
-        results.Should().Equal(expected);
+        Assert.Equal(expected, results);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class ParallelExtensionsTests {
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
-        results.Should().Equal(expected);
+        Assert.Equal(expected, results);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class ParallelExtensionsTests {
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
-        results.Should().Equal(expected);
+        Assert.Equal(expected, results);
     }
 }
 

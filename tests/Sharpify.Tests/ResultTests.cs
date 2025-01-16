@@ -9,7 +9,7 @@ public class ResultTests {
         };
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class ResultTests {
         };
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -29,8 +29,8 @@ public class ResultTests {
         var result = Result.Ok();
 
         // Assert
-        result.IsOk.Should().BeTrue();
-        result.Message.Should().BeEmpty();
+        Assert.True(result.IsOk);
+        Assert.Empty(result.Message);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class ResultTests {
         var result = Result.Ok("Success");
 
         // Assert
-        result.IsOk.Should().BeTrue();
-        result.Message.Should().Be("Success");
+        Assert.True(result.IsOk);
+        Assert.Equal("Success", result.Message);
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class ResultTests {
         var result = Result.Fail("Failure");
 
         // Assert
-        result.IsOk.Should().BeFalse();
-        result.Message.Should().Be("Failure");
+        Assert.False(result.IsOk);
+        Assert.Equal("Failure", result.Message);
     }
 
     [Fact]
@@ -59,8 +59,8 @@ public class ResultTests {
         var result = Result.Ok(42);
 
         // Assert
-        result.IsOk.Should().BeTrue();
-        result.Value.Should().Be(42);
+        Assert.True(result.IsOk);
+        Assert.Equal(42, result.Value);
     }
 
     [Fact]
@@ -69,9 +69,9 @@ public class ResultTests {
         var result = Result.Ok("Success", 42);
 
         // Assert
-        result.IsOk.Should().BeTrue();
-        result.Value.Should().Be(42);
-        result.Message.Should().Be("Success");
+        Assert.True(result.IsOk);
+        Assert.Equal("Success", result.Message);
+        Assert.Equal(42, result.Value);
     }
 
     [Fact]
@@ -83,8 +83,8 @@ public class ResultTests {
         var valueResult = result.WithValue(42);
 
         // Assert
-        valueResult.IsOk.Should().BeTrue();
-        valueResult.Value.Should().Be(42);
-        valueResult.Message.Should().Be("Success");
+        Assert.True(valueResult.IsOk);
+        Assert.Equal("Success", valueResult.Message);
+        Assert.Equal(42, valueResult.Value);
     }
 }

@@ -18,7 +18,7 @@ public class LazyLocalPersistentDictionaryTests {
         var result = dict["test"];
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -40,6 +40,6 @@ public class LazyLocalPersistentDictionaryTests {
         await dict.UpsertAsync("two", "2");
 
         // Assert
-        dict["two"].Should().Be("2");
+        Assert.Equal("2", dict["two"]);
     }
 }

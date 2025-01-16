@@ -15,7 +15,7 @@ public class HelperTests {
 	public void GetRequiredLength_Unmanaged<T>(T[] data, int expectedLength) {
 		var serialized = MemoryPackSerializer.Serialize(data);
 		var requiredLength = Helper.GetRequiredLength(serialized);
-		requiredLength.Should().Be(expectedLength);
+		Assert.Equal(expectedLength, requiredLength);
 	}
 
 	[Fact]
@@ -24,7 +24,7 @@ public class HelperTests {
 		var data = Enumerable.Range(1, faker.Random.Int(10, 100)).Select(_ => new Person(faker.Name.FullName(), faker.Random.Int(1, 100))).ToArray();
 		var serialized = MemoryPackSerializer.Serialize(data);
 		var requiredLength = Helper.GetRequiredLength(serialized);
-		requiredLength.Should().Be(data.Length);
+		Assert.Equal(data.Length, requiredLength);
 	}
 
 	[Theory]
@@ -38,7 +38,7 @@ public class HelperTests {
 		var buffer = new RentedBufferWriter<T>(requiredLength + 5);
 		try {
 			Helper.ReadToRenterBufferWriter(ref buffer, serialized, requiredLength);
-			buffer.Position.Should().Be(expectedLength);
+			Assert.Equal(expectedLength, buffer.Position);
 		} finally {
 			buffer?.Dispose();
 		}
@@ -53,7 +53,7 @@ public class HelperTests {
 		var buffer = new RentedBufferWriter<Person>(requiredLength + 5);
 		try {
 			Helper.ReadToRenterBufferWriter(ref buffer, serialized, requiredLength);
-			buffer.Position.Should().Be(requiredLength);
+			Assert.Equal(requiredLength, buffer.Position);
 		} finally {
 			buffer?.Dispose();
 		}

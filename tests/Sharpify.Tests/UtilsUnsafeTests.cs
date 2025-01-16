@@ -11,8 +11,8 @@ public partial class UtilsTests {
         var a = predicate('a');
 
         // Assert
-        one.Should().Be(1);
-        a.Should().Be(0);
+        Assert.Equal(1, one);
+        Assert.Equal(0, a);
     }
 
     [Fact]
@@ -24,8 +24,8 @@ public partial class UtilsTests {
         var result = Utils.Unsafe.TryUnbox<int>(obj, out var value);
 
         // Assert
-        result.Should().BeTrue();
-        value.Should().Be(5);
+        Assert.True(result);
+        Assert.Equal(5, value);
     }
 
     [Fact]
@@ -39,6 +39,6 @@ public partial class UtilsTests {
         mutableSpan[2] = '1';
 
         // Assert
-        str.Should().Be("ab1");
+        Assert.Equal("ab1", str);
     }
 }

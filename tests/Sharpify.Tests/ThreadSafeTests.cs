@@ -5,7 +5,7 @@ public class ThreadSafeTests {
     public void ThreadSafe_EmptyConstructor() {
         ThreadSafe<int> wrapper = new();
 
-        wrapper.Value.Should().Be(0);
+        Assert.Equal(0, wrapper.Value);
     }
 
     [Fact]
@@ -14,7 +14,7 @@ public class ThreadSafeTests {
 
         int result = wrapper.Value;
 
-        result.Should().Be(42);
+        Assert.Equal(42, result);
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class ThreadSafeTests {
 
         int result = wrapper.Modify(_ => newValue);
 
-        result.Should().Be(newValue);
+        Assert.Equal(newValue, result);
     }
 
     [Theory]
@@ -36,7 +36,7 @@ public class ThreadSafeTests {
 
         int result = wrapper.Modify(value => value + addition);
 
-        result.Should().Be(expected);
+        Assert.Equal(expected, result);
     }
 
     [Theory]
@@ -49,7 +49,7 @@ public class ThreadSafeTests {
         var tasks = Enumerable.Range(0, amount).AsParallel().Select(i => Task.Run(() => wrapper.Modify(value => value + 1)));
         await Task.WhenAll(tasks);
 
-        wrapper.Value.Should().Be(expected);
+        Assert.Equal(expected, wrapper.Value);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class ThreadSafeTests {
         int actual = wrapper.GetHashCode();
         int expected = val.GetHashCode();
 
-        actual.Should().Be(expected);
+        Assert.Equal(expected, actual);
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public class ThreadSafeTests {
     public void ThreadSafe_Equals(int actual, int expected) {
         ThreadSafe<int> wrapper = new(actual);
 
-        wrapper.Equals(expected).Should().BeTrue();
+        Assert.True(wrapper.Equals(expected));
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class ThreadSafeTests {
 
         ThreadSafe<int> wrapper = new(val);
 
-        wrapper.Equals(null).Should().BeFalse();
+        Assert.False(wrapper.Equals(null));
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class ThreadSafeTests {
 
         ThreadSafe<int> wrapper = new(val);
 
-        wrapper.Equals(new ThreadSafe<int>(val)).Should().BeTrue();
+        Assert.True(wrapper.Equals(new ThreadSafe<int>(val)));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class ThreadSafeTests {
         ThreadSafe<int> wrapper = new(val);
         var other = (object)new ThreadSafe<int>(val);
 
-        wrapper.Equals(other).Should().BeTrue();
+        Assert.True(wrapper.Equals(other));
     }
 
     [Fact]
@@ -110,6 +110,6 @@ public class ThreadSafeTests {
         ThreadSafe<int> wrapper = new(val);
         object? other = null;
 
-        wrapper.Equals(other).Should().BeFalse();
+        Assert.False(wrapper.Equals(other));
     }
 }
