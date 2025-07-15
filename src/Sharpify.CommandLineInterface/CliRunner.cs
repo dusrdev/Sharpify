@@ -1,7 +1,5 @@
-﻿using System.Buffers;
-using System.Collections.ObjectModel;
-
-using Sharpify.Collections;
+﻿using System.Collections.ObjectModel;
+using System.Text;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -70,9 +68,9 @@ public sealed class CliRunner {
 	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
-	public ValueTask<int> RunAsync(ReadOnlySpan<string> args, bool commandNameRequired = true) {
+	public ValueTask<int> RunAsync(IList<string> args, bool commandNameRequired = true) {
 		// Handle no input
-		if (args.Length is 0) {
+		if (args.Count is 0) {
 			// If display help text is used, always display the help text
 			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
 				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
@@ -92,7 +90,7 @@ public sealed class CliRunner {
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(Arguments? arguments, bool commandNameRequired = true) {
-		if (arguments is null) {
+		if (arguments is null or { Count: 0 }) {
 			return OutputHelper.Return("Input could not be parsed", 400, _config.ShowErrorCodes);
 		}
 
@@ -133,36 +131,33 @@ public sealed class CliRunner {
 
 	// Generates the help for the application - happens once, at initialization of CliRunner
 	private string GenerateHelpText(bool commandNameRequired) {
-		// here the likely help text is larger than per command, so we use a rented buffer
-		using var owner = MemoryPool<char>.Shared.Rent(GetRequiredBufferLength());
-		var buffer = StringBuffer.Create(owner.Memory.Span);
-		buffer.AppendLine();
+		StringBuilder builder = new(GetRequiredBufferLength());
+		builder.AppendLine();
 		if (_config.HelpTextSource is HelpTextSource.Metadata) {
 			var metaData = _config.MetaData;
-			buffer.AppendLine(metaData.Name);
-			buffer.AppendLine();
-			buffer.AppendLine(metaData.Description);
-			buffer.AppendLine();
-			buffer.Append("Author: ");
-			buffer.AppendLine(metaData.Author);
-			buffer.Append("Version: ");
-			buffer.AppendLine(metaData.Version);
-			buffer.Append("License: ");
-			buffer.AppendLine(metaData.License);
-			buffer.AppendLine();
+			builder.AppendLine(metaData.Name)
+				   .AppendLine()
+				   .AppendLine(metaData.Description)
+				   .Append("Author: ")
+				   .AppendLine(metaData.Author)
+				   .Append("Version: ")
+				   .AppendLine(metaData.Version)
+				   .Append("License: ")
+				   .AppendLine(metaData.License)
+				   .AppendLine();
 		} else if (_config.HelpTextSource is HelpTextSource.CustomHeader) {
-			buffer.AppendLine(_config.CustomHeader);
-			buffer.AppendLine();
+			builder.AppendLine(_config.CustomHeader)
+				   .AppendLine();
 		}
 		if (commandNameRequired) {
-			buffer.AppendLine("Commands:");
+			builder.AppendLine("Commands:");
 			var maxCommandLength = GetMaximumCommandLength() + 2;
 			foreach (Command command in _config.Commands) {
-				buffer.Append(command.Name.PadRight(maxCommandLength));
-				buffer.Append(" - ");
-				buffer.AppendLine(command.Description);
+				builder.Append(command.Name.PadRight(maxCommandLength))
+					   .Append(" - ")
+					   .AppendLine(command.Description);
 			}
-			buffer.Append(
+			builder.Append(
 				"""
 
 				To get help for a command, use: "<command> --help"
@@ -172,11 +167,11 @@ public sealed class CliRunner {
 			);
 		} else {
 			var command = _config.Commands[0];
-			buffer.Append("Usage: ");
-			buffer.AppendLine(command.Usage);
+			builder.Append("Usage: ")
+				   .AppendLine(command.Usage);
 		}
 
-		return buffer.Allocate();
+		return builder.ToString();
 	}
 
 	private int GetMaximumCommandLength() => _config.Commands.Max(c => c.Name.Length);

@@ -1,7 +1,5 @@
 using Sharpify.Collections;
 
-using Xunit.Abstractions;
-
 namespace Sharpify.Tests.Collections;
 
 public class LocalPersistentDictionaryTests {
@@ -73,11 +71,11 @@ public class LocalPersistentDictionaryTests {
 
         // Act
         Task[] upsertTasks = [
-            Task.Run(async () => await dict.UpsertAsync("one", "1")),
-            Task.Run(async () => await dict.UpsertAsync("two", "2")),
-            Task.Run(async () => await dict.UpsertAsync("three", "3")),
-            Task.Run(async () => await dict.UpsertAsync("four", "4")),
-            Task.Run(async () => await dict.UpsertAsync("five", "5")),
+            Task.Run(async () => await dict.UpsertAsync("one", "1"), TestContext.Current.CancellationToken),
+            Task.Run(async () => await dict.UpsertAsync("two", "2"), TestContext.Current.CancellationToken),
+            Task.Run(async () => await dict.UpsertAsync("three", "3"), TestContext.Current.CancellationToken),
+            Task.Run(async () => await dict.UpsertAsync("four", "4"), TestContext.Current.CancellationToken),
+            Task.Run(async () => await dict.UpsertAsync("five", "5"), TestContext.Current.CancellationToken),
         ];
         await Task.WhenAll(upsertTasks);
 

@@ -11,7 +11,7 @@ public class ParallelExtensionsTests {
         var action = new MultiplyActionDict(results);
 
         // Act
-        await dict.ForAll(action);
+        await dict.ForAll(action, TestContext.Current.CancellationToken);
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -30,7 +30,7 @@ public class ParallelExtensionsTests {
             results[x.Key] = x.Value * 2;
             threads.Push(Environment.CurrentManagedThreadId);
             return Task.CompletedTask;
-        });
+        }, TestContext.Current.CancellationToken);
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -45,7 +45,7 @@ public class ParallelExtensionsTests {
         var action = new MultiplyActionDictAsync(results);
 
         // Act
-        await dict.ForAllAsync(action);
+        await dict.ForAllAsync(action, TestContext.Current.CancellationToken);
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -64,7 +64,7 @@ public class ParallelExtensionsTests {
             results[x.Key] = x.Value * 2;
             threads.Push(Environment.CurrentManagedThreadId);
             await Task.Delay(50, token);
-        });
+        }, TestContext.Current.CancellationToken);
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert
@@ -83,7 +83,7 @@ public class ParallelExtensionsTests {
             results[x.Key] = x.Value * 2;
             threads.Push(Environment.CurrentManagedThreadId);
             await Task.Delay(50, token);
-        });
+        }, TestContext.Current.CancellationToken);
         var expected = dict.ToDictionary(x => x.Key, x => x.Value * 2);
 
         // Assert

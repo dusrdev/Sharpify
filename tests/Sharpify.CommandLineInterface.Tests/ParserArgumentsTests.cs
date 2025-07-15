@@ -1,11 +1,11 @@
-using ConsoleDump;
+using System.Collections.ObjectModel;
 
 namespace Sharpify.CommandLineInterface.Tests;
 
 public class ParserArgumentsTests {
 	[Fact]
 	public void Split_WhenEmpty_ReturnsEmptyList() {
-		Assert.True(Parser.Split("").IsDisabled);
+		Assert.Empty(Parser.Split(""));
 	}
 
 	[Theory]
@@ -14,7 +14,7 @@ public class ParserArgumentsTests {
 	[InlineData("\"hello world\"", new[] { "hello world" })]
 	[InlineData("\"hello world\" \"hello world\"", new[] { "hello world", "hello world" })]
 	public void Split_WhenValid_ReturnsValid(string input, string[] expected) {
-		Assert.Equal(expected, Parser.Split(input).WrittenSpan);
+		Assert.Equal(expected, Parser.Split(input));
 	}
 
 	[Fact]
@@ -38,15 +38,51 @@ public class ParserArgumentsTests {
 			Helper.GetMapped(("0", "test"), ("1", "one"), ("param", "value"), ("2", "two")),
 		};
 		for (var i = 0; i < args.Length; i++) {
-			var localArgs = args[i];
+			var localArgs = args[i].AsReadOnly();
 			var localArguments = Parser.MapArguments(localArgs, StringComparer.CurrentCultureIgnoreCase);
 			Assert.Equal(expected[i], localArguments);
 		}
 	}
 
 	[Fact]
-	public void Parse_WhenEmpty_ReturnsNull() {
-		Assert.Null(Parser.ParseArguments(""));
+	public void Parse_WhenEmpty_ReturnsValidButEmptyArguments() {
+		Assert.Equal(0, Parser.ParseArguments("").Count);
+	}
+
+	[Fact]
+	public void ParseArguments_ForCollection_List() {
+		List<string> args = ["command", "--message", "hello world", "--code", "404", "--force"];
+		var arguments = Parser.ParseArguments(args, StringComparer.OrdinalIgnoreCase);
+		Assert.NotNull(arguments);
+		Assert.Equal(4, arguments.Count);
+		Assert.Equal("command", arguments.GetValue(0, ""));
+		Assert.Equal("hello world", arguments.GetValue("message", ""));
+		Assert.Equal(404, arguments.GetValue("code", 0));
+		Assert.True(arguments.HasFlag("force"));
+	}
+
+	[Fact]
+	public void ParseArguments_ForCollection_Array() {
+		string[] args = ["command", "--message", "hello world", "--code", "404", "--force"];
+		var arguments = Parser.ParseArguments(args, StringComparer.OrdinalIgnoreCase);
+		Assert.NotNull(arguments);
+		Assert.Equal(4, arguments.Count);
+		Assert.Equal("command", arguments.GetValue(0, ""));
+		Assert.Equal("hello world", arguments.GetValue("message", ""));
+		Assert.Equal(404, arguments.GetValue("code", 0));
+		Assert.True(arguments.HasFlag("force"));
+	}
+
+	[Fact]
+	public void ParseArguments_ForCollection_ReadOnlyCollection() {
+		ReadOnlyCollection<string> roc = new(["command", "--message", "hello world", "--code", "404", "--force"]);
+		var arguments = Parser.ParseArguments(roc, StringComparer.OrdinalIgnoreCase);
+		Assert.NotNull(arguments);
+		Assert.Equal(4, arguments.Count);
+		Assert.Equal("command", arguments.GetValue(0, ""));
+		Assert.Equal("hello world", arguments.GetValue("message", ""));
+		Assert.Equal(404, arguments.GetValue("code", 0));
+		Assert.True(arguments.HasFlag("force"));
 	}
 
 	[Fact]

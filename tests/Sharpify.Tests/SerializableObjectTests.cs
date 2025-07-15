@@ -104,7 +104,7 @@ public class SerializableObjectTests {
         using var obj = new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
 
         // Act
-        await File.WriteAllTextAsync(file, "");
+        await File.WriteAllTextAsync(file, "", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("John Doe", obj.Value.Name);
@@ -125,7 +125,7 @@ public class SerializableObjectTests {
         };
 
         // Act
-        await File.WriteAllTextAsync(file, "invalid json");
+        await File.WriteAllTextAsync(file, "invalid json", TestContext.Current.CancellationToken);
         // Assert
         Assert.Equal(0, count);
 
@@ -143,7 +143,7 @@ public class SerializableObjectTests {
         obj.OnChanged += (sender, e) => Assert.Equal("Jane", e.Value.Name);
 
         // Act
-        await File.WriteAllTextAsync(file, JsonSerializer.Serialize(config with { Name = "Jane" }, JsonContext.Default.Configuration));
+        await File.WriteAllTextAsync(file, JsonSerializer.Serialize(config with { Name = "Jane" }, JsonContext.Default.Configuration), TestContext.Current.CancellationToken);
 
         // Cleanup
         await file.DeleteAsync();

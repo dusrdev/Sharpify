@@ -9,7 +9,10 @@ namespace Sharpify.CommandLineInterface;
 /// Arguments instances are created via <see cref="Parser"/>
 /// </remarks>
 public sealed partial class Arguments {
-    private readonly string[] _args;
+    /// <summary>
+    /// Source is the list of separated arguments on top of which this instance of <see cref="Arguments"/> was built.
+    /// </summary>
+    public readonly ReadOnlyCollection<string> Source;
     private readonly Dictionary<string, string> _arguments;
 
     /// <summary>
@@ -17,8 +20,8 @@ public sealed partial class Arguments {
     /// </summary>
     /// <param name="args">Copy or reference of the arguments before processing</param>
     /// <param name="arguments">Ensure not null or empty</param>
-    internal Arguments(string[] args, Dictionary<string, string> arguments) {
-        _args = args;
+    internal Arguments(ReadOnlyCollection<string> args, Dictionary<string, string> arguments) {
+        Source = args;
         _arguments = arguments;
     }
 
@@ -35,33 +38,12 @@ public sealed partial class Arguments {
     /// <summary>
     /// Returns an empty arguments object.
     /// </summary>
-    public static readonly Arguments Empty = new([], []);
+    public static readonly Arguments Empty = new(Array.Empty<string>().AsReadOnly(), []);
 
     /// <summary>
-    /// Returns a <see cref="ReadOnlyMemory{String}"/> of the arguments as they were before processing, but after splitting (if it was required)
+    /// Returns an array copy of <see cref="Source"/>
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// If you passed a collection of strings to be used for <see cref="Arguments"/> it will contain a copy of that array, if a <see cref="string"/> was passed, it will contain a copy of the result of <see cref="Parser.ParseArguments(ReadOnlySpan{char})"/>
-    /// </para>
-    /// <para>
-    /// In normal use case you shouldn't need this, but in case you want to manufacture some sort of a nested command structure, you can use this to filter once more for <see cref="Arguments"/> after selectively parsing some of the arguments, in which case it is very powerful.
-    /// </para>
-    /// </remarks>
-    public ReadOnlyMemory<string> ArgsAsMemory() => _args;
-
-    /// <summary>
-    /// Returns a <see cref="ReadOnlySpan{String}"/> of the arguments as they were before processing, but after splitting (if it was required)
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// If you passed a collection of strings to be used for <see cref="Arguments"/> it will contain a copy of that array, if a <see cref="string"/> was passed, it will contain a copy of the result of <see cref="Parser.ParseArguments(ReadOnlySpan{char})"/>
-    /// </para>
-    /// <para>
-    /// In normal use case you shouldn't need this, but in case you want to manufacture some sort of a nested command structure, you can use this to filter once more for <see cref="Arguments"/> after selectively parsing some of the arguments, in which case it is very powerful.
-    /// </para>
-    /// </remarks>
-    public ReadOnlySpan<string> ArgsAsSpan() => _args;
+    public string[] SourceCopy => Source.ToArray();
 
     /// <summary>
     /// Returns new Arguments with positional arguments forwarded by 1, so that argument that was 1 is now 0, 2 is now 1 and so on. This is non-destructive, the original arguments are not modified.
@@ -94,7 +76,7 @@ public sealed partial class Arguments {
 
         // Because this is a new dictionary, if pos 1, isn't found, 0 still won't be present
         // So essentially 0 was forwarded to no longer exist
-        return new Arguments(_args, dict);
+        return new Arguments(Source, dict);
     }
 
     /// <summary>
