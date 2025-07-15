@@ -84,6 +84,7 @@ dotnet_diagnostic.IDE0057.severity = none # use range operator
 dotnet_diagnostic.IDE0301.severity = none # simplify collection initialization
 dotnet_diagnostic.IDE0053.severity = none # expression body lambda
 dotnet_diagnostic.IDE0046.severity = none # simplify if(s) - conditional operator
+dotnet_diagnostic.IDE0305.severity = none # [, ...] instead of .ToArray()
 
 
 # namespace declaration
