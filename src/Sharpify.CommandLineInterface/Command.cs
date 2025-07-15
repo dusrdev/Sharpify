@@ -1,6 +1,4 @@
-using System.Buffers;
-
-using Sharpify.Collections;
+using System.Text;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -31,18 +29,17 @@ public abstract class Command {
 	/// </summary>
 	public virtual string GetHelp() {
 		var length = (Name.Length + Description.Length + Usage.Length) * 2;
-		using var owner = MemoryPool<char>.Shared.Rent(length);
-		var buffer = StringBuffer.Create(owner.Memory.Span);
-		buffer.AppendLine();
-		buffer.Append("Command: ");
-		buffer.AppendLine(Name);
-		buffer.AppendLine();
-		buffer.Append("Description: ");
-		buffer.AppendLine(Description);
-		buffer.AppendLine();
-		buffer.Append("Usage: ");
-		buffer.AppendLine(Usage);
-		return buffer.Allocate();
+		StringBuilder builder = new(length);
+		builder.AppendLine()
+			   .Append("Command: ")
+			   .AppendLine(Name)
+			   .AppendLine()
+			   .Append("Description: ")
+			   .AppendLine(Description)
+			   .AppendLine()
+			   .Append("Usage: ")
+			   .AppendLine(Usage);
+		return builder.ToString();
 	}
 
 	/// <summary>
