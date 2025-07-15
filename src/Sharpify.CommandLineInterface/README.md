@@ -2,7 +2,7 @@
 
 `Sharpify.CommandLineInterface` is a high performance, reflection free and AOT-ready framework for creating command line interfaces, with a configurable output writer and no direct dependency to `System.Console` enabling it to be embedded, used with inputs from any source and output to any source.
 
-Most other command line frameworks in c# use `reflection` to provide their "magic" such as generating help text, and providing input validation, `Sharpify.CommandLineInterface` instead uses compile time implemented metadata and user guided validation. each command, must implement the `Command` abstract class, part of which will be to set the command metadata, the main entry `CliRunner` also has an application level metadata object that can be customized in the `CliBuilder` process, using those, `Sharpify.CommandLineInterface` can resolve and format that metadata to generate an output similar to the other frameworks. Each command's entry point is either `ExecuteAsync` or `Execute` which receive an input of type `Arguments` that can be used to retrieve, validate and parse arguments.
+Most other command line frameworks in c# use `reflection` to provide their "magic" such as generating help text, and providing input validation, `Sharpify.CommandLineInterface` instead uses compile time implemented metadata and user guided validation. each command must implement the `Command` or `SynchronousCommand` abstract class, part of which will be to set the command metadata, the main entry `CliRunner` also has an application level metadata object that can be customized in the `CliBuilder` process, using those, `Sharpify.CommandLineInterface` can resolve and format that metadata to generate an output similar to the other frameworks. Each command's entry point is either `ExecuteAsync` or `Execute` which receive an input of type `Arguments` that can be used to retrieve, validate and parse arguments.
 
 ## Usage
 
@@ -54,9 +54,9 @@ public sealed class EchoCommand : SynchronousCommand {
 
 As you can see the properties set the metadata for the command at compile time, and when it comes time to resolve it, no `reflection` is needed.
 
-`ExecuteAsync` is returning a `ValueTask<int>` allowing both synchronous and asynchronous code, we use the high performance `Arguments` which is an object that manages arguments parsed from the input, to retrieving and validating data. `Execute` is a sync alternative that just reduces the need of wrapping `ValueTask.FromResult(int)` verbosity when `async` is not needed.
+`ExecuteAsync` is returning a `ValueTask<int>` allowing both synchronous and asynchronous code, we use the high performance `Arguments` which is an object that manages arguments parsed from the input for retrieving and validating parameters. `Execute` is a synchronous alternative that just reduces the need of verbosity from `ValueTask.FromResult(int)` when `async` is not needed.
 
-`OutputHelper.Return` is a helper method which outputs the message to customizable `TextWriter` in `CliRunner`, and returns the code that is specified.
+`OutputHelper.Return` is a helper method which outputs the message to customizable `TextWriter` in `CliRunner`, and returns the code (`int`) that is specified.
 
 ### Program.cs (Or other entry point)
 
@@ -85,12 +85,11 @@ public static class Program {
 }
 ```
 
-We can see that we can use high performances compiler optimized `ReadOnlySpan` to consolidate the commands,
-We can also add command one by one, using `params []` or `ReadOnlySpan<Command>`, if you want, you can also dynamically create an array of `Command`s from the executing assembly or any other using `reflection` and pass it as an argument, however this won't be AOT-compatible.
+We can add commands one by one, or use `params []` and `ReadOnlySpan<Command>`, if you want, you can also dynamically create an array of `Command`s from the executing assembly or any other using `reflection` and pass it as an argument, however this will be subject to trimming and can affect AOT compatibility.
 
-Then we use the fluent api to add the commands, set the output to the console (we can also set it to any `TextWriter`), then we modify the global metadata and build.
+Fluent API (builder pattern) is used to add the commands, set the output to the console (we can also set it to any `TextWriter`), and modify the global metadata that will be used for HelpText generation, and finally, build.
 
-Running the app with `RunAsync` parses the `args`, and handles `help` requests, both global and per command, delegates and forwards the arguments to the requested command by name, and executes.
+Running the app with `RunAsync` parses the `args`, and handles `help` requests, both global and per command, it delegates the execution to the appropriate command and injects arguments. After parsing the command name (first argument), `RunAsync` will also trigger `Arguments.ForwardPositionalArguments`, which will remove the command name and shift the arguments, so you don't need to account for it inside the logic of the command.
 
 ### Validation
 
@@ -111,25 +110,53 @@ public override int Execute(Arguments args) {
 }
 ```
 
-Because you provide the actual type (no inference is needed), reflection is also not needed which maintains the Native Aot compatibility and removes the possibility of trimming. With the consolidated APIs of `Arguments` you can parse of validate concisely without verbose code filled with your own parsing logic.
+Because you provide the actual type (no inference is needed), reflection is also not needed, thus, Native AOT compatibility is maintained without the possibility of trimming. With the consolidated APIs of `Arguments` you can validate and parse concisely with minimal verbosity.
+
+### Minimalistic Structure Without Command Classes
+
+As validation and parsing (the main pain points of CLI development) are manged through the `Arguments` object. You can use it directly if you don't need the global orchestration of `CliRunner`.
+
+Example: Imagine you wanted a one `.cs` file that will take 2 numbers and add them, here's how to do that:
+
+```csharp
+using Sharpify.CommandLineInterface;
+// using top level statements (>= .NET 5) Program.cs implicitly gets string[] args
+Arguments arguments = Parser.ParseArguments(args);
+// For the example we will decide that we expect named parameters x and y
+if (!arguments.TryGetValue("x", 0, out int x)) {
+  Console.WriteLine("Parameter \"x\" is required.");
+  return 1; // 1 is a common code for error
+}
+if (!arguments.TryGetValue("y", 0, out int y)) {
+  Console.WriteLine("Parameter \"y\" is required.");
+  return 1;
+}
+// If we reached here, we validated and parsed x and y successfully
+Console.WriteLine($"{x} + {y} = {x + y}");
+return 0; // 0 is a common success code
+```
+
+In this example, we created a functional CLI that validates the existence and parses 2 named parameters, and used them, all in 10 lines of code.
 
 ### Arguments Key Logic
 
-`Arguments` is a key-value-pair wrapper around `Dictionary<string, string>` and before validation maintains these types. To ensure a wide variety of applications it parses arguments in the following way:
+`Arguments` is a key-value-pair wrapper around `Dictionary<string, string>` which stores mapped arguments. To ensure a wide variety of applications, it parses arguments in the following way:
 
-* Positional arguments are parsed as such, if `int x` is their position, the key is essentially `x.ToString()`. Positions start with 0.
+* Positional arguments are retrieved and parsed by using the position as key, for example: for the first argument (not named or flag), it could be retrieved by the key "0" or simply the number 0.
 * Named arguments are parsed as regular key and value, dashes are removed from the key. So "--n" or "-n", key is "n". (But without dashes "n" will be registered as value of positional argument)
   * If a number is following a dash, it will be considered a numeric value, so don't use numbers as keys.
-* Flags are like named arguments but whose value is empty
+* Flags are like named arguments but whose value is empty, in order to avoid them being interpreted as named arguments, it is best practice to keep them *after* all the other parameters.
 
 To handle the above there are the following overload resolutions in `Arguments`:
 
 * `TryGetValue(int position, out string value)` - Will `.ToString()` the position and check the arguments.
 * `TryGetValue(string key, out string value)` - Will check the arguments for the key.
 * `HasFlag(string flag)` - Will check the arguments for the flag, so it will check both named key and that value is empty.
-* `TryGetValue(ReadOnlySpan<string> keys, out string value)` - Will check the arguments for the keys, so the first matching key will be returned.
+* `TryGetValue(ReadOnlySpan<string> keys, out string value)` - Will check the arguments for the keys, so the first matching key will be returned. This can be used to work with aliases (such as "-f" or "--file", it will find whichever the user enters and parse the value into the same variable)
 * `ContainsKey(string key)` - Will check the arguments for the key. The argument in this case can be a named argument or flag, this overload doesn't distinguish between them.
 * `ContainsKey(int position)` - Will `.ToString()` the position and check if a positional argument exists.
+
+Arguments also support parameters which their value is a group of inputs, think of how the tool `rm` support any number of files, this is the same here. To further help working with these scenarios `TryGetValues` overloads accept a `separator` and return either a `string[]` or `T[]`. See all the options below.
 
 ### Arguments - All methods
 
@@ -188,13 +215,13 @@ bool TryGetValues<T>(ReadOnlySpan<string> keys, string? separator, out T[] value
 
 ### Custom Parsing
 
-`Parser` is a static class that provides the functionality of parsing inputs to `Arguments`, it also has a function of parsing an input such as string (or `ReadOnlySpan<char>`) to a `List<string>`, it is efficient and different than `string.Split()` since it splits both on space and quotes, giving quotes priority, so that whatever is within quotes, will remain a single string, regardless of how many spaces there are inside. This can be especially important if you need perhaps file names that could contain spaces, or any other text.
+`Parser` is a static class that provides the functionality of mapping inputs to an `Arguments` object, it also has a function of parsing an input such as string (or `ReadOnlySpan<char>`) to a `List<string>`, it is efficient and different than `string.Split()` since it splits both on space and quotes, giving quotes priority, so that whatever is within quotes, will remain a single string, regardless of how many spaces there are inside. This can be especially important if you need file names that could contain spaces, or any other text.
 
-`Parser` also has overloads for parsing arguments that configure a `StringComparer`, by default a `CurrentCultureIgnoreCase` is used, but whatever you prefer can be used instead.
+`Parser` also has overloads for mapping arguments that configure a `StringComparer`, by default a `StringComparer.OrdinalIgnoreCase` is used, but whatever you prefer can be used instead.
 
 ### Overloads of `CliRunner.RunAsync`
 
-`CliRunner.RunAsync` has overloads for `ReadOnlySpan<char>` (string), `ReadOnlySpan<string>` (array), and `Arguments` giving you full control over your input, and even custom parsing.
+`CliRunner.RunAsync` has overloads for `ReadOnlySpan<char>` (string), `IList<string>` (direct cast from `string[]` or `List<string>`), and `Arguments`, giving you full control over your input, and even custom parsing.
 
 ## Contact
 

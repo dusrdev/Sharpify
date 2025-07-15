@@ -59,12 +59,12 @@ For more information check [inner directory](src/Sharpify.Data/README.md).
 
 ## Sharpify.CommandLineInterface
 
-`Sharpify.CommandLineInterface` is another extension package that adds a high performance, reflection free and `AOT-ready` framework for creating command line and embedded interfaces
+`Sharpify.CommandLineInterface` is a standalone package that adds a high performance, reflection free and `AOT-ready` framework for creating command line and embedded interfaces
 
-* Maintenance friendly model that depends on class that implement `Command` or `SynchronousCommand`
+* Maintenance friendly model that depends on classes that implement `Command` or `SynchronousCommand`
 * `Arguments` is an abstraction layer over the inputs that validate during runtime according to user needs via convenient APIs.
 * Configuration using a fluent builder pattern.
-* Configurable output and input pipes, enable usage outside of `Console` apps, enabling the option for embedded use in any application.
+* Configurable output and input pipes, enable usage outside of `Console` apps, supporting embedded use in any application.
 * Automatic and structured general and command-specific help text.
 * Configurable error handling with defaults.
 * Super lightweight
