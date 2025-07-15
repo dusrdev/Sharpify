@@ -45,8 +45,8 @@ public class ParserArgumentsTests {
 	}
 
 	[Fact]
-	public void Parse_WhenEmpty_ReturnsNull() {
-		Assert.Null(Parser.ParseArguments(""));
+	public void Parse_WhenEmpty_ReturnsValidButEmptyArguments() {
+		Assert.Equal(0, Parser.ParseArguments("").Count);
 	}
 
 	[Fact]

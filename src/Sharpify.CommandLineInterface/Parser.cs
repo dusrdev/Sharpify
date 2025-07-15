@@ -60,14 +60,14 @@ public static class Parser {
     /// <remarks>
     /// This overload uses <see cref="StringComparer.OrdinalIgnoreCase"/>
     /// </remarks>
-    public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.OrdinalIgnoreCase);
+    public static Arguments ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Parses a string into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="str"></param>
     /// <param name="comparer"></param>
-    public static Arguments? ParseArguments(ReadOnlySpan<char> str, StringComparer comparer) {
+    public static Arguments ParseArguments(ReadOnlySpan<char> str, StringComparer comparer) {
         var args = Split(str);
         return ParseArguments(args, comparer);
     }
@@ -79,7 +79,7 @@ public static class Parser {
     /// <remarks>
     /// This overload uses <see cref="StringComparer.OrdinalIgnoreCase"/>
     /// </remarks>
-    public static Arguments? ParseArguments<TList>(TList args) where TList : IList<string>
+    public static Arguments ParseArguments<TList>(TList args) where TList : IList<string>
         => ParseArguments(args, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -88,13 +88,13 @@ public static class Parser {
     /// <param name="args"></param>
     /// <param name="comparer"></param>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static Arguments? ParseArguments<TList>(TList args, StringComparer comparer) where TList : IList<string> {
+    public static Arguments ParseArguments<TList>(TList args, StringComparer comparer) where TList : IList<string> {
         if (args.Count is 0) {
-            return null;
+            return Arguments.Empty;
         }
         var roc = new ReadOnlyCollection<string>(args);
         var results = MapArguments(roc, comparer);
-        return results.Count is 0 ? null : new Arguments(roc, results);
+        return results.Count is 0 ? Arguments.Empty : new Arguments(roc, results);
     }
 
     // Maps a ReadOnlyCollection of strings into a dictionary of arguments

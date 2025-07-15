@@ -90,7 +90,7 @@ public sealed class CliRunner {
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
 	public ValueTask<int> RunAsync(Arguments? arguments, bool commandNameRequired = true) {
-		if (arguments is null) {
+		if (arguments is null or { Count: 0 }) {
 			return OutputHelper.Return("Input could not be parsed", 400, _config.ShowErrorCodes);
 		}
 
