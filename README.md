@@ -10,6 +10,8 @@ A collection of high performance language extensions for C#, fully compatible wi
 [![Nuget](https://img.shields.io/nuget/dt/Sharpify.Data?label=Sharpify.Data%20Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.Data/)
 > dotnet add package Sharpify.Data
 
+* `Sharpify.Data` is deprecated and will no longer be maintained. Refer to [ArrowDb](https://github.com/dusrdev/ArrowDb) for a superior alternative.
+
 [![Nuget](https://img.shields.io/nuget/dt/Sharpify.CommandLineInterface?label=Sharpify.CommandLineInterface%20Nuget%20Downloads)](https://www.nuget.org/packages/Sharpify.CommandLineInterface/)
 > dotnet add package Sharpify.CommandLineInterface
 
