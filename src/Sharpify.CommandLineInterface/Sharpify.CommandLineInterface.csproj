@@ -13,7 +13,7 @@
     <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Title>Sharpify.CommandLineInterface</Title>
-    <Description>An extension of Sharpify, focused on creating command line interfaces</Description>
+    <Description>An standalone package focused on creating minimalistic AOT compatible command line interfaces</Description>
     <PackageProjectUrl>https://github.com/dusrdev/Sharpify</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dusrdev/Sharpify</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
