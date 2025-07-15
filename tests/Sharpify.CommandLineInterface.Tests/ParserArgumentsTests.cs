@@ -1,5 +1,3 @@
-using ConsoleDump;
-
 namespace Sharpify.CommandLineInterface.Tests;
 
 public class ParserArgumentsTests {
