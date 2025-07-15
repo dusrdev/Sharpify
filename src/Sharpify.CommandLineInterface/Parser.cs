@@ -1,6 +1,5 @@
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-
-using Sharpify.Collections;
 
 namespace Sharpify.CommandLineInterface;
 
@@ -9,14 +8,20 @@ namespace Sharpify.CommandLineInterface;
 /// </summary>
 public static class Parser {
     /// <summary>
+    /// The default starting capacity of argument buffers
+    /// </summary>
+    private const int DefaultBufferCapacity = 8;
+
+    /// <summary>
     /// Very efficiently splits an input into a List of strings, respects quotes
     /// </summary>
     /// <param name="str"></param>
-    public static RentedBufferWriter<string> Split(ReadOnlySpan<char> str) {
+    public static List<string> Split(ReadOnlySpan<char> str) {
+        List<string> args = [];
         if (str.Length is 0) {
-            return new RentedBufferWriter<string>(0);
+            return args;
         }
-        var buffer = new RentedBufferWriter<string>(str.Length);
+        args.EnsureCapacity(DefaultBufferCapacity);
         int i = 0;
         while ((uint)i < (uint)str.Length) {
             char c = str[i];
@@ -30,7 +35,7 @@ public static class Parser {
                 if (nextQuote is -1) {
                     break;
                 }
-                buffer.WriteAndAdvance(new string(str.Slice(0, nextQuote)));
+                args.Add(new string(str.Slice(0, nextQuote)));
                 i = nextQuote + 1;
                 continue;
             }
@@ -38,27 +43,14 @@ public static class Parser {
             str = str.Slice(i);
             int nextSpace = str.IndexOf(' ');
             if (nextSpace <= 0) { // the last word, no spaces after
-                buffer.WriteAndAdvance(new string(str));
+                args.Add(new string(str));
                 i = str.Length;
                 continue;
             }
-            buffer.WriteAndAdvance(new string(str.Slice(0, nextSpace)));
+            args.Add(new string(str.Slice(0, nextSpace)));
             i = nextSpace + 1;
         }
-        return buffer;
-    }
-
-    /// <summary>
-    /// Splits a <see cref="ReadOnlySpan{T}"/> of characters into a list of strings.
-    /// </summary>
-    /// <param name="str">The input <see cref="ReadOnlySpan{T}"/> of characters to split.</param>
-    /// <returns>A <see cref="List{T}"/> of strings containing the split parts.</returns>
-    public static List<string> SplitToList(ReadOnlySpan<char> str) {
-        using var splitBuffer = Split(str);
-        var span = splitBuffer.WrittenSpan;
-        var list = new List<string>(span.Length);
-        list.AddRange(span);
-        return list;
+        return args;
     }
 
     /// <summary>
@@ -73,8 +65,8 @@ public static class Parser {
     /// <param name="str"></param>
     /// <param name="comparer"></param>
     public static Arguments? ParseArguments(ReadOnlySpan<char> str, StringComparer comparer) {
-        using var splitBuffer = Split(str);
-        return ParseArguments(splitBuffer.WrittenSpan, comparer);
+        var args = Split(str);
+        return ParseArguments(args, comparer);
     }
 
     /// <summary>
@@ -82,34 +74,38 @@ public static class Parser {
     /// </summary>
     /// <param name="args"></param>
     /// <param name="comparer"></param>
-    public static Arguments? ParseArguments(List<string> args, StringComparer comparer) => ParseArgumentsInternal(args.AsSpan(), comparer);
+    public static Arguments? ParseArguments(List<string> args, StringComparer comparer) => ParseArguments(args.AsReadOnly(), comparer);
 
     /// <summary>
-    /// Parses a ReadOnlySpan of strings into arguments.
+    /// Parses an Array of strings into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="args"></param>
     /// <param name="comparer"></param>
-    public static Arguments? ParseArguments(ReadOnlySpan<string> args, StringComparer comparer) => ParseArgumentsInternal(args, comparer);
+    public static Arguments? ParseArguments(string[] args, StringComparer comparer) => ParseArguments(args.AsReadOnly(), comparer);
 
-    // Parses a List<string> into a dictionary of arguments
-    internal static Arguments? ParseArgumentsInternal(ReadOnlySpan<string> args, StringComparer comparer) {
-        if (args.Length is 0) {
+    /// <summary>
+    /// Parses a ReadOnlyCollection of strings into arguments.
+    /// </summary>
+    /// <param name="args"></param>
+    /// <param name="comparer"></param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Arguments? ParseArguments(ReadOnlyCollection<string> args, StringComparer comparer) {
+        if (args.Count is 0) {
             return null;
         }
-
-        var argsCopy = args.ToArray();
-        var results = MapArguments(argsCopy, comparer);
-        return results.Count is 0 ? null : new Arguments(argsCopy, results);
+        var results = MapArguments(args, comparer);
+        return results.Count is 0 ? null : new Arguments(args, results);
     }
 
-    // Maps a List of strings into a dictionary of arguments
-    internal static Dictionary<string, string> MapArguments(ReadOnlySpan<string> args, StringComparer comparer) {
-        var results = new Dictionary<string, string>(args.Length, comparer);
-        Span<bool> mapped = stackalloc bool[args.Length];
+    // Maps a ReadOnlyCollection of strings into a dictionary of arguments
+    internal static Dictionary<string, string> MapArguments(ReadOnlyCollection<string> args, StringComparer comparer) {
+        var length = args.Count;
+        var results = new Dictionary<string, string>(length, comparer);
+        Span<bool> mapped = stackalloc bool[length];
         int i = 0;
 
         // Named arguments
-        while (i < args.Length) {
+        while (i < length) {
             var current = args[i];
             // This is positional argument, processed in the next loop
             // values of named params are processed in the single iteration of the named parameter
@@ -128,7 +124,7 @@ public static class Parser {
             // if not, then this is a switch (i.e. a named boolean toggle)
             // IsParameterName(args[i + 1]) => checks if the next argument is a parameter
             // if it is, then again, this is a switch
-            if (i + 1 == args.Length || IsParameterName(args[i + 1])) {
+            if (i + 1 == length || IsParameterName(args[i + 1])) {
                 results[name] = string.Empty;
                 mapped[i] = true;
                 i++;
@@ -148,7 +144,7 @@ public static class Parser {
         // The positional arguments are mapped in the order they appear
         // And the number of the positional argument
         // A positional argument may have the key 0, even if it is the last enter argument (assuming other arguments are named or switches)
-        for (i = 0; i < args.Length; i++) {
+        for (i = 0; i < length; i++) {
             if (mapped[i]) {
                 continue;
             }
