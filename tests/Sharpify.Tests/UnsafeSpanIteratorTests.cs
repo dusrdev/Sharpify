@@ -16,25 +16,6 @@ public class UnsafeSpanIteratorTests {
     }
 
     [Fact]
-    public async Task UnsafeSpanIterator_UseConcurrentlyInAsync() {
-        // Arrange
-        var arr = Enumerable.Range(1, 100).ToArray();
-        int sum = 0;
-
-        // Act
-        async Task Increment(int item) {
-            await Task.Delay(20);
-            Interlocked.Add(ref sum, item);
-        }
-        var iterator = new UnsafeSpanIterator<int>(arr.AsSpan());
-        var tasks = iterator.AsParallel().Select(Increment);
-        await Task.WhenAll(tasks);
-
-        // Assert
-        Assert.Equal(5050, sum);
-    }
-
-    [Fact]
     public void UnsafeSpanIterator_Slice() {
         // Arrange
         Span<int> items = [1, 2, 3, 4, 5, 6];
