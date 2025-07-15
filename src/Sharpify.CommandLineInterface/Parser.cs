@@ -17,7 +17,7 @@ public static class Parser {
     /// </summary>
     /// <param name="str"></param>
     public static List<string> Split(ReadOnlySpan<char> str) {
-        List<string> args = [];
+        List<string> args = new(0); // Force usage of empty array
         if (str.Length is 0) {
             return args;
         }
@@ -57,6 +57,9 @@ public static class Parser {
     /// Parses a string into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="str"></param>
+    /// <remarks>
+    /// This overload uses <see cref="StringComparer.OrdinalIgnoreCase"/>
+    /// </remarks>
     public static Arguments? ParseArguments(ReadOnlySpan<char> str) => ParseArguments(str, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -70,31 +73,28 @@ public static class Parser {
     }
 
     /// <summary>
-    /// Parses an List of strings into an <see cref="Arguments"/> object
+    /// Parses a collection of strings into an <see cref="Arguments"/> object
     /// </summary>
     /// <param name="args"></param>
-    /// <param name="comparer"></param>
-    public static Arguments? ParseArguments(List<string> args, StringComparer comparer) => ParseArguments(args.AsReadOnly(), comparer);
+    /// <remarks>
+    /// This overload uses <see cref="StringComparer.OrdinalIgnoreCase"/>
+    /// </remarks>
+    public static Arguments? ParseArguments<TList>(TList args) where TList : IList<string>
+        => ParseArguments(args, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Parses an Array of strings into an <see cref="Arguments"/> object
+    /// Parses a collections of strings into arguments.
     /// </summary>
     /// <param name="args"></param>
     /// <param name="comparer"></param>
-    public static Arguments? ParseArguments(string[] args, StringComparer comparer) => ParseArguments(args.AsReadOnly(), comparer);
-
-    /// <summary>
-    /// Parses a ReadOnlyCollection of strings into arguments.
-    /// </summary>
-    /// <param name="args"></param>
-    /// <param name="comparer"></param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Arguments? ParseArguments(ReadOnlyCollection<string> args, StringComparer comparer) {
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Arguments? ParseArguments<TList>(TList args, StringComparer comparer) where TList : IList<string> {
         if (args.Count is 0) {
             return null;
         }
-        var results = MapArguments(args, comparer);
-        return results.Count is 0 ? null : new Arguments(args, results);
+        var roc = new ReadOnlyCollection<string>(args);
+        var results = MapArguments(roc, comparer);
+        return results.Count is 0 ? null : new Arguments(roc, results);
     }
 
     // Maps a ReadOnlyCollection of strings into a dictionary of arguments

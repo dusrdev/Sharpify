@@ -68,9 +68,9 @@ public sealed class CliRunner {
 	/// <summary>
 	/// Runs the CLI application with the specified arguments.
 	/// </summary>
-	public ValueTask<int> RunAsync(string[] args, bool commandNameRequired = true) {
+	public ValueTask<int> RunAsync(IList<string> args, bool commandNameRequired = true) {
 		// Handle no input
-		if (args.Length is 0) {
+		if (args.Count is 0) {
 			// If display help text is used, always display the help text
 			if (_config.EmptyInputBehavior is EmptyInputBehavior.DisplayHelpText) {
 				return OutputHelper.Return(GenerateHelpText(commandNameRequired), 0);
