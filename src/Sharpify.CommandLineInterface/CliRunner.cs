@@ -147,7 +147,7 @@ public sealed class CliRunner {
 				   .AppendLine();
 		} else if (_config.HelpTextSource is HelpTextSource.CustomHeader) {
 			builder.AppendLine(_config.CustomHeader)
-			       .AppendLine();
+				   .AppendLine();
 		}
 		if (commandNameRequired) {
 			builder.AppendLine("Commands:");
@@ -168,7 +168,7 @@ public sealed class CliRunner {
 		} else {
 			var command = _config.Commands[0];
 			builder.Append("Usage: ")
-			       .AppendLine(command.Usage);
+				   .AppendLine(command.Usage);
 		}
 
 		return builder.ToString();
