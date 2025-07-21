@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Version>2.5.0</Version>
+        <Version>2.6.0</Version>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
@@ -26,10 +26,6 @@
         <None Include="README.md" Pack="true" PackagePath="\" />
         <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
         <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

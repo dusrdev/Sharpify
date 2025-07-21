@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v2.5.1
+
+* Some computed properties in `BufferWrapper{T}` were made `readonly` to hint the compiler to not create defensive copies.
+
 ## v2.5.0
 
 * Updated to support .NET 9.0 and optimized certain methods to use .NET 9 specific API's wherever possible.
