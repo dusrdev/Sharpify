@@ -65,10 +65,10 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     public void Advance(int count) => Position += count;
 
     /// <inheritdoc/>
-    public Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException("BufferWrapper does not support GetMemory");
+    public readonly Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException("BufferWrapper does not support GetMemory");
 
     /// <inheritdoc/>
-    public Span<T> GetSpan(int sizeHint = 0) => _buffer.Slice(Position);
+    public readonly Span<T> GetSpan(int sizeHint = 0) => _buffer.Slice(Position);
 
     /// <summary>
     /// Returns the character at the specified index.
