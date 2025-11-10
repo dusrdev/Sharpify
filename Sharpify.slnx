@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Sharpify/Sharpify.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Sharpify.Tests/Sharpify.Tests.csproj" />
+  </Folder>
+</Solution>
