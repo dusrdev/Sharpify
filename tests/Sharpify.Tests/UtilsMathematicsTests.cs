@@ -11,7 +11,7 @@ public partial class UtilsTests {
         expectedResult = Math.Round(expectedResult, 15);
 
         // Act
-        double result = Utils.Mathematics.RollingAverage(val, newVal, count);
+        double result = Utils.RollingAverage(val, newVal, count);
         result = Math.Round(result, 3);
 
         // Assert
@@ -24,7 +24,7 @@ public partial class UtilsTests {
     [InlineData(11, 39916800)]
     public void Factorial_ValidInput_ValidResult(double n, double expected) {
         // Act
-        var result = Utils.Mathematics.Factorial(n);
+        var result = Utils.Factorial(n);
 
         // Assert
         Assert.Equal(expected, result);
@@ -37,7 +37,7 @@ public partial class UtilsTests {
     [InlineData(33, 3524578)]
     public void FibonacciApproximation_ValidInput_ValidResult(int n, double expected) {
         // Act
-        var result = Utils.Mathematics.FibonacciApproximation(n);
+        var result = Utils.FibonacciApproximation(n);
 
         // Assert
         const double margin = 0.01;

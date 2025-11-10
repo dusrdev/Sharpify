@@ -23,7 +23,7 @@ public class SerializableObjectTests {
     public async Task Constructor_Creates_File_When_File_Does_Not_Exist() {
         // Arrange
         var file = await TempFile.CreateAsync();
-        var action = () => new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
+        var action = () => new MonitoredSerializableObject<Configuration>(file.FilePath, JsonContext.Default.Configuration);
 
         // Act
         action();
@@ -38,14 +38,14 @@ public class SerializableObjectTests {
         // Arrange
         var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        var action = () => new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
+        var action = () => new MonitoredSerializableObject<Configuration>(file.FilePath, config, JsonContext.Default.Configuration);
 
         // Act
         action();
         // Assert
         Assert.True(File.Exists(file));
         // Act
-        using var obj = new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
+        using var obj = new MonitoredSerializableObject<Configuration>(file.FilePath, JsonContext.Default.Configuration);
         // Assert
         Assert.Equal(config, obj.Value);
 
@@ -58,14 +58,14 @@ public class SerializableObjectTests {
         // Arrange
         var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
+        using var obj = new MonitoredSerializableObject<Configuration>(file.FilePath, config, JsonContext.Default.Configuration);
         const string newName = "Jane Doe";
 
         // Act
         obj.Modify(c => c with { Name = newName });
         // Assert
         Assert.Equal(newName, obj.Value.Name);
-        using var obj2 = new MonitoredSerializableObject<Configuration>(file.Path, JsonContext.Default.Configuration);
+        using var obj2 = new MonitoredSerializableObject<Configuration>(file.FilePath, JsonContext.Default.Configuration);
         Assert.Equal(newName, obj2.Value.Name);
 
         // Cleanup
@@ -77,7 +77,7 @@ public class SerializableObjectTests {
         // Arrange
         var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
+        using var obj = new MonitoredSerializableObject<Configuration>(file.FilePath, config, JsonContext.Default.Configuration);
         const string newName = "Jane Doe";
         int count = 0;
         Configuration lastValue = default;
@@ -101,7 +101,7 @@ public class SerializableObjectTests {
         // Arrange
         var file = await TempFile.CreateAsync();
         var config = new Configuration { Name = "John Doe", Age = 42 };
-        using var obj = new MonitoredSerializableObject<Configuration>(file.Path, config, JsonContext.Default.Configuration);
+        using var obj = new MonitoredSerializableObject<Configuration>(file.FilePath, config, JsonContext.Default.Configuration);
 
         // Act
         await File.WriteAllTextAsync(file, "", TestContext.Current.CancellationToken);

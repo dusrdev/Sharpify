@@ -4,7 +4,7 @@ public partial class UtilsTests {
     [Fact]
     public void CreateIntegerPredicate_ForCharIsDigit_Valid() {
         // Arrange
-        var predicate = Utils.Unsafe.CreateIntegerPredicate<char>(char.IsDigit);
+        var predicate = Utils.CreateIntegerPredicate<char>(char.IsDigit);
 
         // Act
         var one = predicate('1');
@@ -21,7 +21,7 @@ public partial class UtilsTests {
         var obj = (object) 5;
 
         // Act
-        var result = Utils.Unsafe.TryUnbox<int>(obj, out var value);
+        var result = Utils.TryUnbox<int>(obj, out var value);
 
         // Assert
         Assert.True(result);
@@ -35,7 +35,7 @@ public partial class UtilsTests {
         var span = str.AsSpan();
 
         // Act
-        var mutableSpan = Utils.Unsafe.AsMutableSpan(span);
+        var mutableSpan = Utils.AsMutableSpan(span);
         mutableSpan[2] = '1';
 
         // Assert

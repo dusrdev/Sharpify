@@ -13,7 +13,7 @@ public partial class UtilsTests {
     public void FormatBytes_DoubleWithVariousInputs_ReturnsCorrectResult(
         double bytes, string expectedResult) {
         // Act
-        string result = Utils.Strings.FormatBytes(bytes);
+        string result = Utils.FormatBytes(bytes);
 
         // Assert
         Assert.Equal(expectedResult, result);
@@ -30,7 +30,7 @@ public partial class UtilsTests {
     public void FormatBytes_LongWithVariousInputs_ReturnsCorrectResult(
         long bytes, string expectedResult) {
         // Act
-        string result = Utils.Strings.FormatBytes(bytes);
+        string result = Utils.FormatBytes(bytes);
 
         // Assert
         Assert.Equal(expectedResult, result);
@@ -43,7 +43,7 @@ public partial class UtilsTests {
     public void FormatBytes_LongWithNonRoundedInputs_ReturnsCorrectResult(
         long bytes, string expectedResult) {
         // Act
-        string result = Utils.Strings.FormatBytes(bytes);
+        string result = Utils.FormatBytes(bytes);
 
         // Assert
         Assert.Equal(expectedResult, result);
@@ -56,7 +56,7 @@ public partial class UtilsTests {
     public void FormatBytes_DoubleWithNonRoundedInputs_ReturnsCorrectResult(
         double bytes, string expectedResult) {
         // Act
-        string result = Utils.Strings.FormatBytes(bytes);
+        string result = Utils.FormatBytes(bytes);
 
         // Assert
         Assert.Equal(expectedResult, result);
@@ -65,7 +65,7 @@ public partial class UtilsTests {
     [Fact]
     public void FormatBytes_Double_HasEnoughCapacity() {
         // Arrange
-        Action act = () => _ = Utils.Strings.FormatBytes(double.MaxValue);
+        Action act = () => _ = Utils.FormatBytes(double.MaxValue);
 
         // Assert
         act();
@@ -74,7 +74,7 @@ public partial class UtilsTests {
     [Fact]
     public void FormatBytes_Long_HasEnoughCapacity() {
         // Arrange
-        Action act = () => _ = Utils.Strings.FormatBytes(long.MaxValue);
+        Action act = () => _ = Utils.FormatBytes(long.MaxValue);
 
         // Assert
         act();
