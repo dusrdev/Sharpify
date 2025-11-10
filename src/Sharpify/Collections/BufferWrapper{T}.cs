@@ -2,7 +2,6 @@ using System.Buffers;
 
 namespace Sharpify.Collections;
 
-#if NET9_0_OR_GREATER
 /// <summary>
 /// Represents a buffer than be used to efficiently append items to a span.
 /// </summary>
@@ -81,4 +80,3 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// </summary>
     public readonly ReadOnlySpan<T> WrittenSpan => _buffer.Slice(0, Position);
 }
-#endif
