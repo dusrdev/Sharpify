@@ -6,7 +6,7 @@ public static partial class Utils {
     /// <summary>
 	/// A format for timestamps
 	/// </summary>
-    public const string TimeStampFormat = "HHMM-dd-MMM-yy";
+    public const string TimeStampFormat = "HHmm-dd-MMM-yy";
 
     /// <summary>
     /// Returns a <see cref="ReadOnlySpan{Char}"/> slice over <paramref name="time"/> formatted as <see cref="TimeStampFormat"/>

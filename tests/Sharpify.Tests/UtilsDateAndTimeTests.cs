@@ -13,7 +13,7 @@ public partial class UtilsTests {
         ReadOnlySpan<char> result = Utils.FormatTimeStamp(dateTime, owner.Memory.Span);
 
         // Assert
-        Assert.Equal("1355-6-Apr-22", result);
+        Assert.Equal("1355-06-Apr-22", result);
     }
 
     [Fact]
@@ -25,6 +25,6 @@ public partial class UtilsTests {
         string result = Utils.FormatTimeStamp(dateTime);
 
         // Assert
-        Assert.Equal("1355-6-Apr-22", result);
+        Assert.Equal("1355-06-Apr-22", result);
     }
 }
