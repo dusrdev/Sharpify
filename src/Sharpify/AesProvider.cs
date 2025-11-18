@@ -57,9 +57,8 @@ public sealed class AesProvider : IDisposable {
         //generate a random salt for hashing
         //hash password given salt and iterations (default to 1000)
         //iterations provide difficulty when cracking
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, SaltSize, iterations, HashAlgorithmName.SHA512);
-        var hash = pbkdf2.GetBytes(SaltSize);
-        var salt = pbkdf2.Salt;
+        byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA512, SaltSize);
 
         // create format for hash text
         // salt|iterations|hash
@@ -90,7 +89,7 @@ public sealed class AesProvider : IDisposable {
         hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
             | StringSplitOptions.TrimEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
-        hpSpan[parts[1]].TryConvertToInt32(out var origIterations);
+        var origIterations = int.Parse(hpSpan[parts[1]]);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
 
         //generate hash from test password and original salt and iterations
