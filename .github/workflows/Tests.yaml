@@ -10,9 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest, macos-latest]
-        project: [tests/Sharpify.Tests/Sharpify.Tests.csproj, tests/Sharpify.CommandLineInterface.Tests/Sharpify.CommandLineInterface.Tests.csproj]
     uses: dusrdev/actions/.github/workflows/reusable-dotnet-test-mtp.yaml@main
     with:
       platform: ${{ matrix.platform }}
-      dotnet-version: 9.0.x
-      test-project-path: ${{ matrix.project }}
+      dotnet-version: 10.0.x
+      test-project-path: tests/Sharpify.Tests/Sharpify.Tests.csproj

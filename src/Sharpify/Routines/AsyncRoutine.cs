@@ -18,7 +18,7 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// List of asynchronous actions to be executed.
     /// </summary>
-    public readonly List<Func<CancellationToken, Task>> Actions = [];
+    public List<Func<CancellationToken, Task>> Actions { get; private set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsyncRoutine"/> class with the specified interval, options, and cancellation token source.
@@ -27,6 +27,7 @@ public class AsyncRoutine : IDisposable {
     /// <param name="options">The options to configure the behavior of the routine.</param>
     /// <param name="cancellationTokenSource">The cancellation token source used to cancel the routine.</param>
     public AsyncRoutine(TimeSpan interval, RoutineOptions options, CancellationTokenSource cancellationTokenSource) {
+        Actions = [];
         _options = options;
         _timer = new PeriodicTimer(interval);
         _isRunning = true;
@@ -90,16 +91,13 @@ public class AsyncRoutine : IDisposable {
                 }
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    using var buffer = new RentedBufferWriter<Task>(Actions.Count);
+                    using var taskArrayOwner = ArrayPool<Task>.Shared.Rent(Actions.Count, out Task[] array);
+                    var buffer = BufferWrapper<Task>.Create(array);
                     foreach (var action in Actions) {
-                        buffer.WriteAndAdvance(Task.Run(() => action(_cancellationTokenSource.Token)
+                        buffer.Append(Task.Run(() => action(_cancellationTokenSource.Token)
                         , _cancellationTokenSource.Token));
                     }
-#if NET9_0_OR_GREATER
                     await Task.WhenAll(buffer.WrittenSpan).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-#else
-                    await Task.WhenAll(buffer.WrittenSegment).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-#endif
                     // Execute sequentially
                 } else {
                     foreach (var action in Actions) {

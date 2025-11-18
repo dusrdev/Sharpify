@@ -1,14 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Version>2.5.0</Version>
+        <LangVersion>preview</LangVersion>
+        <Version>3.0.1</Version>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
         <Copyright>David Shnayder</Copyright>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>Sharpify</Title>
         <Description>A collection of high performance language extensions for C#</Description>
@@ -20,16 +19,39 @@
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
         <SynchReleaseVersion>false</SynchReleaseVersion>
         <IsAotCompatible>true</IsAotCompatible>
-    </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
-        <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Deterministic>true</Deterministic>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <IsTrimmable>true</IsTrimmable>
+
+        <Authors>David Shnayder</Authors>
+        <Copyright>David Shnayder</Copyright>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <DebugType>portable</DebugType>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>
+            $(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb
+        </AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="/" Link="README.md" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <PackageReleaseNotes>
+        </PackageReleaseNotes>
+    </PropertyGroup>
 </Project>

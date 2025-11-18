@@ -8,16 +8,9 @@ namespace Sharpify;
 
 public static partial class Extensions {
     /// <summary>
-    /// Determines whether the specified collection is null or empty.
-    /// </summary>
-    /// <typeparam name="T">The type of elements in the collection.</typeparam>
-    /// <param name="collection">The collection to check.</param>
-    /// <returns><c>true</c> if the collection is null or empty; otherwise, <c>false</c>.</returns>
-    public static bool IsNullOrEmpty<T>(this ICollection<T>? collection) => collection is null or { Count: 0 };
-
-    /// <summary>
     /// Returns the span of a list
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsSpan<T>(this List<T> list) => CollectionsMarshal.AsSpan(list);
 
     /// <summary>
@@ -29,6 +22,7 @@ public static partial class Extensions {
     /// Items should not be added or removed from the <see cref="Dictionary{TKey, TValue}"/> while the ref <typeparamref name="TValue"/> is in use.
     /// The ref null can be detected using Unsafe.IsNullRef{T}(ref readonly T)"
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref TValue GetValueRefOrNullRef<TKey, TValue>(
         this Dictionary<TKey, TValue> dictionary,
         TKey key) where TKey : notnull {
@@ -44,6 +38,7 @@ public static partial class Extensions {
     /// <remarks>
     /// Items should not be added to or removed from the <see cref="Dictionary{TKey, TValue}"/> while the ref <typeparamref name="TValue"/> is in use.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref TValue? GetValueRefOrAddDefault<TKey, TValue>(
         this Dictionary<TKey, TValue> dictionary,
         TKey key,
@@ -67,45 +62,6 @@ public static partial class Extensions {
         var collection = dict as ICollection<KeyValuePair<TKey, TValue>>;
         collection.CopyTo(arr, index);
     }
-
-    /// <summary>
-    /// Rents a buffer and copies the contents of the dictionary into it.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the dictionary keys.</typeparam>
-    /// <typeparam name="TValue">The type of the dictionary values.</typeparam>
-    /// <param name="dict">The dictionary to rent the buffer for.</param>
-    /// <returns>A tuple containing the rented buffer as an array and an array segment representing the copied items.</returns>
-    /// <remarks>
-    /// <para>The array segment is required since the ArrayPool can return a buffer larger than the length of the dictionary, for any operations use the array segment</para>
-    /// <para>The array is returned as the reference for the buffer, and should be used to return the buffer to the array pool after use. You can use <see cref="ReturnBufferToSharedArrayPool"/> </para>
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (KeyValuePair<TKey, TValue>[] rentedBuffer, ArraySegment<KeyValuePair<TKey, TValue>> entries) RentBufferAndCopyEntries<TKey, TValue>(this Dictionary<TKey, TValue> dict) where TKey : notnull {
-        var count = dict.Count;
-        var arr = ArrayPool<KeyValuePair<TKey, TValue>>.Shared.Rent(count);
-        dict.CopyTo(arr, 0);
-        var segment = new ArraySegment<KeyValuePair<TKey, TValue>>(arr, 0, count);
-        return (arr, segment);
-    }
-
-    /// <summary>
-    /// Returns a rented buffer to the shared <see cref="ArrayPool{T}"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of elements in the array.</typeparam>
-    /// <param name="arr">The array to return.</param>
-    /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the shared array pool</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ReturnBufferToSharedArrayPool<T>(this T[] arr) => ArrayPool<T>.Shared.Return(arr);
-
-    /// <summary>
-    /// Returns a rented buffer to the <paramref name="pool"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of elements in the array.</typeparam>
-    /// <param name="arr">The array to return.</param>
-    /// <param name="pool">The array pool to return the buffer to.</param>
-    /// <exception cref="ArgumentException">If used on a buffer that wasn't part of the array pool</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ReturnBufferToArrayPool<T>(this T[] arr, ArrayPool<T> pool) => pool.Return(arr);
 
     /// <summary>
     /// Returns a new array with the elements sorted using the default comparer for the element type.

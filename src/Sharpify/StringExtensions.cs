@@ -16,63 +16,6 @@ public static partial class Extensions {
     }
 
     /// <summary>
-    /// A simple wrapper over <see cref="string.IsNullOrEmpty(string)"/> to make it easier to use.
-    /// </summary>
-    public static bool IsNullOrEmpty(this string str) => string.IsNullOrEmpty(str);
-
-    /// <summary>
-    /// A simple wrapper over <see cref="string.IsNullOrWhiteSpace(string)"/> to make it easier to use.
-    /// </summary>
-    public static bool IsNullOrWhiteSpace(this string str) => string.IsNullOrWhiteSpace(str);
-
-    /// <summary>
-    /// Tries to convert <paramref name="value"/> to an <see cref="int"/>.
-    /// </summary>
-    /// <param name="value">The span of characters to convert.</param>
-    /// <param name="result">When this method returns, contains the converted <see cref="int"/> if the conversion succeeded, or zero if the conversion failed.</param>
-    /// <returns><c>true</c> if the conversion succeeded; otherwise, <c>false</c>.</returns>
-    public static bool TryConvertToInt32(this ReadOnlySpan<char> value, out int result) {
-        result = 0;
-        if (value.IsWhiteSpace() || value.Length > 11) { // 10 is the max length of an int32 + 1 for sign
-            return false;
-        }
-        bool isNegative = value[0] is '-';
-        var length = value.Length;
-        int i = 0;
-        if (isNegative) {
-            i++;
-        }
-        for (; (uint)i < (uint)length; i++) {
-            var digit = value[i] - '0';
-
-            // Check for invalid digit
-            if (digit is < 0 or > 9) {
-                result = 0;
-                return false;
-            }
-
-            unchecked {
-                result = (result * 10) + digit;
-            }
-        }
-        if (isNegative) {
-            result *= -1;
-        }
-        return true;
-    }
-
-    /// <summary>
-    /// A more convenient way to use <see cref="string.Concat(ReadOnlySpan{char}, ReadOnlySpan{char})"/>
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="suffix"></param>
-    /// <remarks>
-    /// The advantage of Concat over string interpolation diminishes when more than 2 strings are used.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string Concat(this string value, ReadOnlySpan<char> suffix) => string.Concat(value.AsSpan(), suffix);
-
-    /// <summary>
     /// Method used to turn <paramref name="str"/> into Title format
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

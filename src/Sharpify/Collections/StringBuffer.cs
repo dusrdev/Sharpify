@@ -10,7 +10,11 @@ public unsafe ref struct StringBuffer {
     /// <summary>
     /// The total length of the buffer.
     /// </summary>
+#pragma warning disable CA1051 // Do not declare visible instance fields
+
     public readonly int Length;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
 
     /// <summary>
     /// The current position of the buffer.
@@ -76,7 +80,7 @@ public unsafe ref struct StringBuffer {
     public ref StringBuffer Append<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null) where T : ISpanFormattable {
         bool appended = value.TryFormat(_buffer.Slice(Position), out var charsWritten, format, provider);
         if (!appended) {
-            throw new ArgumentOutOfRangeException(nameof(Length));
+            throw new ArgumentOutOfRangeException(nameof(value), "Value did not fit into the buffer.");
         }
         Position += charsWritten;
         return ref this;

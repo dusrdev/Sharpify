@@ -1,7 +1,7 @@
 namespace Sharpify.Tests;
 
 public record TempFile {
-	public string Path { get; }
+	public string FilePath { get; }
 	private const int Retries = 5;
 
 	public static async Task<TempFile> CreateAsync() {
@@ -20,14 +20,14 @@ public record TempFile {
 	}
 
 	private TempFile() {
-		Path = Utils.Env.PathInBaseDirectory(Random.Shared.Next(1000000, 9999999).ToString());
-		using var _ = File.Create(Path);
+		FilePath = Path.Combine(AppContext.BaseDirectory, Random.Shared.Next(1000000, 9999999).ToString());
+		using var _ = File.Create(FilePath);
 	}
 
-	public static implicit operator string(TempFile file) => file.Path;
+	public static implicit operator string(TempFile file) => file.FilePath;
 
 	public async Task DeleteAsync() {
-		if (!File.Exists(Path)) {
+		if (!File.Exists(FilePath)) {
 			return;
 		}
 
@@ -37,7 +37,7 @@ public record TempFile {
 		bool wasDeleted = false;
 		do {
 			try {
-				File.Delete(Path);
+				File.Delete(FilePath);
 				wasDeleted = true;
 			} catch {
 				if (Interlocked.Decrement(ref retries) >= 0) {

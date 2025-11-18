@@ -10,13 +10,14 @@ public class Routine : IDisposable {
     /// <summary>
     /// List of actions to be executed by the routine.
     /// </summary>
-    public readonly List<Action> Actions = [];
+    public List<Action> Actions { get; private set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Routine"/> class with the specified interval.
     /// </summary>
     /// <param name="intervalInMilliseconds">The time interval between timer events, in milliseconds.</param>
     public Routine(double intervalInMilliseconds) {
+        Actions = [];
         _timer = new System.Timers.Timer(intervalInMilliseconds);
         _timer.Elapsed += OnTimerElapsed;
     }

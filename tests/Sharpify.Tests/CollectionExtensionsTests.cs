@@ -1,32 +1,6 @@
-using System.Buffers;
-
 namespace Sharpify.Tests;
 
 public class CollectionExtensionsTests {
-    [Fact]
-    public void IsNullOrEmpty_GivenNullList() {
-        // Arrange
-        List<int>? list = null;
-
-        // Act
-        var result = list.IsNullOrEmpty();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void IsNullOrEmpty_GivenEmptyList() {
-        // Arrange
-        var list = new List<int>();
-
-        // Act
-        var result = list.IsNullOrEmpty();
-
-        // Assert
-        Assert.True(result);
-    }
-
     [Fact]
     public void AsSpan_GivenNonEmptyList_ReturnsCorrectSpan() {
         // Arrange
@@ -120,40 +94,6 @@ public class CollectionExtensionsTests {
         Assert.False(exists);
         Assert.Contains(new KeyValuePair<int, string>(key, default(string)), dictionary);
         #pragma warning restore
-    }
-
-    [Fact]
-    public void CopyTo_CopiesDictionaryEntries() {
-        var dict = Enumerable.Range(1, 10).ToDictionary(i => i, i => i);
-        var buffer = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
-        dict.CopyTo(buffer, 0);
-        var span = new Span<KeyValuePair<int, int>>(buffer, 0, dict.Count);
-        Assert.Equal(dict, span.ToArray());
-        buffer.ReturnBufferToSharedArrayPool();
-    }
-
-    [Fact]
-    public void RentBufferAndCopyEntries_ReturnRentedBuffer_Dictionary() {
-        var dict = Enumerable.Range(1, 10).ToDictionary(i => i, i => i);
-        var (buffer, entries) = dict.RentBufferAndCopyEntries();
-        try {
-            Assert.Equal(dict, entries.ToArray());
-        } finally {
-            buffer.ReturnBufferToSharedArrayPool();
-        }
-    }
-
-    [Fact]
-    public void Dictionary_CopyToArray() {
-        var dict = Enumerable.Range(1, 10).ToDictionary(i => i, i => i);
-        var buffer = ArrayPool<KeyValuePair<int, int>>.Shared.Rent(dict.Count);
-        dict.CopyTo(buffer, 0);
-        var span = buffer.AsSpan(0, dict.Count);
-        try {
-            Assert.Equal(dict, span.ToArray());
-        } finally {
-            buffer.ReturnBufferToSharedArrayPool();
-        }
     }
 
     [Fact]
@@ -296,7 +236,7 @@ public class CollectionExtensionsTests {
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(array, result[0]);
+        Assert.Equal(new ArraySegment<int>(array), result[0]);
     }
 
     [Fact]

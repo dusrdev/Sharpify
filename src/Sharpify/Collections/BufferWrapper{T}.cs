@@ -2,7 +2,6 @@ using System.Buffers;
 
 namespace Sharpify.Collections;
 
-#if NET9_0_OR_GREATER
 /// <summary>
 /// Represents a buffer than be used to efficiently append items to a span.
 /// </summary>
@@ -12,7 +11,11 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// <summary>
     /// The total length of the buffer.
     /// </summary>
+#pragma warning disable CA1051 // Do not declare visible instance fields
+
     public readonly int Length;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
 
     /// <summary>
     /// The current position of the buffer.
@@ -22,7 +25,11 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// <summary>
     /// Initializes a string buffer that uses a pre-allocated buffer (potentially from the stack).
     /// </summary>
+#pragma warning disable CA1000 // Do not declare static members on generic types
+
     public static BufferWrapper<T> Create(Span<T> buffer) => new(buffer);
+#pragma warning restore CA1000 // Do not declare static members on generic types
+
 
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
@@ -65,10 +72,10 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     public void Advance(int count) => Position += count;
 
     /// <inheritdoc/>
-    public Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException("BufferWrapper does not support GetMemory");
+    public readonly Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException("BufferWrapper does not support GetMemory");
 
     /// <inheritdoc/>
-    public Span<T> GetSpan(int sizeHint = 0) => _buffer.Slice(Position);
+    public readonly Span<T> GetSpan(int sizeHint = 0) => _buffer.Slice(Position);
 
     /// <summary>
     /// Returns the character at the specified index.
@@ -81,4 +88,3 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// </summary>
     public readonly ReadOnlySpan<T> WrittenSpan => _buffer.Slice(0, Position);
 }
-#endif
