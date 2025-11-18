@@ -236,7 +236,7 @@ public class CollectionExtensionsTests {
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(array, result[0]);
+        Assert.Equal(new ArraySegment<int>(array), result[0]);
     }
 
     [Fact]

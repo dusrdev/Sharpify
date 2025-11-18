@@ -41,7 +41,7 @@ public sealed class AesProvider : IDisposable {
 
     // Creates a usable fixed length key from the string password
     private static byte[] CreateKey(ReadOnlySpan<char> strKey) {
-        using var owner = PooledArrayOwner<byte>.Rent(strKey.Length * sizeof(char), out Span<byte> span);
+        using var owner = ArrayPool<byte>.Shared.Rent(strKey.Length * sizeof(char), out Span<byte> span);
         int written = Encoding.UTF8.GetBytes(strKey, span);
         return SHA256.HashData(span.Slice(0, written));
     }
@@ -107,11 +107,11 @@ public sealed class AesProvider : IDisposable {
     /// <param name="unencrypted">original text</param>
     /// <returns>Unicode string</returns>
     public string Encrypt(ReadOnlySpan<char> unencrypted) {
-        using var bytesOwner = PooledArrayOwner<byte>.Rent(unencrypted.Length * sizeof(char), out Span<byte> bytesBuffer);
+        using var bytesOwner = ArrayPool<byte>.Shared.Rent(unencrypted.Length * sizeof(char), out Span<byte> bytesBuffer);
         int written = Encoding.UTF8.GetBytes(unencrypted, bytesBuffer);
         var writtenSpan = bytesBuffer.Slice(0, written);
 
-        using var encryptedOwner = PooledArrayOwner<byte>.Rent(writtenSpan.Length + ReservedBufferSize, out Span<byte> encryptedBuffer);
+        using var encryptedOwner = ArrayPool<byte>.Shared.Rent(writtenSpan.Length + ReservedBufferSize, out Span<byte> encryptedBuffer);
         written = EncryptBytes(writtenSpan, encryptedBuffer);
         return Convert.ToBase64String(encryptedBuffer.Slice(0, written));
     }
@@ -122,7 +122,7 @@ public sealed class AesProvider : IDisposable {
     /// <remarks>Returns an empty string if it fails</remarks>
     public string Decrypt(string encrypted) {
         var buffer = Convert.FromBase64String(encrypted);
-        using var decryptedOwner = PooledArrayOwner<byte>.Rent(buffer.Length, out Span<byte> span);
+        using var decryptedOwner = ArrayPool<byte>.Shared.Rent(buffer.Length, out Span<byte> span);
         int written = DecryptBytes(buffer, span);
         ReadOnlySpan<byte> decrypted = span.Slice(0, written);
         return decrypted.Length is 0
@@ -210,10 +210,10 @@ public sealed class AesProvider : IDisposable {
     /// <param name="url">original url</param>
     /// <returns>Encrypted url with Base64Url encoding</returns>
     public string EncryptUrl(string url) {
-        using var bufferOwner = PooledArrayOwner<byte>.Rent(url.Length * sizeof(char), out Span<byte> buffer);
+        using var bufferOwner = ArrayPool<byte>.Shared.Rent(url.Length * sizeof(char), out Span<byte> buffer);
         int written = Encoding.UTF8.GetBytes(url, buffer); // IBufferWriter overload advances automatically
         ReadOnlySpan<byte> bytesSpan = buffer.Slice(0, written);
-        using var encryptedOwner = PooledArrayOwner<byte>.Rent(bytesSpan.Length + ReservedBufferSize, out Span<byte> encrypted);
+        using var encryptedOwner = ArrayPool<byte>.Shared.Rent(bytesSpan.Length + ReservedBufferSize, out Span<byte> encrypted);
         written = EncryptBytes(bytesSpan, encrypted);
         return Base64UrlEncode(encrypted.Slice(0, written));
     }
@@ -226,7 +226,7 @@ public sealed class AesProvider : IDisposable {
     /// <remarks>Returns an empty string if it fails</remarks>
     public string DecryptUrl(string encryptedUrl) {
         var base64 = Base64UrlDecode(encryptedUrl);
-        using var decryptedOwner = PooledArrayOwner<byte>.Rent(base64.Length, out Span<byte> buffer);
+        using var decryptedOwner = ArrayPool<byte>.Shared.Rent(base64.Length, out Span<byte> buffer);
         int written = DecryptBytes(base64, buffer);
         ReadOnlySpan<byte> decrypted = buffer.Slice(0, written);
         return decrypted.Length is 0

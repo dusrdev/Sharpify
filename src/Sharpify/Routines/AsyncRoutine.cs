@@ -90,16 +90,13 @@ public class AsyncRoutine : IDisposable {
                 }
                 // Execute in Parallel
                 if (_options.HasFlag(RoutineOptions.ExecuteInParallel)) {
-                    using var buffer = new RentedBufferWriter<Task>(Actions.Count);
+                    using var taskArrayOwner = ArrayPool<Task>.Shared.Rent(Actions.Count, out Task[] array);
+                    var buffer = BufferWrapper<Task>.Create(array);
                     foreach (var action in Actions) {
-                        buffer.WriteAndAdvance(Task.Run(() => action(_cancellationTokenSource.Token)
+                        buffer.Append(Task.Run(() => action(_cancellationTokenSource.Token)
                         , _cancellationTokenSource.Token));
                     }
-#if NET9_0_OR_GREATER
                     await Task.WhenAll(buffer.WrittenSpan).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-#else
-                    await Task.WhenAll(buffer.WrittenSegment).WaitAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-#endif
                     // Execute sequentially
                 } else {
                     foreach (var action in Actions) {

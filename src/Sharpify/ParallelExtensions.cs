@@ -1,3 +1,5 @@
+using System.Buffers;
+
 using Sharpify.Collections;
 
 namespace Sharpify;
@@ -25,17 +27,14 @@ public static partial class Extensions {
 
         var length = collection.Count;
 
-        using var taskBuffer = new RentedBufferWriter<Task>(length);
+        using var taskArrayOwner = ArrayPool<Task>.Shared.Rent(length, out Task[] array);
+        var taskBuffer = BufferWrapper<Task>.Create(array);
 
         foreach (var item in collection) {
-            taskBuffer.WriteAndAdvance(body.Invoke(item, token));
+            taskBuffer.Append(body.Invoke(item, token));
         }
 
-#if NET9_0_OR_GREATER
         await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
-#else
-        await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
-#endif
     }
 
     /// <summary>
@@ -77,17 +76,14 @@ public static partial class Extensions {
 
         var length = collection.Count;
 
-        using var taskBuffer = new RentedBufferWriter<Task>(length);
+        using var taskArrayOwner = ArrayPool<Task>.Shared.Rent(length, out Task[] array);
+        var taskBuffer = BufferWrapper<Task>.Create(array);
 
         foreach (var item in collection) {
-            taskBuffer.WriteAndAdvance(Task.Run(() => body.Invoke(item, token), token));
+            taskBuffer.Append(Task.Run(() => body.Invoke(item, token), token));
         }
 
-#if NET9_0_OR_GREATER
         await Task.WhenAll(taskBuffer.WrittenSpan).WaitAsync(token).ConfigureAwait(false);
-#else
-        await Task.WhenAll(taskBuffer.WrittenSegment).WaitAsync(token).ConfigureAwait(false);
-#endif
     }
 
     /// <summary>
