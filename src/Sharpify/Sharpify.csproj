@@ -8,8 +8,6 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Authors>David Shnayder</Authors>
         <Copyright>David Shnayder</Copyright>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageReadmeFile>CHANGELOGLATEST.md</PackageReadmeFile>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>Sharpify</Title>
         <Description>A collection of high performance language extensions for C#</Description>
@@ -21,11 +19,39 @@
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
         <SynchReleaseVersion>false</SynchReleaseVersion>
         <IsAotCompatible>true</IsAotCompatible>
+
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Deterministic>true</Deterministic>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <IsTrimmable>true</IsTrimmable>
+
+        <Authors>David Shnayder</Authors>
+        <Copyright>David Shnayder</Copyright>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
-        <None Include="CHANGELOG.md" Pack="true" PackagePath="\" />
-        <None Include="CHANGELOGLATEST.md" Pack="true" PackagePath="\" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <DebugType>portable</DebugType>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>
+            $(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb
+        </AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="/" Link="README.md" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <PackageReleaseNotes>
+        </PackageReleaseNotes>
+    </PropertyGroup>
 </Project>

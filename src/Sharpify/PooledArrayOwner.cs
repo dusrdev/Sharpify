@@ -13,7 +13,7 @@ public partial struct PooledArrayOwner<T> : IDisposable {
 	/// <summary>
 	/// The rented array held by this object.
 	/// </summary>
-	public readonly T[] Value;
+	public T[] Value { get; private set; }
 
 	internal PooledArrayOwner(ArrayPool<T> pool, int minimumLength) {
 		_pool = pool;

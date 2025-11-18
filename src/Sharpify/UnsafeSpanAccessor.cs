@@ -17,7 +17,11 @@ public unsafe readonly struct UnsafeSpanIterator<T> : IEnumerable<T> {
     /// <summary>
     /// The length of the span
     /// </summary>
+#pragma warning disable CA1051 // Do not declare visible instance fields
+
     public readonly int Length;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
 
     /// <summary>
     /// Creates a new instance of <see cref="UnsafeSpanIterator{T}"/> over the specified span.

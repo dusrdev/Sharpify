@@ -24,7 +24,7 @@ public static partial class Utils {
     /// <summary>
     /// Returns <paramref name="time"/> formatted as <see cref="TimeStampFormat"/>
     /// </summary>
-    public static string FormatTimeStamp(DateTime time) => time.ToString(TimeStampFormat);
+    public static string FormatTimeStamp(DateTime time) => time.ToString(TimeStampFormat, CultureInfo.CurrentCulture);
 
     /// <summary>
 	/// Returns a <see cref="TimeSpan"/> of the remaining time based on <paramref name="currentPercentage"/> and <paramref name="elapsed"/>.

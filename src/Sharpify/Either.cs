@@ -10,12 +10,12 @@ public readonly record struct Either<T0, T1> {
     /// <summary>
     /// Checks if the value is T0.
     /// </summary>
-    public readonly bool IsT0;
+    public bool IsT0 { get; }
 
     /// <summary>
     /// Checks if the value is T1.
     /// </summary>
-    public readonly bool IsT1;
+    public bool IsT1 { get; }
 
     /// <summary>
     /// Gets the value as T0.

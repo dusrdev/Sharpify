@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -89,7 +90,7 @@ public sealed class AesProvider : IDisposable {
         hpSpan.Split(parts, '|', StringSplitOptions.RemoveEmptyEntries
             | StringSplitOptions.TrimEntries);
         ReadOnlySpan<byte> origSalt = Convert.FromBase64String(hashedPassword[parts[0]]);
-        var origIterations = int.Parse(hpSpan[parts[1]]);
+        var origIterations = int.Parse(hpSpan[parts[1]], NumberStyles.Integer, CultureInfo.CurrentCulture);
         ReadOnlySpan<char> origHash = hashedPassword[parts[2]];
 
         //generate hash from test password and original salt and iterations

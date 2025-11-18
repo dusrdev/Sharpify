@@ -18,7 +18,7 @@ public class AsyncRoutine : IDisposable {
     /// <summary>
     /// List of asynchronous actions to be executed.
     /// </summary>
-    public readonly List<Func<CancellationToken, Task>> Actions = [];
+    public List<Func<CancellationToken, Task>> Actions { get; private set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsyncRoutine"/> class with the specified interval, options, and cancellation token source.
@@ -27,6 +27,7 @@ public class AsyncRoutine : IDisposable {
     /// <param name="options">The options to configure the behavior of the routine.</param>
     /// <param name="cancellationTokenSource">The cancellation token source used to cancel the routine.</param>
     public AsyncRoutine(TimeSpan interval, RoutineOptions options, CancellationTokenSource cancellationTokenSource) {
+        Actions = [];
         _options = options;
         _timer = new PeriodicTimer(interval);
         _isRunning = true;

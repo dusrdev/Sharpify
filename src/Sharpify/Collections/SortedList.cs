@@ -7,23 +7,27 @@ namespace Sharpify.Collections;
 /// </summary>
 /// <typeparam name="T">The type of elements in the list.</typeparam>
 public class SortedList<T> : IReadOnlyList<T> {
-	/// <summary>
-	/// The underlying list used for storing elements in the SortedList.
-	/// </summary>
-	protected readonly List<T> _list;
-	/// <summary>
-	/// The comparer used to compare elements in the sorted list.
-	/// </summary>
-	protected readonly IComparer<T> _comparer;
-	/// <summary>
-	/// Gets a value indicating whether the SortedList allows duplicate elements.
-	/// </summary>
-	protected readonly bool _allowDuplicates;
+    /// <summary>
+    /// The underlying list used for storing elements in the SortedList.
+    /// </summary>
+#pragma warning disable CA1051 // Do not declare visible instance fields
+    protected readonly List<T> _list;
+    /// <summary>
+    /// The comparer used to compare elements in the sorted list.
+    /// </summary>
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that is empty, has the default initial capacity, and uses the default comparer for the element type.
-	/// </summary>
-	public SortedList() : this(null, Comparer<T>.Default, false) { }
+    protected readonly IComparer<T> _comparer;
+    /// <summary>
+    /// Gets a value indicating whether the SortedList allows duplicate elements.
+    /// </summary>
+
+    protected readonly bool _allowDuplicates;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SortedList{T}"/> class that is empty, has the default initial capacity, and uses the default comparer for the element type.
+    /// </summary>
+    public SortedList() : this(null, Comparer<T>.Default, false) { }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SortedList{T}"/> class that contains elements copied from the specified collection

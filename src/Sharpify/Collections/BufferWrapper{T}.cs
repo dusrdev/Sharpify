@@ -11,7 +11,11 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// <summary>
     /// The total length of the buffer.
     /// </summary>
+#pragma warning disable CA1051 // Do not declare visible instance fields
+
     public readonly int Length;
+#pragma warning restore CA1051 // Do not declare visible instance fields
+
 
     /// <summary>
     /// The current position of the buffer.
@@ -21,7 +25,11 @@ public ref struct BufferWrapper<T> : IBufferWriter<T> {
     /// <summary>
     /// Initializes a string buffer that uses a pre-allocated buffer (potentially from the stack).
     /// </summary>
+#pragma warning disable CA1000 // Do not declare static members on generic types
+
     public static BufferWrapper<T> Create(Span<T> buffer) => new(buffer);
+#pragma warning restore CA1000 // Do not declare static members on generic types
+
 
     /// <summary>
     /// Represents a mutable interface over a buffer allocated in memory.
