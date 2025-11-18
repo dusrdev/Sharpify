@@ -10,7 +10,6 @@ A collection of high performance language extensions for C#, fully compatible wi
 * ⚡ Fully Native AOT compatible
 * 🤷 `Either<T0, T1>` - Discriminated union object that forces handling of both cases
 * 🦾 Flexible `Result` type that can encapsulate any other type and adds a massage options and a success or failure status. Flexible as it doesn't require any special handling to use (unlike `Either`)
-* 🏄 Wrapper extensions that simplify use of common functions and advanced features from the `CollectionsMarshal` class
 * `Routine` and `AsyncRoutine` bring the user easily usable and configurable interval based background job execution.
 * `SortedList<T>` bridges the performance of `List` and order assurance of `SortedSet`
 * `Synchronized<T>` is a thread-safe object owner with an optional delegate that can be executed on update.
